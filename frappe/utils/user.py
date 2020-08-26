@@ -334,6 +334,7 @@ def get_link_to_reset_password(user):
 		'link': link
 	}
 
+@frappe.whitelist()
 def get_users_with_role(role):
 	return [p[0] for p in frappe.db.sql("""SELECT DISTINCT `tabUser`.`name`
 		FROM `tabHas Role`, `tabUser`
