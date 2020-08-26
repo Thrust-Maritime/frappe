@@ -13,6 +13,7 @@ from frappe.model.workflow import apply_workflow, get_workflow_name, has_approva
 	get_workflow_state_field, send_email_alert, get_workflow_field_value, is_transition_condition_satisfied
 from frappe.desk.notifications import clear_doctype_notifications
 from frappe.utils.user import get_users_with_role
+import json
 
 class WorkflowAction(Document):
 	pass
@@ -168,6 +169,8 @@ def get_next_possible_transitions(workflow_name, state, doc=None):
 def get_users_next_action_data(transitions, doc):
 	user_data_map = {}
 	for transition in transitions:
+		if isinstance(transition,str):
+			transition = json.loads(transition)
 		users = get_users_with_role(transition.allowed)
 		filtered_users = filter_allowed_users(users, doc, transition)
 		for user in filtered_users:
@@ -195,6 +198,7 @@ def create_workflow_actions_for_users(users, doc):
 			'user': user
 		}).insert(ignore_permissions=True)
 
+@frappe.whitelist()
 def send_workflow_action_email(users_data, doc):
 	common_args = get_common_email_args(doc)
 	message = common_args.pop('message', None)
