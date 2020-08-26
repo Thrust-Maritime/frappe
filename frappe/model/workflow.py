@@ -12,6 +12,7 @@ class WorkflowStateError(frappe.ValidationError): pass
 class WorkflowTransitionError(frappe.ValidationError): pass
 class WorkflowPermissionError(frappe.ValidationError): pass
 
+@frappe.whitelist()
 def get_workflow_name(doctype):
 	workflow_name = frappe.cache().hget('workflow', doctype)
 	if workflow_name is None:
