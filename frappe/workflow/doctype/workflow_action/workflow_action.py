@@ -168,8 +168,11 @@ def get_next_possible_transitions(workflow_name, state, doc=None):
 @frappe.whitelist()
 def get_users_next_action_data(transitions, doc):
 	user_data_map = {}
+	if isinstance(transitions,str):
+		transitions = json.loads(transitions)
 	for transition in transitions:
 		if isinstance(transition,str):
+			frappe.log_error(transition)
 			transition = json.loads(transition)
 		users = get_users_with_role(transition.allowed)
 		filtered_users = filter_allowed_users(users, doc, transition)
