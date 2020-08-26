@@ -144,6 +144,7 @@ def update_completed_workflow_actions(doc, user=None):
 		WHERE `reference_doctype`=%s AND `reference_name`=%s AND `user`=%s AND `status`='Open'""",
 		(user, doc.get('doctype'), doc.get('name'), user))
 
+@frappe.whitelist()
 def get_next_possible_transitions(workflow_name, state, doc=None):
 	transitions = frappe.get_all('Workflow Transition',
 		fields=['allowed', 'action', 'state', 'allow_self_approval', 'next_state', '`condition`'],
@@ -163,6 +164,7 @@ def get_next_possible_transitions(workflow_name, state, doc=None):
 
 	return transitions_to_return
 
+@frappe.whitelist()
 def get_users_next_action_data(transitions, doc):
 	user_data_map = {}
 	for transition in transitions:
@@ -259,6 +261,7 @@ def clear_workflow_actions(doctype, name):
 		where reference_doctype=%s and reference_name=%s''',
 		(doctype, name))
 
+@frappe.whitelist()
 def get_doc_workflow_state(doc):
 	workflow_name = get_workflow_name(doc.get('doctype'))
 	workflow_state_field = get_workflow_state_field(workflow_name)
