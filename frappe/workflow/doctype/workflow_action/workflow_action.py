@@ -14,6 +14,7 @@ from frappe.model.workflow import apply_workflow, get_workflow_name, has_approva
 from frappe.desk.notifications import clear_doctype_notifications
 from frappe.utils.user import get_users_with_role
 import json
+from collections import namedtuple
 
 class WorkflowAction(Document):
 	pass
@@ -168,12 +169,7 @@ def get_next_possible_transitions(workflow_name, state, doc=None):
 @frappe.whitelist()
 def get_users_next_action_data(transitions, doc):
 	user_data_map = {}
-	if isinstance(transitions,str):
-		transitions = json.loads(transitions)
 	for transition in transitions:
-		if isinstance(transition,str):
-			frappe.log_error(transition)
-			transition = json.loads(transition)
 		users = get_users_with_role(transition.allowed)
 		filtered_users = filter_allowed_users(users, doc, transition)
 		for user in filtered_users:
@@ -184,8 +180,8 @@ def get_users_next_action_data(transitions, doc):
 				})
 
 			user_data_map[user].get('possible_actions').append(frappe._dict({
-				'action_name': transition.action,
-				'action_link': get_workflow_action_url(transition.action, doc, user)
+				'action_name': transition.allowed,
+				'action_link': get_workflow_action_url(transition.allowed, doc, user)
 			}))
 	return user_data_map
 
