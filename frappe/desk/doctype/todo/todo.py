@@ -94,6 +94,9 @@ def on_doctype_update():
 def get_permission_query_conditions(user):
 	if not user: user = frappe.session.user
 
+	#TechSquid - Allow all users to see all ToDo's
+	return None
+
 	if "System Manager" in frappe.get_roles(user):
 		return None
 	else:
@@ -101,6 +104,10 @@ def get_permission_query_conditions(user):
 			.format(user=frappe.db.escape(user))
 
 def has_permission(doc, user):
+
+	#TechSquid - Allow all users to see all ToDo's
+	return True
+
 	if "System Manager" in frappe.get_roles(user):
 		return True
 	else:

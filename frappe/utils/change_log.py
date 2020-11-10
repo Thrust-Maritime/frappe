@@ -138,6 +138,7 @@ def get_app_last_commit_ref(app):
 	except Exception:
 		return ''
 
+@frappe.whitelist()
 def check_for_update():
 	updates = frappe._dict(major=[], minor=[], patch=[])
 	apps = get_versions()
@@ -192,6 +193,7 @@ def check_release_on_github(app):
 		# Passing this since some apps may not have git initializaed in them
 		return None
 
+	frappe.log_error(remote_url)
 	if isinstance(remote_url, bytes):
 		remote_url = remote_url.decode()
 
@@ -205,8 +207,11 @@ def check_release_on_github(app):
 	org_name = remote_url.split('/')[3]
 	r = requests.get('https://api.github.com/repos/{}/{}/releases'.format(org_name, app))
 	if r.ok:
-		lastest_non_beta_release = parse_latest_non_beta_release(r.json())
-		return Version(lastest_non_beta_release), org_name
+		try:
+			lastest_non_beta_release = parse_latest_non_beta_release(r.json())
+			return Version(lastest_non_beta_release), org_name
+		except:
+			return None
 	# In case of an improper response or if there are no releases
 	return None
 
