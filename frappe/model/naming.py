@@ -123,35 +123,76 @@ def parse_naming_series(parts, doctype='', doc=''):
 		parts = parts.split('.')
 	series_set = False
 	today = now_datetime()
-	for e in parts:
-		part = ''
-		if e.startswith('#'):
-			if not series_set:
-				digits = len(e)
-				part = getseries(n, digits)
-				series_set = True
-		elif e == 'YY':
-			part = today.strftime('%y')
-		elif e == 'MM':
-			part = today.strftime('%m')
-		elif e == 'DD':
-			part = today.strftime("%d")
-		elif e == 'YYYY':
-			part = today.strftime('%Y')
-		elif e == 'FY':
-			part = frappe.defaults.get_user_default("fiscal_year")
-		elif e.startswith('{') and doc:
-			e = e.replace('{', '').replace('}', '')
-			part = doc.get(e)
-		elif doc and doc.get(e):
-			part = doc.get(e)
+
+	if doc:
+		if doc.doctype == "Purchase Order":
+			iterationNumber = getseries(parts[0], len(parts[3]))
+			poName = parts[0] + str(iterationNumber) + parts[2] + str(doc.get(parts[1].replace('{', '').replace('}', '')))
+			return poName
+		# elif doc.doctype == "Task":
+		# 	iterationNumber = getseries(parts[0], len(parts[3]))
+		# 	taskName = parts[0] + str(doc.get(parts[1].replace('{', '').replace('}', ''))) + parts[2] + str(iterationNumber)
+		# 	return taskName
 		else:
-			part = e
+			for e in parts:
+				part = ''
+				if e.startswith('#'):
+					if not series_set:
+						digits = len(e)
+						part = getseries(n, digits)
+						series_set = True
+				elif e == 'YY':
+					part = today.strftime('%y')
+				elif e == 'MM':
+					part = today.strftime('%m')
+				elif e == 'DD':
+					part = today.strftime("%d")
+				elif e == 'YYYY':
+					part = today.strftime('%Y')
+				elif e == 'FY':
+					part = frappe.defaults.get_user_default("fiscal_year")
+				elif e.startswith('{') and doc:
+					e = e.replace('{', '').replace('}', '')
+					part = doc.get(e)
+				elif doc and doc.get(e):
+					part = doc.get(e)
+				else:
+					part = e
 
-		if isinstance(part, string_types):
-			n += part
+				if isinstance(part, string_types):
+					n += part
 
-	return n
+			return n
+	else:
+		for e in parts:
+			part = ''
+			if e.startswith('#'):
+				if not series_set:
+					digits = len(e)
+					part = getseries(n, digits)
+					series_set = True
+			elif e == 'YY':
+				part = today.strftime('%y')
+			elif e == 'MM':
+				part = today.strftime('%m')
+			elif e == 'DD':
+				part = today.strftime("%d")
+			elif e == 'YYYY':
+				part = today.strftime('%Y')
+			elif e == 'FY':
+				part = frappe.defaults.get_user_default("fiscal_year")
+			elif e.startswith('{') and doc:
+				e = e.replace('{', '').replace('}', '')
+				part = doc.get(e)
+			elif doc and doc.get(e):
+				part = doc.get(e)
+			else:
+				part = e
+
+			if isinstance(part, string_types):
+				n += part
+
+		return n
 
 
 def getseries(key, digits):
