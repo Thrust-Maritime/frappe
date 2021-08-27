@@ -225,7 +225,7 @@ class EMail:
 
 	def set_in_reply_to(self, in_reply_to):
 		"""Used to send the Message-Id of a received email back as In-Reply-To"""
-		self.msg_root["In-Reply-To"] = in_reply_to
+		self.set_header('In-Reply-To', in_reply_to)
 
 	def make(self):
 		"""build into msg_root"""
@@ -252,7 +252,10 @@ class EMail:
 		if key in self.msg_root:
 			del self.msg_root[key]
 
-		self.msg_root[key] = value
+		try:
+			self.msg_root[key] = value
+		except ValueError:
+			self.msg_root[key] = sanitize_email_header(value)
 
 	def as_string(self):
 		"""validate, build message and convert to string"""
@@ -267,10 +270,14 @@ def get_formatted_html(subject, message, footer=None, print_html=None,
 	if not email_account:
 		email_account = get_outgoing_email_account(False, sender=sender)
 
+	signature = None
+	if "<!-- signature-included -->" not in message:
+		signature = get_signature(email_account)
+
 	rendered_email = frappe.get_template("templates/emails/standard.html").render({
 		"header": get_header(header),
 		"content": message,
-		"signature": get_signature(email_account),
+		"signature": signature,
 		"footer": get_footer(email_account, footer),
 		"title": subject,
 		"print_html": print_html,
@@ -478,3 +485,6 @@ def get_header(header=None):
 	})
 
 	return email_header
+
+def sanitize_email_header(str):
+	return str.replace('\r', '').replace('\n', '')
