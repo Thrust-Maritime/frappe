@@ -6,7 +6,7 @@ import functools
 import frappe, re, os
 from six import iteritems
 from past.builtins import cmp
-from frappe.utils import markdown
+from frappe.utils import md_to_html
 
 def delete_page_cache(path):
 	cache = frappe.cache()
@@ -69,7 +69,10 @@ def get_home_page():
 				home_page = home_page[-1]
 
 		if not home_page:
-			home_page = frappe.db.get_value("Website Settings", None, "home_page") or "login"
+			home_page = frappe.db.get_value("Website Settings", None, "home_page")
+
+		if not home_page:
+			home_page = "login" if frappe.session.user == 'Guest' else "me"
 
 		home_page = home_page.strip('/')
 
@@ -334,7 +337,7 @@ def get_html_content_based_on_type(doc, fieldname, content_type):
 		content = doc.get(fieldname)
 
 		if content_type == 'Markdown':
-			content = markdown(doc.get(fieldname + '_md'))
+			content = md_to_html(doc.get(fieldname + '_md'))
 		elif content_type == 'HTML':
 			content = doc.get(fieldname + '_html')
 

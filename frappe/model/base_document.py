@@ -743,16 +743,21 @@ class BaseDocument(object):
 			from frappe.model.meta import get_default_df
 			df = get_default_df(fieldname)
 
+		if df and not currency:
+			currency = self.get(df.get("options"))
+			if not frappe.db.exists('Currency', currency, cache=True):
+				currency = None
+
 		val = self.get(fieldname)
 
 		if translated:
 			val = _(val)
 
-		if absolute_value and isinstance(val, (int, float)):
-			val = abs(self.get(fieldname))
-
 		if not doc:
 			doc = getattr(self, "parent_doc", None) or self
+
+		if (absolute_value or doc.get('absolute_value')) and isinstance(val, (int, float)):
+			val = abs(self.get(fieldname))
 
 		return format_value(val, df=df, doc=doc, currency=currency)
 

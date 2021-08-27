@@ -33,6 +33,9 @@ class PermissionError(Exception):
 class DoesNotExistError(ValidationError):
 	http_status_code = 404
 
+class PageDoesNotExistError(ValidationError):
+	http_status_code = 404
+
 class NameError(Exception):
 	http_status_code = 409
 
@@ -102,6 +105,7 @@ class IncompatibleApp(ValidationError): pass
 class InvalidDates(ValidationError): pass
 class DataTooLongException(ValidationError): pass
 class FileAlreadyAttachedException(Exception): pass
+class AttachmentLimitReached(Exception): pass
 # OAuth exceptions
 class InvalidAuthorizationHeader(CSRFTokenError): pass
 class InvalidAuthorizationPrefix(CSRFTokenError): pass
