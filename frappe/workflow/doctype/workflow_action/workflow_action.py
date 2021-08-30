@@ -13,8 +13,6 @@ from frappe.model.workflow import apply_workflow, get_workflow_name, has_approva
 	get_workflow_state_field, send_email_alert, get_workflow_field_value, is_transition_condition_satisfied
 from frappe.desk.notifications import clear_doctype_notifications
 from frappe.utils.user import get_users_with_role
-import json
-from collections import namedtuple
 
 class WorkflowAction(Document):
 	pass
@@ -101,11 +99,11 @@ def confirm_action(doctype, docname, user, action):
 
 def return_success_page(doc):
 	frappe.respond_as_web_page(_("Success"),
-		_("{0}: {1} is set to state {2}".format(
+		_("{0}: {1} is set to state {2}").format(
 			doc.get('doctype'),
 			frappe.bold(doc.get('name')),
 			frappe.bold(get_doc_workflow_state(doc))
-		)), indicator_color='green')
+		), indicator_color='green')
 
 def return_action_confirmation_page(doc, action, action_link, alert_doc_change=False):
 	template_params = {
@@ -127,12 +125,12 @@ def return_action_confirmation_page(doc, action, action_link, alert_doc_change=F
 
 def return_link_expired_page(doc, doc_workflow_state):
 	frappe.respond_as_web_page(_("Link Expired"),
-		_("Document {0} has been set to state {1} by {2}"
+		_("Document {0} has been set to state {1} by {2}")
 			.format(
 				frappe.bold(doc.get('name')),
 				frappe.bold(doc_workflow_state),
 				frappe.bold(frappe.get_value('User', doc.get("modified_by"), 'full_name'))
-			)), indicator_color='blue')
+			), indicator_color='blue')
 
 def clear_old_workflow_actions(doc, user=None):
 	user = user if user else frappe.session.user
@@ -146,7 +144,6 @@ def update_completed_workflow_actions(doc, user=None):
 		WHERE `reference_doctype`=%s AND `reference_name`=%s AND `user`=%s AND `status`='Open'""",
 		(user, doc.get('doctype'), doc.get('name'), user))
 
-@frappe.whitelist()
 def get_next_possible_transitions(workflow_name, state, doc=None):
 	transitions = frappe.get_all('Workflow Transition',
 		fields=['allowed', 'action', 'state', 'allow_self_approval', 'next_state', '`condition`'],
@@ -166,17 +163,9 @@ def get_next_possible_transitions(workflow_name, state, doc=None):
 
 	return transitions_to_return
 
-from collections import namedtuple
-@frappe.whitelist()
 def get_users_next_action_data(transitions, doc):
 	user_data_map = {}
-	if isinstance(transitions,str):
-		transitions = json.loads(transitions)		
 	for transition in transitions:
-		if isinstance(transition,str):
-			transition = json.loads(transition)
-		elif isinstance(transition,dict):
-			transition = namedtuple("Transition", transition.keys())(*transition.values())
 		users = get_users_with_role(transition.allowed)
 		filtered_users = filter_allowed_users(users, doc, transition)
 		for user in filtered_users:
@@ -187,8 +176,8 @@ def get_users_next_action_data(transitions, doc):
 				})
 
 			user_data_map[user].get('possible_actions').append(frappe._dict({
-				'action_name': transition.allowed,
-				'action_link': get_workflow_action_url(transition.allowed, doc, user)
+				'action_name': transition.action,
+				'action_link': get_workflow_action_url(transition.action, doc, user)
 			}))
 	return user_data_map
 
@@ -204,7 +193,6 @@ def create_workflow_actions_for_users(users, doc):
 			'user': user
 		}).insert(ignore_permissions=True)
 
-@frappe.whitelist()
 def send_workflow_action_email(users_data, doc):
 	common_args = get_common_email_args(doc)
 	message = common_args.pop('message', None)
@@ -271,7 +259,6 @@ def clear_workflow_actions(doctype, name):
 		where reference_doctype=%s and reference_name=%s''',
 		(doctype, name))
 
-@frappe.whitelist()
 def get_doc_workflow_state(doc):
 	workflow_name = get_workflow_name(doc.get('doctype'))
 	workflow_state_field = get_workflow_state_field(workflow_name)
@@ -299,10 +286,11 @@ def get_common_email_args(doc):
 		response = frappe.render_template(email_template.response, vars(doc))
 	else:
 		subject = _('Workflow Action')
-		response = _('{0}: {1}'.format(doctype, docname))
+		response = _('{0}: {1}').format(doctype, docname)
 
 	common_args = {
 		'template': 'workflow_action',
+		'header': 'Workflow Action',
 		'attachments': [frappe.attach_print(doctype, docname , file_name=docname)],
 		'subject': subject,
 		'message': response

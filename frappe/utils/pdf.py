@@ -16,6 +16,7 @@ from PyPDF2 import PdfFileReader, PdfFileWriter
 import frappe
 from frappe import _
 from frappe.utils import scrub_urls
+from frappe.utils.jinja import is_rtl
 
 PDF_CONTENT_ERRORS = ["ContentNotFoundError", "ContentOperationNotPermittedError",
 	"UnknownContentError", "RemoteHostClosedError"]
@@ -51,6 +52,8 @@ def get_pdf(html, options=None, output=None):
 				output.appendPagesFromReader(reader)
 		else:
 			raise
+	finally:
+		cleanup(options)
 
 	if "password" in options:
 		password = options["password"]
@@ -109,8 +112,7 @@ def prepare_options(html, options):
 	options.update(html_options or {})
 
 	# cookies
-	if frappe.session and frappe.session.sid:
-		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid))]
+	options.update(get_cookie_options())
 
 	# page size
 	if not options.get("page-size"):
@@ -118,6 +120,22 @@ def prepare_options(html, options):
 
 	return html, options
 
+
+def get_cookie_options():
+	options = {}
+	if frappe.session and frappe.session.sid and hasattr(frappe.local, "request"):
+		# Use wkhtmltopdf's cookie-jar feature to set cookies and restrict them to host domain
+		cookiejar = "/tmp/{}.jar".format(frappe.generate_hash())
+
+		# Remove port from request.host
+		# https://werkzeug.palletsprojects.com/en/0.16.x/wrappers/#werkzeug.wrappers.BaseRequest.host
+		domain = frappe.utils.get_host_name().split(":", 1)[0]
+		with open(cookiejar, "w") as f:
+			f.write("sid={}; Domain={};\n".format(frappe.session.sid, domain))
+
+		options['cookie-jar'] = cookiejar
+
+	return options
 
 def read_options_from_html(html):
 	options = {}
@@ -128,7 +146,7 @@ def read_options_from_html(html):
 	toggle_visible_pdf(soup)
 
 	# use regex instead of soup-parser
-	for attr in ("margin-top", "margin-bottom", "margin-left", "margin-right", "page-size", "header-spacing"):
+	for attr in ("margin-top", "margin-bottom", "margin-left", "margin-right", "page-size", "header-spacing", "orientation"):
 		try:
 			pattern = re.compile(r"(\.print-format)([\S|\s][^}]*?)(" + str(attr) + r":)(.+)(mm;)")
 			match = pattern.findall(html)
@@ -146,8 +164,7 @@ def prepare_header_footer(soup):
 	head = soup.find("head").contents
 	styles = soup.find_all("style")
 
-	bootstrap = frappe.read_file(os.path.join(frappe.local.sites_path, "assets/frappe/css/bootstrap.css"))
-	fontawesome = frappe.read_file(os.path.join(frappe.local.sites_path, "assets/frappe/css/font-awesome.css"))
+	css = frappe.read_file(os.path.join(frappe.local.sites_path, "assets/css/printview.css"))
 
 	# extract header and footer
 	for html_id in ("header-html", "footer-html"):
@@ -160,11 +177,12 @@ def prepare_header_footer(soup):
 			toggle_visible_pdf(content)
 			html = frappe.render_template("templates/print_formats/pdf_header_footer.html", {
 				"head": head,
-				"styles": styles,
 				"content": content,
+				"styles": styles,
 				"html_id": html_id,
-				"bootstrap": bootstrap,
-				"fontawesome": fontawesome
+				"css": css,
+				"lang": frappe.local.lang,
+				"layout_direction": "rtl" if is_rtl() else "ltr"
 			})
 
 			# create temp file
@@ -183,11 +201,8 @@ def prepare_header_footer(soup):
 	return options
 
 
-def cleanup(fname, options):
-	if os.path.exists(fname):
-		os.remove(fname)
-
-	for key in ("header-html", "footer-html"):
+def cleanup(options):
+	for key in ("header-html", "footer-html", "cookie-jar"):
 		if options.get(key) and os.path.exists(options[key]):
 			os.remove(options[key])
 

@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
 from __future__ import unicode_literals, print_function
 
 from six.moves import input
 
-import frappe, os, re
+import frappe, os, re, git
 from frappe.utils import touch_file, cstr
 
 def make_boilerplate(dest, app_name):
@@ -42,7 +42,7 @@ def make_boilerplate(dest, app_name):
 			if hook_key=="app_name" and hook_val.lower().replace(" ", "_") != hook_val:
 				print("App Name must be all lowercase and without spaces")
 				hook_val = ""
-			elif hook_key=="app_title" and not re.match("^(?![\W])[^\d_\s][\w -]+$", hook_val, re.UNICODE):
+			elif hook_key=="app_title" and not re.match(r"^(?![\W])[^\d_\s][\w -]+$", hook_val, re.UNICODE):
 				print("App Title should start with a letter and it can only consist of letters, numbers, spaces and underscores")
 				hook_val = ""
 
@@ -72,7 +72,7 @@ def make_boilerplate(dest, app_name):
 		f.write(frappe.as_unicode(gitignore_template.format(app_name = hooks.app_name)))
 
 	with open(os.path.join(dest, hooks.app_name, "requirements.txt"), "w") as f:
-		f.write("frappe")
+		f.write("# frappe -- https://github.com/frappe/frappe is installed via 'bench init'")
 
 	with open(os.path.join(dest, hooks.app_name, "README.md"), "w") as f:
 		f.write(frappe.as_unicode("## {0}\n\n{1}\n\n#### License\n\n{2}".format(hooks.app_title,
@@ -103,7 +103,13 @@ def make_boilerplate(dest, app_name):
 	with open(os.path.join(dest, hooks.app_name, hooks.app_name, "config", "docs.py"), "w") as f:
 		f.write(frappe.as_unicode(docs_template.format(**hooks)))
 
-	print("'{app}' created at {path}".format(app=app_name, path=os.path.join(dest, app_name)))
+	# initialize git repository
+	app_directory = os.path.join(dest, hooks.app_name)
+	app_repo = git.Repo.init(app_directory)
+	app_repo.git.add(A=True)
+	app_repo.index.commit("feat: Initialize App")
+
+	print("'{app}' created at {path}".format(app=app_name, path=app_directory))
 
 
 manifest_template = """include MANIFEST.in
@@ -125,16 +131,12 @@ recursive-include {app_name} *.svg
 recursive-include {app_name} *.txt
 recursive-exclude {app_name} *.pyc"""
 
-init_template = """# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
+init_template = """
 __version__ = '0.0.1'
 
 """
 
-hooks_template = """# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from . import __version__ as app_version
+hooks_template = """from . import __version__ as app_version
 
 app_name = "{app_name}"
 app_title = "{app_title}"
@@ -156,6 +158,13 @@ app_license = "{app_license}"
 # web_include_css = "/assets/{app_name}/css/{app_name}.css"
 # web_include_js = "/assets/{app_name}/js/{app_name}.js"
 
+# include custom scss in every website theme (without file extension ".scss")
+# website_theme_scss = "{app_name}/public/scss/website"
+
+# include js, css files in header of web form
+# webform_include_js = {{"doctype": "public/js/doctype.js"}}
+# webform_include_css = {{"doctype": "public/css/doctype.css"}}
+
 # include js in page
 # page_js = {{"page" : "public/js/file.js"}}
 
@@ -175,9 +184,6 @@ app_license = "{app_license}"
 # role_home_page = {{
 #	"Role": "home_page"
 # }}
-
-# Website user home page (by function)
-# get_website_user_home_page = "{app_name}.utils.get_home_page"
 
 # Generators
 # ----------
@@ -207,6 +213,14 @@ app_license = "{app_license}"
 #
 # has_permission = {{
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
+# }}
+
+# DocType Class
+# ---------------
+# Override standard doctype classes
+
+# override_doctype_class = {{
+# 	"ToDo": "custom_app.overrides.CustomToDo"
 # }}
 
 # Document Events
@@ -261,11 +275,45 @@ app_license = "{app_license}"
 # 	"Task": "{app_name}.task.get_dashboard_data"
 # }}
 
+# exempt linked doctypes from being automatically cancelled
+#
+# auto_cancel_exempted_doctypes = ["Auto Repeat"]
+
+
+# User Data Protection
+# --------------------
+
+user_data_fields = [
+	{{
+		"doctype": "{{doctype_1}}",
+		"filter_by": "{{filter_by}}",
+		"redact_fields": ["{{field_1}}", "{{field_2}}"],
+		"partial": 1,
+	}},
+	{{
+		"doctype": "{{doctype_2}}",
+		"filter_by": "{{filter_by}}",
+		"partial": 1,
+	}},
+	{{
+		"doctype": "{{doctype_3}}",
+		"strict": False,
+	}},
+	{{
+		"doctype": "{{doctype_4}}"
+	}}
+]
+
+# Authentication and authorization
+# --------------------------------
+
+# auth_hooks = [
+# 	"{app_name}.auth.validate"
+# ]
+
 """
 
-desktop_template = """# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from frappe import _
+desktop_template = """from frappe import _
 
 def get_data():
 	return [
@@ -279,8 +327,7 @@ def get_data():
 	]
 """
 
-setup_template = """# -*- coding: utf-8 -*-
-from setuptools import setup, find_packages
+setup_template = """from setuptools import setup, find_packages
 
 with open("requirements.txt") as f:
 	install_requires = f.read().strip().split("\\n")

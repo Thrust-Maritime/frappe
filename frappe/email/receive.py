@@ -1,19 +1,27 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-from __future__ import unicode_literals
-import six
-from six import iteritems, text_type
-from six.moves import range
-import time, _socket, poplib, imaplib, email, email.utils, datetime, chardet, re
-from email_reply_parser import EmailReplyParser
+import datetime
+import email
+import email.utils
+import imaplib
+import poplib
+import re
+import time
 from email.header import decode_header
+
+import _socket
+import chardet
+import six
+from email_reply_parser import EmailReplyParser
+
 import frappe
 from frappe import _, safe_decode, safe_encode
-from frappe.utils import (extract_email_id, convert_utc_to_user_timezone, now,
-	cint, cstr, strip, markdown, parse_addr)
-from frappe.utils.scheduler import log
-from frappe.core.doctype.file.file import get_random_filename, MaxFileSizeReachedError
+from frappe.core.doctype.file.file import (MaxFileSizeReachedError,
+	get_random_filename)
+from frappe.utils import (cint, convert_utc_to_user_timezone, cstr,
+	extract_email_id, markdown, now, parse_addr, strip)
+
 
 class EmailSizeExceededError(frappe.ValidationError): pass
 class EmailTimeoutError(frappe.ValidationError): pass
@@ -76,7 +84,7 @@ class EmailServer:
 
 		except _socket.error:
 			# log performs rollback and logs error in Error Log
-			log("receive.connect_pop")
+			frappe.log_error("receive.connect_pop")
 
 			# Invalid mail server -- due to refusing connection
 			frappe.msgprint(_('Invalid Mail Server. Please rectify and try again.'))
@@ -251,7 +259,7 @@ class EmailServer:
 
 			else:
 				# log performs rollback and logs error in Error Log
-				log("receive.get_messages", self.make_error_msg(msg_num, incoming_mail))
+				frappe.log_error("receive.get_messages", self.make_error_msg(msg_num, incoming_mail))
 				self.errors = True
 				frappe.db.rollback()
 
@@ -276,7 +284,7 @@ class EmailServer:
 
 		flags = []
 		for flag in imaplib.ParseFlags(flag_string) or []:
-			pattern = re.compile("\w+")
+			pattern = re.compile(r"\w+")
 			match = re.search(pattern, frappe.as_unicode(flag))
 			flags.append(match.group(0))
 
@@ -338,7 +346,7 @@ class EmailServer:
 			return
 
 		self.imap.select("Inbox")
-		for uid, operation in iteritems(uid_list):
+		for uid, operation in uid_list.items():
 			if not uid: continue
 
 			op = "+FLAGS" if operation == "Read" else "-FLAGS"
@@ -474,7 +482,7 @@ class Email:
 			self.html_content += markdown(text_content)
 
 	def get_charset(self, part):
-		"""Detect chartset."""
+		"""Detect charset."""
 		charset = part.get_content_charset()
 		if not charset:
 			charset = chardet.detect(safe_encode(cstr(part)))['encoding']
@@ -485,7 +493,7 @@ class Email:
 		charset = self.get_charset(part)
 
 		try:
-			return text_type(part.get_payload(decode=True), str(charset), "ignore")
+			return str(part.get_payload(decode=True), str(charset), "ignore")
 		except LookupError:
 			return part.get_payload()
 
@@ -537,6 +545,8 @@ class Email:
 			except MaxFileSizeReachedError:
 				# WARNING: bypass max file size exception
 				pass
+			except frappe.FileAlreadyAttachedException:
+				pass
 			except frappe.DuplicateEntryError:
 				# same file attached twice??
 				pass
@@ -545,7 +555,7 @@ class Email:
 
 	def get_thread_id(self):
 		"""Extract thread ID from `[]`"""
-		l = re.findall('(?<=\[)[\w/-]+', self.subject)
+		l = re.findall(r'(?<=\[)[\w/-]+', self.subject)
 		return l and l[0] or None
 
 

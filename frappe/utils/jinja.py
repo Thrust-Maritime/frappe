@@ -11,12 +11,21 @@ def get_jenv():
 		from jinja2.sandbox import SandboxedEnvironment
 
 		# frappe will be loaded last, so app templates will get precedence
-		jenv = SandboxedEnvironment(loader = get_jloader(),
-			undefined=DebugUndefined)
+		jenv = SandboxedEnvironment(
+			loader=get_jloader(),
+			undefined=DebugUndefined
+		)
 		set_filters(jenv)
 
 		jenv.globals.update(get_safe_globals())
 		jenv.globals.update(get_jenv_customization('methods'))
+		jenv.globals.update({
+			'resolve_class': resolve_class,
+			'inspect': inspect,
+			'web_blocks': web_blocks,
+			'web_block': web_block,
+			'include_style': include_style
+		})
 
 		frappe.local.jenv = jenv
 
@@ -62,24 +71,31 @@ def render_template(template, context, is_path=None, safe_render=True):
 	:param safe_render: (optional) prevent server side scripting via jinja templating
 	'''
 
-	from frappe import get_traceback, throw
+	from frappe import get_traceback, throw, _
 	from jinja2 import TemplateError
 
 	if not template:
 		return ""
 
-	# if it ends with .html then its a freaking path, not html
-	if (is_path
-		or template.startswith("templates/")
-		or (template.endswith('.html') and '\n' not in template)):
+	if (is_path or guess_is_path(template)):
 		return get_jenv().get_template(template).render(context)
 	else:
 		if safe_render and ".__" in template:
-			throw("Illegal template")
+			throw(_("Illegal template"))
 		try:
 			return get_jenv().from_string(template).render(context)
 		except TemplateError:
 			throw(title="Jinja Template Error", msg="<pre>{template}</pre><pre>{tb}</pre>".format(template=template, tb=get_traceback()))
+
+def guess_is_path(template):
+	# template can be passed as a path or content
+	# if its single line and ends with a html, then its probably a path
+	if '\n' not in template and '.' in template:
+		extn = template.rsplit('.')[-1]
+		if extn in ('html', 'css', 'scss', 'py', 'md', 'json', 'js', 'xml'):
+			return True
+
+	return False
 
 
 def get_jloader():
@@ -95,7 +111,7 @@ def get_jloader():
 				apps = frappe.local.flags.web_pages_apps or frappe.get_installed_apps(sort=True)
 				apps.reverse()
 
-		if not "frappe" in apps:
+		if "frappe" not in apps:
 			apps.append('frappe')
 
 		frappe.local.jloader = ChoiceLoader(
@@ -149,3 +165,84 @@ def get_jenv_customization(customization_type):
 		out[fn_name] = frappe.get_attr(fn_string)
 
 	return out
+
+
+def resolve_class(classes):
+	import frappe
+
+	if classes is None:
+		return ''
+
+	if isinstance(classes, frappe.string_types):
+		return classes
+
+	if isinstance(classes, (list, tuple)):
+		return ' '.join([resolve_class(c) for c in classes]).strip()
+
+	if isinstance(classes, dict):
+		return ' '.join([classname for classname in classes if classes[classname]]).strip()
+
+	return classes
+
+
+def inspect(var, render=True):
+	context = { "var": var }
+	if render:
+		html = "<pre>{{ var | pprint | e }}</pre>"
+	else:
+		html = ""
+	return get_jenv().from_string(html).render(context)
+
+
+def web_block(template, values=None, **kwargs):
+	options = {"template": template, "values": values}
+	options.update(kwargs)
+	return web_blocks([options])
+
+
+def web_blocks(blocks):
+	from frappe import throw, _dict
+	from frappe.website.doctype.web_page.web_page import get_web_blocks_html
+	from frappe import _
+
+	web_blocks = []
+	for block in blocks:
+		if not block.get('template'):
+			throw(_('Web Template is not specified'))
+
+		doc = _dict({
+			'doctype': 'Web Page Block',
+			'web_template': block['template'],
+			'web_template_values': block.get('values', {}),
+			'add_top_padding': 1,
+			'add_bottom_padding': 1,
+			'add_container': 1,
+			'hide_block': 0,
+			'css_class': ''
+		})
+		doc.update(block)
+		web_blocks.append(doc)
+
+	out = get_web_blocks_html(web_blocks)
+
+	html = out.html
+	for script in out.scripts:
+		html += '<script>{}</script>'.format(script)
+
+	return html
+
+
+def include_style(file_name, rtl=None):
+	if rtl is None:
+		rtl = is_rtl()
+
+	if rtl:
+		path = f"/assets/css-rtl/{file_name}"
+	else:
+		path = f"/assets/css/{file_name}"
+	return f'<link type="text/css" rel="stylesheet" href="{path}">'
+
+
+def is_rtl():
+	from frappe import local
+	return local.lang in ["ar", "he", "fa", "ps"]

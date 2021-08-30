@@ -10,35 +10,14 @@ from six import string_types, text_type
 from frappe.utils import get_request_session
 from frappe import _
 
-def make_get_request(url, auth=None, headers=None, data=None):
-	if not auth:
-		auth = ''
-	if not data:
-		data = {}
-	if not headers:
-		headers = {}
+def make_request(method, url, auth=None, headers=None, data=None):
+	auth = auth or ''
+	data = data or {}
+	headers = headers or {}
 
 	try:
 		s = get_request_session()
-		frappe.flags.integration_request = s.get(url, data={}, auth=auth, headers=headers)
-		frappe.flags.integration_request.raise_for_status()
-		return frappe.flags.integration_request.json()
-
-	except Exception as exc:
-		frappe.log_error(frappe.get_traceback())
-		raise exc
-
-def make_post_request(url, auth=None, headers=None, data=None):
-	if not auth:
-		auth = ''
-	if not data:
-		data = {}
-	if not headers:
-		headers = {}
-
-	try:
-		s = get_request_session()
-		frappe.flags.integration_request = s.post(url, data=data, auth=auth, headers=headers)
+		frappe.flags.integration_request = s.request(method, url, data=data, auth=auth, headers=headers)
 		frappe.flags.integration_request.raise_for_status()
 
 		if frappe.flags.integration_request.headers.get("content-type") == "text/plain; charset=utf-8":
@@ -49,9 +28,21 @@ def make_post_request(url, auth=None, headers=None, data=None):
 		frappe.log_error()
 		raise exc
 
-def create_request_log(data, integration_type, service_name, name=None):
+def make_get_request(url, **kwargs):
+	return make_request('GET', url, **kwargs)
+
+def make_post_request(url, **kwargs):
+	return make_request('POST', url, **kwargs)
+
+def make_put_request(url, **kwargs):
+	return make_request('PUT', url, **kwargs)
+
+def create_request_log(data, integration_type, service_name, name=None, error=None):
 	if isinstance(data, string_types):
 		data = json.loads(data)
+
+	if isinstance(error, string_types):
+		error = json.loads(error)
 
 	integration_request = frappe.get_doc({
 		"doctype": "Integration Request",
@@ -59,6 +50,7 @@ def create_request_log(data, integration_type, service_name, name=None):
 		"integration_request_service": service_name,
 		"reference_doctype": data.get("reference_doctype"),
 		"reference_docname": data.get("reference_docname"),
+		"error": json.dumps(error, default=json_handler),
 		"data": json.dumps(data, default=json_handler)
 	})
 
@@ -77,12 +69,12 @@ def get_payment_gateway_controller(payment_gateway):
 		try:
 			return frappe.get_doc("{0} Settings".format(payment_gateway))
 		except Exception:
-			frappe.throw(_("{0} Settings not found".format(payment_gateway)))
+			frappe.throw(_("{0} Settings not found").format(payment_gateway))
 	else:
 		try:
 			return frappe.get_doc(gateway.gateway_settings, gateway.gateway_controller)
 		except Exception:
-			frappe.throw(_("{0} Settings not found".format(payment_gateway)))
+			frappe.throw(_("{0} Settings not found").format(payment_gateway))
 
 
 @frappe.whitelist(allow_guest=True, xss_safe=True)

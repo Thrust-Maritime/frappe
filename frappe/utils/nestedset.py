@@ -59,7 +59,7 @@ def update_add_node(doc, parent, parent_field):
 
 	# get the last sibling of the parent
 	if parent:
-		left, right = frappe.db.sql("select lft, rgt from `tab{0}` where name=%s"
+		left, right = frappe.db.sql("select lft, rgt from `tab{0}` where name=%s for update"
 			.format(doctype), parent)[0]
 		validate_loop(doc.doctype, doc.name, left, right)
 	else: # root
@@ -91,7 +91,7 @@ def update_move_node(doc, parent_field):
 
 	if parent:
 		new_parent = frappe.db.sql("""select lft, rgt from `tab{0}`
-			where name = %s""".format(doc.doctype), parent, as_dict=1)[0]
+			where name = %s for update""".format(doc.doctype), parent, as_dict=1)[0]
 
 		validate_loop(doc.doctype, doc.name, new_parent.lft, new_parent.rgt)
 
@@ -110,7 +110,7 @@ def update_move_node(doc, parent_field):
 
 	if parent:
 		new_parent = frappe.db.sql("""select lft, rgt from `tab%s`
-			where name = %s""" % (doc.doctype, '%s'), parent, as_dict=1)[0]
+			where name = %s for update""" % (doc.doctype, '%s'), parent, as_dict=1)[0]
 
 
 		# set parent lft, rgt
@@ -137,10 +137,16 @@ def update_move_node(doc, parent_field):
 	frappe.db.sql("""update `tab{0}` set lft = -lft + %s, rgt = -rgt + %s, modified=%s
 		where lft < 0""".format(doc.doctype), (new_diff, new_diff, n))
 
+@frappe.whitelist()
 def rebuild_tree(doctype, parent_field):
 	"""
 		call rebuild_node for all root nodes
 	"""
+
+	# Check for perm if called from client-side
+	if frappe.request and frappe.local.form_dict.cmd == 'rebuild_tree':
+		frappe.only_for('System Manager')
+
 	# get all roots
 	frappe.db.auto_commit_on_many_writes = 1
 

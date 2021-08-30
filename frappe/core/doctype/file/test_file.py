@@ -193,9 +193,9 @@ class TestSameContent(unittest.TestCase):
 
 class TestFile(unittest.TestCase):
 	def setUp(self):
+		frappe.set_user('Administrator')
 		self.delete_test_data()
 		self.upload_file()
-
 
 	def tearDown(self):
 		try:
@@ -350,30 +350,6 @@ class TestFile(unittest.TestCase):
 		self.assertEqual(file1.file_url, file2.file_url)
 		self.assertTrue(os.path.exists(file2.get_full_path()))
 
-	def test_website_user_file_permission(self):
-		# Website User should be able to attach a file
-		# if they have write access to a document
-		from frappe.core.doctype.file.file import File
-		user = frappe.get_doc(dict(
-			doctype='User',
-			email='test-file-perm@example.com',
-			first_name='Tester'
-		))
-		user.insert(ignore_if_duplicate=True)
-		frappe.set_user('test-file-perm@example.com')
-		txt_file = frappe.get_doc({
-			"doctype": "File",
-			"file_name": 'file3.txt',
-			"attached_to_doctype": 'User',
-			"attached_to_name": user.name,
-			"content": test_content1
-		})
-		txt_file.insert()
-		# creation of file should not fail
-		# because user gets permission via has_web_form_permission
-		self.assertIsInstance(txt_file, File)
-		frappe.set_user('Administrator')
-
 	def test_parent_directory_validation_in_file_url(self):
 		file1 = frappe.get_doc({
 			"doctype": "File",
@@ -390,6 +366,53 @@ class TestFile(unittest.TestCase):
 		file1.reload()
 		file1.file_url = '/private/files/parent_dir2.txt'
 		file1.save()
+
+class TestAttachment(unittest.TestCase):
+	test_doctype = 'Test For Attachment'
+
+	def setUp(self):
+		if frappe.db.exists('DocType', self.test_doctype):
+			return
+
+		frappe.get_doc(
+			doctype='DocType',
+			name=self.test_doctype,
+			module='Custom',
+			custom=1,
+			fields=[
+				{'label': 'Title', 'fieldname': 'title', 'fieldtype': 'Data'},
+				{'label': 'Attachment', 'fieldname': 'attachment', 'fieldtype': 'Attach'},
+			]
+		).insert()
+
+	def tearDown(self):
+		frappe.delete_doc('DocType', self.test_doctype)
+
+	def test_file_attachment_on_update(self):
+		doc = frappe.get_doc(
+			doctype=self.test_doctype,
+			title='test for attachment on update'
+		).insert()
+
+		file = frappe.get_doc({
+			'doctype': 'File',
+			'file_name': 'test_attach.txt',
+			'content': 'Test Content'
+		})
+		file.save()
+
+		doc.attachment = file.file_url
+		doc.save()
+
+		exists = frappe.db.exists('File', {
+			'file_name': 'test_attach.txt',
+			'file_url': file.file_url,
+			'attached_to_doctype': self.test_doctype,
+			'attached_to_name': doc.name,
+			'attached_to_field': 'attachment'
+		})
+
+		self.assertTrue(exists)
 
 
 class TestAttachmentsAccess(unittest.TestCase):
@@ -429,12 +452,12 @@ class TestAttachmentsAccess(unittest.TestCase):
 			"content": 'System Manager Home',
 		}).insert()
 
-		system_manager_files = [file.file_name for file in get_files_in_folder('Home')]
-		system_manager_attachments_files = [file.file_name for file in get_files_in_folder('Home/Attachments')]
+		system_manager_files = [file.file_name for file in get_files_in_folder('Home')['files']]
+		system_manager_attachments_files = [file.file_name for file in get_files_in_folder('Home/Attachments')['files']]
 
 		frappe.set_user('test4@example.com')
-		user_files = [file.file_name for file in get_files_in_folder('Home')]
-		user_attachments_files = [file.file_name for file in get_files_in_folder('Home/Attachments')]
+		user_files = [file.file_name for file in get_files_in_folder('Home')['files']]
+		user_attachments_files = [file.file_name for file in get_files_in_folder('Home/Attachments')['files']]
 
 		self.assertIn('test_sm_home.txt', system_manager_files)
 		self.assertNotIn('test_sm_home.txt', user_files)

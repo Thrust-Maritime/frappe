@@ -9,7 +9,7 @@ import timeit
 import json
 from datetime import datetime, date
 from frappe import _
-from frappe.utils import cint, flt, update_progress_bar, cstr
+from frappe.utils import cint, flt, update_progress_bar, cstr, duration_to_seconds
 from frappe.utils.csvutils import read_csv_content, get_csv_content_from_google_sheets
 from frappe.utils.xlsxutils import (
 	read_xlsx_file_from_attached_file,
@@ -472,32 +472,6 @@ class ImportFile:
 
 		doc = parent_doc
 
-		if self.import_type == INSERT:
-			# check if there is atleast one row for mandatory table fields
-			meta = frappe.get_meta(self.doctype)
-			mandatory_table_fields = [
-				df
-				for df in meta.fields
-				if df.fieldtype in table_fieldtypes
-				and df.reqd
-				and len(doc.get(df.fieldname, [])) == 0
-			]
-			if len(mandatory_table_fields) == 1:
-				self.warnings.append(
-					{
-						"row": first_row.row_number,
-						"message": _("There should be atleast one row for {0} table").format(
-							frappe.bold(mandatory_table_fields[0].label)
-						),
-					}
-				)
-			elif mandatory_table_fields:
-				fields_string = ", ".join([df.label for df in mandatory_table_fields])
-				message = _("There should be atleast one row for the following tables: {0}").format(
-					fields_string
-				)
-				self.warnings.append({"row": first_row.row_number, "message": message})
-
 		return doc, rows, data[len(rows) :]
 
 	def get_warnings(self):
@@ -626,7 +600,6 @@ class Row:
 				new_doc.update(doc)
 				doc = new_doc
 
-		self.check_mandatory_fields(doctype, doc, table_df)
 		return doc
 
 	def validate_value(self, value, col):
@@ -666,6 +639,20 @@ class Row:
 					}
 				)
 				return
+		elif df.fieldtype == "Duration":
+			import re
+			is_valid_duration = re.match(r"^(?:(\d+d)?((^|\s)\d+h)?((^|\s)\d+m)?((^|\s)\d+s)?)$", value)
+			if not is_valid_duration:
+				self.warnings.append(
+					{
+						"row": self.row_number,
+						"col": col.column_number,
+						"field": df_as_json(df),
+						"message": _("Value {0} must be in the valid duration format: d h m s").format(
+							frappe.bold(value)
+						)
+					}
+				)
 
 		return value
 
@@ -694,6 +681,8 @@ class Row:
 			value = flt(value)
 		elif df.fieldtype in ["Date", "Datetime"]:
 			value = self.get_date(value, col)
+		elif df.fieldtype == "Duration":
+			value = duration_to_seconds(value)
 
 		return value
 
@@ -710,66 +699,6 @@ class Row:
 				# import will break for these values later
 				pass
 		return value
-
-	def check_mandatory_fields(self, doctype, doc, table_df=None):
-		"""If import type is Insert:
-			Check for mandatory fields (except table fields) in doc
-		if import type is Update:
-			Check for name field or autoname field in doc
-		"""
-		meta = frappe.get_meta(doctype)
-		if self.import_type == UPDATE:
-			if meta.istable:
-				# when updating records with table rows,
-				# there are two scenarios:
-				# 1. if row 'name' is provided in the template
-				# the table row will be updated
-				# 2. if row 'name' is not provided
-				# then a new row will be added
-				# so we dont need to check for mandatory
-				return
-
-			# for update, only ID (name) field is mandatory
-			id_field = get_id_field(doctype)
-			if doc.get(id_field.fieldname) in INVALID_VALUES:
-				self.warnings.append(
-					{
-						"row": self.row_number,
-						"message": _("{0} is a mandatory field asdadsf").format(id_field.label),
-					}
-				)
-			return
-
-		fields = [
-			df
-			for df in meta.fields
-			if df.fieldtype not in table_fieldtypes
-			and df.reqd
-			and doc.get(df.fieldname) in INVALID_VALUES
-		]
-
-		if not fields:
-			return
-
-		def get_field_label(df):
-			return "{0}{1}".format(df.label, " ({})".format(table_df.label) if table_df else "")
-
-		if len(fields) == 1:
-			field_label = get_field_label(fields[0])
-			self.warnings.append(
-				{
-					"row": self.row_number,
-					"message": _("{0} is a mandatory field").format(frappe.bold(field_label)),
-				}
-			)
-		else:
-			fields_string = ", ".join([frappe.bold(get_field_label(df)) for df in fields])
-			self.warnings.append(
-				{
-					"row": self.row_number,
-					"message": _("{0} are mandatory fields").format(fields_string),
-				}
-			)
 
 	def get_values(self, indexes):
 		return [self.data[i] for i in indexes]
@@ -969,6 +898,9 @@ class Column:
 		if not self.df:
 			return
 
+		if self.skip_import:
+			return
+
 		if self.df.fieldtype == "Link":
 			# find all values that dont exist
 			values = list(set([cstr(v) for v in self.column_values[1:] if v]))
@@ -997,10 +929,7 @@ class Column:
 				self.warnings.append(
 					{
 						"col": self.column_number,
-						"message": _(
-							"Date format could not be determined from the values in"
-							" this column. Defaulting to yyyy-mm-dd."
-						),
+						"message": _("Date format could not be determined from the values in this column. Defaulting to yyyy-mm-dd."),
 						"type": "info",
 					}
 				)

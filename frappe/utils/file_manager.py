@@ -406,6 +406,10 @@ def extract_images_from_html(doc, content):
 		doctype = doc.parenttype if doc.parent else doc.doctype
 		name = doc.parent or doc.name
 
+		if doc.doctype == "Comment":
+			doctype = doc.reference_doctype
+			name = doc.reference_name
+
 		# TODO fix this
 		file_url = save_file(filename, content, doctype, name, decode=True).get("file_url")
 		if not frappe.flags.has_dataurl:
@@ -414,7 +418,7 @@ def extract_images_from_html(doc, content):
 		return '<img src="{file_url}"'.format(file_url=file_url)
 
 	if content:
-		content = re.sub('<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, content)
+		content = re.sub(r'<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, content)
 
 	return content
 

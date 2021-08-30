@@ -1,4 +1,4 @@
-name: Build and Publish Assets built for Releases
+name: 'Frappe Assets'
 
 on:
   release:
@@ -8,7 +8,8 @@ env:
   GITHUB_TOKEN: ${{ github.token }}
 
 jobs:
-  build:
+  build-release-and-publish:
+    name: 'Build and Publish Assets built for Releases'
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +32,7 @@ jobs:
       - name: Package assets
         run: |
           mkdir -p $GITHUB_WORKSPACE/build
-          tar -cvpzf $GITHUB_WORKSPACE/build/assets.tar.gz ./frappe-bench/sites/assets/js ./frappe-bench/sites/assets/css
+          tar -cvpzf $GITHUB_WORKSPACE/build/assets.tar.gz ./frappe-bench/sites/assets/js ./frappe-bench/sites/assets/css*
 
       - name: Get release
         id: get_release

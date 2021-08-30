@@ -17,7 +17,6 @@ def get_context(context, **dict_params):
 	doctype = frappe.local.form_dict.doctype
 	context.parents = [{"route":"me", "title":_("My Account")}]
 	context.meta = frappe.get_meta(doctype)
-	context.title = context.doctype
 	context.update(get_list_context(context, doctype) or {})
 	context.doctype = doctype
 	context.txt = frappe.local.form_dict.txt
@@ -169,8 +168,11 @@ def get_list_context(context, doctype, web_form_name=None):
 		list_context = update_context_from_module(web_form.get_web_form_module(), list_context)
 
 	# get path from '/templates/' folder of the doctype
-	if not list_context.row_template:
+	if not meta.custom and not list_context.row_template:
 		list_context.row_template = meta.get_row_template()
+
+	if not meta.custom and not list_context.list_template:
+		list_context.template = meta.get_list_template() or "www/list.html"
 
 	return list_context
 

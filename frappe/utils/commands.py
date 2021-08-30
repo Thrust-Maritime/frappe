@@ -1,20 +1,21 @@
 import functools
-import requests
-from terminaltables import AsciiTable
-
 
 @functools.lru_cache(maxsize=1024)
 def get_first_party_apps():
 	"""Get list of all apps under orgs: frappe. erpnext from GitHub"""
+	import requests
+
 	apps = []
 	for org in ["frappe", "erpnext"]:
-		req = requests.get("https://api.github.com/users/{0}/repos".format(org), {"type": "sources", "per_page": 200})
+		req = requests.get(f"https://api.github.com/users/{org}/repos", {"type": "sources", "per_page": 200})
 		if req.ok:
 			apps.extend([x["name"] for x in req.json()])
 	return apps
 
 
 def render_table(data):
+	from terminaltables import AsciiTable
+
 	print(AsciiTable(data).table)
 
 
@@ -49,3 +50,9 @@ def log(message, colour=''):
 	colour = colours.get(colour, "")
 	end_line = '\033[0m'
 	print(colour + message + end_line)
+
+
+def warn(message, category=None):
+	from warnings import warn
+
+	warn(message=message, category=category, stacklevel=2)

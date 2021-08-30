@@ -7,6 +7,7 @@ import frappe
 from frappe import _
 import frappe.cache_manager
 from frappe.core.doctype.user.user import get_enabled_users
+from frappe.model import log_types
 from frappe.model.document import Document
 from frappe.social.doctype.energy_point_settings.energy_point_settings import is_energy_point_enabled
 from frappe.social.doctype.energy_point_log.energy_point_log import \
@@ -14,10 +15,10 @@ from frappe.social.doctype.energy_point_log.energy_point_log import \
 
 class EnergyPointRule(Document):
 	def on_update(self):
-		frappe.cache_manager.clear_doctype_map('Energy Point Rule', self.name)
+		frappe.cache_manager.clear_doctype_map('Energy Point Rule', self.reference_doctype)
 
 	def on_trash(self):
-		frappe.cache_manager.clear_doctype_map('Energy Point Rule', self.name)
+		frappe.cache_manager.clear_doctype_map('Energy Point Rule', self.reference_doctype)
 
 	def apply(self, doc):
 		if self.rule_condition_satisfied(doc):
@@ -86,7 +87,8 @@ def process_energy_points(doc, state):
 		or frappe.flags.in_install
 		or frappe.flags.in_migrate
 		or frappe.flags.in_import
-		or frappe.flags.in_setup_wizard):
+		or frappe.flags.in_setup_wizard
+		or doc.doctype in log_types):
 		return
 
 	if not is_energy_point_enabled():

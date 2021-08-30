@@ -83,14 +83,14 @@ export default class WebForm extends frappe.ui.FieldGroup {
 	}
 
 	setup_cancel_button() {
-		this.add_button_to_header("Cancel", "light", () => this.cancel());
+		this.add_button_to_header(__("Cancel"), "light", () => this.cancel());
 	}
 
 	setup_delete_button() {
 		frappe.has_permission(this.doc_type, "", "delete", () => {
 			this.add_button_to_header(
-				'<i class="fa fa-trash" aria-hidden="true"></i>',
-				"light",
+				frappe.utils.icon('delete'),
+				"danger",
 				() => this.delete()
 			);
 		});
@@ -98,7 +98,7 @@ export default class WebForm extends frappe.ui.FieldGroup {
 
 	setup_print_button() {
 		this.add_button_to_header(
-			'<i class="fa fa-print" aria-hidden="true"></i>',
+			frappe.utils.icon('print'),
 			"light",
 			() => this.print()
 		);
