@@ -1,9 +1,11 @@
 {
+ "actions": [],
  "allow_import": 1,
  "creation": "2013-01-29 10:47:14",
  "description": "Keeps track of all communications",
  "doctype": "DocType",
  "document_type": "Setup",
+ "email_append_to": 1,
  "engine": "InnoDB",
  "field_order": [
   "subject",
@@ -150,7 +152,7 @@
    "fieldname": "communication_type",
    "fieldtype": "Select",
    "label": "Communication Type",
-   "options": "Communication\nComment\nChat\nBot\nNotification\nFeedback",
+   "options": "Communication\nComment\nChat\nBot\nNotification\nFeedback\nAutomated Message",
    "read_only": 1,
    "reqd": 1
   },
@@ -384,7 +386,8 @@
  ],
  "icon": "fa fa-comment",
  "idx": 1,
- "modified": "2019-10-09 14:22:27.664645",
+ "links": [],
+ "modified": "2021-03-25 09:44:28.963538",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "Communication",
@@ -423,13 +426,13 @@
    "write": 1
   },
   {
-    "create": 1,
-    "delete": 1,
-    "email": 1,
-    "export":1,
-    "print":1,
-    "read": 1,
-    "role": "Inbox User"
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Inbox User"
   },
   {
    "delete": 1,
@@ -440,8 +443,10 @@
   }
  ],
  "search_fields": "subject",
+ "sender_field": "sender",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "subject_field": "subject",
  "title_field": "subject",
  "track_changes": 1,
  "track_seen": 1

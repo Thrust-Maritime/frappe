@@ -235,15 +235,11 @@ def get_config(app, module):
 	sections = [s for s in config if s.get("condition", True)]
 
 	disabled_reports = get_disabled_reports()
-	has_report_permission = frappe.permissions.has_permission('Report', 'read',
-		user=frappe.session.user, raise_exception=False)
-
 	for section in sections:
 		items = []
 		for item in section["items"]:
-			if item["type"]=="report":
-				if item["name"] in disabled_reports or not has_report_permission:
-					continue
+			if item["type"]=="report" and item["name"] in disabled_reports:
+				continue
 			# some module links might not have name
 			if not item.get("name"):
 				item["name"] = item.get("label")
@@ -543,12 +539,9 @@ def get_last_modified(doctype):
 
 def get_report_list(module, is_standard="No"):
 	"""Returns list on new style reports for modules."""
-	try:
-		reports = frappe.get_list("Report", fields=["name", "ref_doctype", "report_type"], 
-			filters={"is_standard": is_standard, "disabled": 0, "module": module},
-			order_by="name")
-	except frappe.PermissionError:
-		return
+	reports =  frappe.get_list("Report", fields=["name", "ref_doctype", "report_type"], filters=
+		{"is_standard": is_standard, "disabled": 0, "module": module},
+		order_by="name")
 
 	out = []
 	for r in reports:

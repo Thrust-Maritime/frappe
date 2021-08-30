@@ -69,23 +69,25 @@ class Contact(Document):
 				return True
 
 	def add_email(self, email_id, is_primary=0, autosave=False):
-		self.append("email_ids", {
-			"email_id": email_id,
-			"is_primary": is_primary
-		})
+		if not frappe.db.exists("Contact Email", {"email_id": email_id, "parent": self.name}):
+			self.append("email_ids", {
+				"email_id": email_id,
+				"is_primary": is_primary
+			})
 
-		if autosave:
-			self.save(ignore_permissions=True)
+			if autosave:
+				self.save(ignore_permissions=True)
 
 	def add_phone(self, phone, is_primary_phone=0, is_primary_mobile_no=0, autosave=False):
-		self.append("phone_nos", {
-			"phone": phone,
-			"is_primary_phone": is_primary_phone,
-			"is_primary_mobile_no": is_primary_mobile_no
-		})
+		if not frappe.db.exists("Contact Phone", {"phone": phone, "parent": self.name}):
+			self.append("phone_nos", {
+				"phone": phone,
+				"is_primary_phone": is_primary_phone,
+				"is_primary_mobile_no": is_primary_mobile_no
+			})
 
-		if autosave:
-			self.save(ignore_permissions=True)
+			if autosave:
+				self.save(ignore_permissions=True)
 
 	def set_primary_email(self):
 		if not self.email_ids:
@@ -95,10 +97,15 @@ class Contact(Document):
 		if len([email.email_id for email in self.email_ids if email.is_primary]) > 1:
 			frappe.throw(_("Only one {0} can be set as primary.").format(frappe.bold("Email ID")))
 
+		primary_email_exists = False
 		for d in self.email_ids:
 			if d.is_primary == 1:
+				primary_email_exists = True
 				self.email_id = d.email_id.strip()
 				break
+
+		if not primary_email_exists:
+			self.email_id = ""
 
 	def set_primary(self, fieldname):
 		# Used to set primary mobile and phone no.
@@ -113,10 +120,15 @@ class Contact(Document):
 		if len(is_primary) > 1:
 			frappe.throw(_("Only one {0} can be set as primary.").format(frappe.bold(frappe.unscrub(fieldname))))
 
+		primary_number_exists = False 
 		for d in self.phone_nos:
 			if d.get(field_name) == 1:
+				primary_number_exists = True
 				setattr(self, fieldname, d.phone)
 				break
+
+		if not primary_number_exists:
+			setattr(self, fieldname, "")
 
 def get_default_contact(doctype, name):
 	'''Returns default contact for the given doctype, name'''

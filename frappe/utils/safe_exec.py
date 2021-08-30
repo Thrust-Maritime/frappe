@@ -5,20 +5,34 @@ from html2text import html2text
 from RestrictedPython import compile_restricted, safe_globals
 import RestrictedPython.Guards
 import frappe
+from frappe import _
 import frappe.utils
 import frappe.utils.data
 from frappe.website.utils import (get_shade, get_toc, get_next_link)
 from frappe.modules import scrub
 from frappe.www.printview import get_visible_columns
 import frappe.exceptions
+import frappe.integrations.utils
+from frappe.frappeclient import FrappeClient
 
-class ServerScriptNotEnabled(frappe.PermissionError): pass
+class ServerScriptNotEnabled(frappe.PermissionError):
+	pass
+
+class NamespaceDict(frappe._dict):
+	"""Raise AttributeError if function not found in namespace"""
+	def __getattr__(self, key):
+		ret = self.get(key)
+		if (not ret and key.startswith("__")) or (key not in self):
+			def default_function(*args, **kwargs):
+				raise AttributeError(f"module has no attribute '{key}'")
+			return default_function
+		return ret
+
 
 def safe_exec(script, _globals=None, _locals=None):
 	# script reports must be enabled via site_config.json
 	if not frappe.conf.server_script_enabled:
-		frappe.msgprint('Please Enable Server Scripts')
-		raise ServerScriptNotEnabled
+		frappe.throw(_('Please Enable Server Scripts'), ServerScriptNotEnabled)
 
 	# build globals
 	exec_globals = get_safe_globals()
@@ -28,12 +42,16 @@ def safe_exec(script, _globals=None, _locals=None):
 	# execute script compiled by RestrictedPython
 	exec(compile_restricted(script), exec_globals, _locals) # pylint: disable=exec-used
 
+	return exec_globals, _locals
+
 def get_safe_globals():
 	datautils = frappe._dict()
 	if frappe.db:
 		date_format = frappe.db.get_default("date_format") or "yyyy-mm-dd"
+		time_format = frappe.db.get_default("time_format") or "HH:mm:ss"
 	else:
-		date_format = 'yyyy-mm-dd'
+		date_format = "yyyy-mm-dd"
+		time_format = "HH:mm:ss"
 
 	add_data_utils(datautils)
 
@@ -42,60 +60,71 @@ def get_safe_globals():
 
 	user = getattr(frappe.local, "session", None) and frappe.local.session.user or "Guest"
 
-	out = frappe._dict(
+	out = NamespaceDict(
 		# make available limited methods of frappe
-		json = frappe._dict(
+		json=NamespaceDict(
 			loads = json.loads,
 			dumps = json.dumps),
-		dict = dict,
-		frappe =  frappe._dict(
-			flags = frappe._dict(),
+		dict=dict,
+		log=frappe.log,
+		_dict=frappe._dict,
+		frappe=NamespaceDict(
+			flags=frappe._dict(),
+			format=frappe.format_value,
+			format_value=frappe.format_value,
+			date_format=date_format,
+			time_format=time_format,
+			format_date=frappe.utils.data.global_date_format,
+			form_dict=getattr(frappe.local, 'form_dict', {}),
+			bold=frappe.bold,
+			copy_doc=frappe.copy_doc,
 
-			format = frappe.format_value,
-			format_value = frappe.format_value,
-			date_format = date_format,
-			format_date = frappe.utils.data.global_date_format,
-			form_dict = getattr(frappe.local, 'form_dict', {}),
+			get_meta=frappe.get_meta,
+			get_doc=frappe.get_doc,
+			get_cached_doc=frappe.get_cached_doc,
+			get_list=frappe.get_list,
+			get_all=frappe.get_all,
+			get_system_settings=frappe.get_system_settings,
+			rename_doc=frappe.rename_doc,
 
-			get_meta = frappe.get_meta,
-			get_doc = frappe.get_doc,
-			get_cached_doc = frappe.get_cached_doc,
-			get_list = frappe.get_list,
-			get_all = frappe.get_all,
-			get_system_settings = frappe.get_system_settings,
-
-			utils = datautils,
-			get_url = frappe.utils.get_url,
-			render_template = frappe.render_template,
-			msgprint = frappe.msgprint,
+			utils=datautils,
+			get_url=frappe.utils.get_url,
+			render_template=frappe.render_template,
+			msgprint=frappe.msgprint,
+			throw=frappe.throw,
 			sendmail = frappe.sendmail,
 			get_print = frappe.get_print,
 			attach_print = frappe.attach_print,
 
-			user = user,
-			get_fullname = frappe.utils.get_fullname,
-			get_gravatar = frappe.utils.get_gravatar_url,
-			full_name = frappe.local.session.data.full_name if getattr(frappe.local, "session", None) else "Guest",
-			request = getattr(frappe.local, 'request', {}),
-			session = frappe._dict(
-				user = user,
-				csrf_token = frappe.local.session.data.csrf_token if getattr(frappe.local, "session", None) else ''
+			user=user,
+			get_fullname=frappe.utils.get_fullname,
+			get_gravatar=frappe.utils.get_gravatar_url,
+			full_name=frappe.local.session.data.full_name if getattr(frappe.local, "session", None) else "Guest",
+			request=getattr(frappe.local, 'request', {}),
+			session=frappe._dict(
+				user=user,
+				csrf_token=frappe.local.session.data.csrf_token if getattr(frappe.local, "session", None) else ''
 			),
-			socketio_port = frappe.conf.socketio_port,
-			get_hooks = frappe.get_hooks,
+			make_get_request = frappe.integrations.utils.make_get_request,
+			make_post_request = frappe.integrations.utils.make_post_request,
+			socketio_port=frappe.conf.socketio_port,
+			get_hooks=frappe.get_hooks,
+			sanitize_html=frappe.utils.sanitize_html,
+			log_error=frappe.log_error
 		),
-		style = frappe._dict(
-			border_color = '#d1d8dd'
+		FrappeClient=FrappeClient,
+		style=frappe._dict(
+			border_color='#d1d8dd'
 		),
-		get_toc =  get_toc,
-		get_next_link = get_next_link,
-		_ =  frappe._,
-		_dict = frappe._dict,
-		get_shade = get_shade,
-		scrub =  scrub,
-		guess_mimetype = mimetypes.guess_type,
-		html2text = html2text,
-		dev_server =  1 if os.environ.get('DEV_SERVER', False) else 0
+		get_toc=get_toc,
+		get_next_link=get_next_link,
+		_=frappe._,
+		get_shade=get_shade,
+		scrub=scrub,
+		guess_mimetype=mimetypes.guess_type,
+		html2text=html2text,
+		dev_server=1 if frappe._dev_server else 0,
+		run_script=run_script
 	)
 
 	add_module_properties(frappe.exceptions, out.frappe, lambda obj: inspect.isclass(obj) and issubclass(obj, Exception))
@@ -103,7 +132,8 @@ def get_safe_globals():
 	if not frappe.flags.in_setup_help:
 		out.get_visible_columns = get_visible_columns
 		out.frappe.date_format = date_format
-		out.frappe.db = frappe._dict(
+		out.frappe.time_format = time_format
+		out.frappe.db = NamespaceDict(
 			get_list = frappe.get_list,
 			get_all = frappe.get_all,
 			get_value = frappe.db.get_value,
@@ -111,6 +141,7 @@ def get_safe_globals():
 			get_single_value = frappe.db.get_single_value,
 			get_default = frappe.db.get_default,
 			escape = frappe.db.escape,
+			sql = read_sql
 		)
 
 	if frappe.response:
@@ -129,6 +160,17 @@ def get_safe_globals():
 	out.sorted = sorted
 
 	return out
+
+def read_sql(query, *args, **kwargs):
+	'''a wrapper for frappe.db.sql to allow reads'''
+	if query.strip().split(None, 1)[0].lower() == 'select':
+		return frappe.db.sql(query, *args, **kwargs)
+	else:
+		raise frappe.PermissionError('Only SELECT SQL allowed in scripting')
+
+def run_script(script):
+	'''run another server script'''
+	return frappe.get_doc('Server Script', script).execute_method()
 
 def _getitem(obj, key):
 	# guard function for RestrictedPython
@@ -211,12 +253,13 @@ VALID_UTILS = (
 "get_last_day_of_week",
 "get_last_day",
 "get_time",
+"get_datetime_in_timezone",
 "get_datetime_str",
 "get_date_str",
 "get_time_str",
 "get_user_date_format",
 "get_user_time_format",
-"formatdate",
+"format_date",
 "format_time",
 "format_datetime",
 "format_duration",
@@ -277,6 +320,10 @@ VALID_UTILS = (
 "strip",
 "to_markdown",
 "md_to_html",
+"markdown",
 "is_subset",
-"generate_hash"
+"generate_hash",
+"formatdate",
+"get_user_info_for_avatar",
+"get_abbr"
 )

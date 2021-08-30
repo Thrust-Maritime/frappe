@@ -3,23 +3,7 @@
 
 frappe.ui.form.on('Auto Email Report', {
 	refresh: function(frm) {
-		if(frm.doc.report_type !== 'Report Builder') {
-			if(frm.script_setup_for !== frm.doc.report && !frm.doc.__islocal) {
-				frappe.call({
-					method:"frappe.desk.query_report.get_script",
-					args: {
-						report_name: frm.doc.report
-					},
-					callback: function(r) {
-						frappe.dom.eval(r.message.script || "");
-						frm.script_setup_for = frm.doc.report;
-						frm.trigger('show_filters');
-					}
-				});
-			} else {
-				frm.trigger('show_filters');
-			}
-		}
+		frm.trigger('fetch_report_filters');
 		if(!frm.is_new()) {
 			frm.add_custom_button(__('Download'), function() {
 				var w = window.open(
@@ -50,6 +34,27 @@ frappe.ui.form.on('Auto Email Report', {
 	},
 	report: function(frm) {
 		frm.set_value('filters', '');
+		frm.trigger('fetch_report_filters');
+	},
+	fetch_report_filters(frm) {
+		if (frm.doc.report
+			&& frm.doc.report_type !== 'Report Builder'
+			&& frm.script_setup_for !== frm.doc.report
+		) {
+			frappe.call({
+				method: "frappe.desk.query_report.get_script",
+				args: {
+					report_name: frm.doc.report
+				},
+				callback: function(r) {
+					frappe.dom.eval(r.message.script || "");
+					frm.script_setup_for = frm.doc.report;
+					frm.trigger('show_filters');
+				}
+			});
+		} else {
+			frm.trigger('show_filters');
+		}
 	},
 	show_filters: function(frm) {
 		var wrapper = $(frm.get_field('filters_display').wrapper);
@@ -66,16 +71,14 @@ frappe.ui.form.on('Auto Email Report', {
 
 			var filters = JSON.parse(frm.doc.filters || '{}');
 
-			let report_filters, report_name;
+			let report_filters;
 
 			if (frm.doc.report_type === 'Custom Report'
 				&& frappe.query_reports[frm.doc.reference_report]
 				&& frappe.query_reports[frm.doc.reference_report].filters) {
 				report_filters = frappe.query_reports[frm.doc.reference_report].filters;
-				report_name = frm.doc.reference_report;
 			} else {
 				report_filters = frappe.query_reports[frm.doc.report].filters;
-				report_name = frm.doc.report;
 			}
 
 			if(report_filters && report_filters.length > 0) {
@@ -95,7 +98,7 @@ frappe.ui.form.on('Auto Email Report', {
 			report_filters = report_filters_list;
 
 			const mandatory_css = {
-				"background-color": "#fffdf4",
+				"background-color": "var(--error-bg)",
 				"font-weight": "bold"
 			};
 
@@ -121,10 +124,6 @@ frappe.ui.form.on('Auto Email Report', {
 					}
 				});
 				dialog.show();
-
-				//Set query report object so that it can be used while fetching filter values in the report
-				frappe.query_report = new frappe.views.QueryReport({'filters': dialog.fields_list});
-				frappe.query_reports[report_name].onload && frappe.query_reports[report_name].onload(frappe.query_report);
 				dialog.set_values(filters);
 			})
 

@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "Prompt",
  "creation": "2019-09-11 22:15:44.851526",
  "doctype": "DocType",
@@ -86,6 +87,8 @@
   }
  ],
  "in_create": 1,
+ "index_web_pages_for_search": 1,
+ "links": [],
  "modified": "2020-11-04 12:54:57.989317",
  "modified_by": "Administrator",
  "module": "Desk",

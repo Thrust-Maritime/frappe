@@ -165,10 +165,6 @@ def send_event_digest():
 
 @frappe.whitelist()
 def get_events(start, end, user=None, for_reminder=False, filters=None):
-	from unidecode import unidecode
-	start = unidecode(start)
-	end = unidecode(end)
-
 	if not user:
 		user = frappe.session.user
 

@@ -76,7 +76,7 @@ class TestDashboardChart(unittest.TestCase):
 			based_on = 'creation',
 			timespan = 'Last Year',
 			time_interval = 'Monthly',
-			filters_json = '{}',
+			filters_json = '[]',
 			timeseries = 1
 		)).insert()
 
@@ -109,7 +109,7 @@ class TestDashboardChart(unittest.TestCase):
 			based_on = 'creation',
 			timespan = 'Last Year',
 			time_interval = 'Monthly',
-			filters_json = '{}',
+			filters_json = '[]',
 			timeseries = 1
 		)).insert()
 
@@ -140,7 +140,7 @@ class TestDashboardChart(unittest.TestCase):
 			chart_type = 'Group By',
 			document_type = 'ToDo',
 			group_by_based_on = 'status',
-			filters_json = '{}',
+			filters_json = '[]',
 		)).insert()
 
 		result = get(chart_name ='Test Group By Dashboard Chart', refresh = 1)
@@ -167,7 +167,7 @@ class TestDashboardChart(unittest.TestCase):
 			time_interval = 'Daily',
 			from_date = datetime(2019, 1, 6),
 			to_date = datetime(2019, 1, 11),
-			filters_json = '{}',
+			filters_json = '[]',
 			timeseries = 1
 		)).insert()
 
@@ -198,7 +198,7 @@ class TestDashboardChart(unittest.TestCase):
 			time_interval = 'Weekly',
 			from_date = datetime(2018, 12, 30),
 			to_date = datetime(2019, 1, 15),
-			filters_json = '{}',
+			filters_json = '[]',
 			timeseries = 1
 		)).insert()
 
@@ -211,7 +211,7 @@ class TestDashboardChart(unittest.TestCase):
 		)
 
 		frappe.db.rollback()
-	
+
 	def test_avg_dashboard_chart(self):
 		insert_test_records()
 
@@ -229,7 +229,7 @@ class TestDashboardChart(unittest.TestCase):
 			time_interval = 'Weekly',
 			from_date = datetime(2018, 12, 30),
 			to_date = datetime(2019, 1, 15),
-			filters_json = '{}',
+			filters_json = '[]',
 			timeseries = 1
 		)).insert()
 
