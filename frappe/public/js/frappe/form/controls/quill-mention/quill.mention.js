@@ -1,6 +1,7 @@
 /* eslint-disable */
 import Quill from 'quill';
 import Keys from './constants/keys';
+import './quill.mention.css';
 import './blots/mention';
 
 
@@ -149,7 +150,6 @@ class Mention {
         this.mentionList.childNodes[this.itemIndex].dataset.value,
       link: itemLink || null,
       denotationChar: this.mentionList.childNodes[this.itemIndex].dataset.denotationChar,
-      isGroup: this.mentionList.childNodes[this.itemIndex].dataset.isGroup,
     };
   }
 
@@ -198,7 +198,6 @@ class Mention {
         li.dataset.index = i;
         li.dataset.id = data[i].id;
         li.dataset.value = data[i].value;
-        li.dataset.isGroup = Boolean(data[i].is_group);
         li.dataset.denotationChar = mentionChar;
         if (data[i].link) {
           li.dataset.link = data[i].link;

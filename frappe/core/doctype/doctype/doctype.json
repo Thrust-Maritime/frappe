@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_rename": 1,
  "autoname": "Prompt",
  "creation": "2013-02-18 13:36:19",
@@ -22,7 +21,6 @@
   "track_views",
   "custom",
   "beta",
-  "is_virtual",
   "fields_section_break",
   "fields",
   "sb1",
@@ -30,7 +28,6 @@
   "name_case",
   "column_break_15",
   "description",
-  "documentation",
   "form_settings_section",
   "image_field",
   "timeline_field",
@@ -55,25 +52,14 @@
   "color",
   "show_preview_popup",
   "show_name_in_global_search",
-  "email_settings_sb",
-  "default_email_template",
-  "column_break_51",
-  "email_append_to",
-  "sender_field",
-  "subject_field",
   "sb2",
   "permissions",
   "restrict_to_domain",
   "read_only",
   "in_create",
-  "actions_section",
-  "actions",
-  "links_section",
-  "links",
   "web_view",
   "has_web_view",
   "allow_guest_to_view",
-  "index_web_pages_for_search",
   "route",
   "is_published_field",
   "advanced",
@@ -135,7 +121,7 @@
    "label": "Editable Grid"
   },
   {
-   "default": "0",
+   "default": "1",
    "depends_on": "eval:!doc.istable && !doc.issingle",
    "description": "Open a dialog with mandatory fields to create a new record quickly",
    "fieldname": "quick_entry",
@@ -430,7 +416,7 @@
    "label": "Allow Guest to View"
   },
   {
-   "depends_on": "eval:!doc.istable",
+   "depends_on": "has_web_view",
    "fieldname": "route",
    "fieldtype": "Data",
    "label": "Route"
@@ -468,167 +454,11 @@
    "fieldname": "nsm_parent_field",
    "fieldtype": "Data",
    "label": "Parent Field (Tree)"
-  },
-  {
-   "description": "URL for documentation or help",
-   "fieldname": "documentation",
-   "fieldtype": "Data",
-   "label": "Documentation Link"
-  },
-  {
-   "collapsible": 1,
-   "collapsible_depends_on": "actions",
-   "fieldname": "actions_section",
-   "fieldtype": "Section Break",
-   "label": "Actions"
-  },
-  {
-   "fieldname": "actions",
-   "fieldtype": "Table",
-   "label": "Actions",
-   "options": "DocType Action"
-  },
-  {
-   "collapsible": 1,
-   "collapsible_depends_on": "links",
-   "fieldname": "links_section",
-   "fieldtype": "Section Break",
-   "label": "Linked Documents"
-  },
-  {
-   "fieldname": "links",
-   "fieldtype": "Table",
-   "label": "Links",
-   "options": "DocType Link"
-  },
-  {
-   "depends_on": "email_append_to",
-   "fieldname": "subject_field",
-   "fieldtype": "Data",
-   "label": "Subject Field"
-  },
-  {
-   "depends_on": "email_append_to",
-   "fieldname": "sender_field",
-   "fieldtype": "Data",
-   "label": "Sender Field",
-   "mandatory_depends_on": "email_append_to"
-  },
-  {
-   "default": "0",
-   "fieldname": "email_append_to",
-   "fieldtype": "Check",
-   "label": "Allow document creation via Email"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "email_settings_sb",
-   "fieldtype": "Section Break",
-   "label": "Email Settings"
-  },
-  {
-   "default": "1",
-   "fieldname": "index_web_pages_for_search",
-   "fieldtype": "Check",
-   "label": "Index Web Pages for Search"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_virtual",
-   "fieldtype": "Check",
-   "label": "Is Virtual"
-  },
-  {
-   "fieldname": "default_email_template",
-   "fieldtype": "Link",
-   "label": "Default Email Template",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "column_break_51",
-   "fieldtype": "Column Break"
   }
  ],
  "icon": "fa fa-bolt",
  "idx": 6,
- "links": [
-  {
-   "group": "Views",
-   "link_doctype": "Report",
-   "link_fieldname": "ref_doctype"
-  },
-  {
-   "group": "Workflow",
-   "link_doctype": "Workflow",
-   "link_fieldname": "document_type"
-  },
-  {
-   "group": "Workflow",
-   "link_doctype": "Notification",
-   "link_fieldname": "document_type"
-  },
-  {
-   "group": "Customization",
-   "link_doctype": "Custom Field",
-   "link_fieldname": "dt"
-  },
-  {
-   "group": "Customization",
-   "link_doctype": "Client Script",
-   "link_fieldname": "dt"
-  },
-  {
-   "group": "Customization",
-   "link_doctype": "Server Script",
-   "link_fieldname": "reference_doctype"
-  },
-  {
-   "group": "Workflow",
-   "link_doctype": "Webhook",
-   "link_fieldname": "webhook_doctype"
-  },
-  {
-   "group": "Views",
-   "link_doctype": "Print Format",
-   "link_fieldname": "doc_type"
-  },
-  {
-   "group": "Views",
-   "link_doctype": "Web Form",
-   "link_fieldname": "doc_type"
-  },
-  {
-   "group": "Views",
-   "link_doctype": "Calendar View",
-   "link_fieldname": "reference_doctype"
-  },
-  {
-   "group": "Views",
-   "link_doctype": "Kanban Board",
-   "link_fieldname": "reference_doctype"
-  },
-  {
-   "group": "Workflow",
-   "link_doctype": "Onboarding Step",
-   "link_fieldname": "reference_document"
-  },
-  {
-   "group": "Rules",
-   "link_doctype": "Auto Repeat",
-   "link_fieldname": "reference_doctype"
-  },
-  {
-   "group": "Rules",
-   "link_doctype": "Assignment Rule",
-   "link_fieldname": "document_type"
-  },
-  {
-   "group": "Rules",
-   "link_doctype": "Energy Point Rule",
-   "link_fieldname": "reference_doctype"
-  }
- ],
- "modified": "2021-03-22 12:26:41.031135",
+ "modified": "2019-09-07 14:28:05.392490",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "DocType",
@@ -656,7 +486,6 @@
    "write": 1
   }
  ],
- "route": "doctype",
  "search_fields": "module",
  "show_name_in_global_search": 1,
  "sort_field": "modified",

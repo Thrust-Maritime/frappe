@@ -7,7 +7,6 @@ from frappe import _
 from frappe.utils import now_datetime, cint, cstr
 import re
 from six import string_types
-from frappe.model import log_types
 
 
 def set_new_name(doc):
@@ -36,13 +35,7 @@ def set_new_name(doc):
 	elif getattr(doc.meta, "issingle", False):
 		doc.name = doc.doctype
 
-	elif getattr(doc.meta, "istable", False):
-		doc.name = make_autoname("hash", doc.doctype)
-
-	if not doc.name:
-		set_naming_from_document_naming_rule(doc)
-
-	if not doc.name:
+	else:
 		doc.run_method("autoname")
 
 	if not doc.name and autoname:
@@ -50,15 +43,12 @@ def set_new_name(doc):
 
 	# if the autoname option is 'field:' and no name was derived, we need to
 	# notify
-	if not doc.name and autoname.startswith("field:"):
+	if autoname.startswith("field:") and not doc.name:
 		fieldname = autoname[6:]
 		frappe.throw(_("{0} is required").format(doc.meta.get_label(fieldname)))
 
 	# at this point, we fall back to name generation with the hash option
-	if not doc.name and autoname == "hash":
-		doc.name = make_autoname("hash", doc.doctype)
-
-	if not doc.name:
+	if not doc.name or autoname == "hash":
 		doc.name = make_autoname("hash", doc.doctype)
 
 	doc.name = validate_name(
@@ -66,6 +56,7 @@ def set_new_name(doc):
 		doc.name,
 		frappe.get_meta(doc.doctype).get_field("name_case")
 	)
+
 
 def set_name_from_naming_options(autoname, doc):
 	"""
@@ -84,20 +75,6 @@ def set_name_from_naming_options(autoname, doc):
 		doc.name = _format_autoname(autoname, doc)
 	elif "#" in autoname:
 		doc.name = make_autoname(autoname, doc=doc)
-
-def set_naming_from_document_naming_rule(doc):
-	'''
-	Evaluate rules based on "Document Naming Series" doctype
-	'''
-	if doc.doctype in log_types:
-		return
-
-	# ignore_ddl if naming is not yet bootstrapped
-	for d in frappe.get_all('Document Naming Rule',
-		dict(document_type=doc.doctype, disabled=0), order_by='priority desc', ignore_ddl=True):
-		frappe.get_cached_doc('Document Naming Rule', d.name).apply(doc)
-		if doc.name:
-			break
 
 def set_name_by_naming_series(doc):
 	"""Sets name by the `naming_series` property"""
@@ -133,11 +110,7 @@ def make_autoname(key="", doctype="", doc=""):
 	if "#" not in key:
 		key = key + ".#####"
 	elif "." not in key:
-		error_message = _("Invalid naming series (. missing)")
-		if doctype:
-			error_message = _("Invalid naming series (. missing) for {0}").format(doctype)
-
-		frappe.throw(error_message)
+		frappe.throw(_("Invalid naming series (. missing)") + (_(" for {0}").format(doctype) if doctype else ""))
 
 	parts = key.split('.')
 	n = parse_naming_series(parts, doctype, doc)
@@ -150,37 +123,76 @@ def parse_naming_series(parts, doctype='', doc=''):
 		parts = parts.split('.')
 	series_set = False
 	today = now_datetime()
-	for e in parts:
-		part = ''
-		if e.startswith('#'):
-			if not series_set:
-				digits = len(e)
-				part = getseries(n, digits)
-				series_set = True
-		elif e == 'YY':
-			part = today.strftime('%y')
-		elif e == 'MM':
-			part = today.strftime('%m')
-		elif e == 'DD':
-			part = today.strftime("%d")
-		elif e == 'YYYY':
-			part = today.strftime('%Y')
-		elif e == 'timestamp':
-			part = str(today)
-		elif e == 'FY':
-			part = frappe.defaults.get_user_default("fiscal_year")
-		elif e.startswith('{') and doc:
-			e = e.replace('{', '').replace('}', '')
-			part = doc.get(e)
-		elif doc and doc.get(e):
-			part = doc.get(e)
+
+	if doc:
+		if doc.doctype == "Purchase Order":
+			iterationNumber = getseries(parts[0], len(parts[3]))
+			poName = parts[0] + str(iterationNumber) + parts[2] + str(doc.get(parts[1].replace('{', '').replace('}', '')))
+			return poName
+		# elif doc.doctype == "Task":
+		# 	iterationNumber = getseries(parts[0], len(parts[3]))
+		# 	taskName = parts[0] + str(doc.get(parts[1].replace('{', '').replace('}', ''))) + parts[2] + str(iterationNumber)
+		# 	return taskName
 		else:
-			part = e
+			for e in parts:
+				part = ''
+				if e.startswith('#'):
+					if not series_set:
+						digits = len(e)
+						part = getseries(n, digits)
+						series_set = True
+				elif e == 'YY':
+					part = today.strftime('%y')
+				elif e == 'MM':
+					part = today.strftime('%m')
+				elif e == 'DD':
+					part = today.strftime("%d")
+				elif e == 'YYYY':
+					part = today.strftime('%Y')
+				elif e == 'FY':
+					part = frappe.defaults.get_user_default("fiscal_year")
+				elif e.startswith('{') and doc:
+					e = e.replace('{', '').replace('}', '')
+					part = doc.get(e)
+				elif doc and doc.get(e):
+					part = doc.get(e)
+				else:
+					part = e
 
-		if isinstance(part, string_types):
-			n += part
+				if isinstance(part, string_types):
+					n += part
 
-	return n
+			return n
+	else:
+		for e in parts:
+			part = ''
+			if e.startswith('#'):
+				if not series_set:
+					digits = len(e)
+					part = getseries(n, digits)
+					series_set = True
+			elif e == 'YY':
+				part = today.strftime('%y')
+			elif e == 'MM':
+				part = today.strftime('%m')
+			elif e == 'DD':
+				part = today.strftime("%d")
+			elif e == 'YYYY':
+				part = today.strftime('%Y')
+			elif e == 'FY':
+				part = frappe.defaults.get_user_default("fiscal_year")
+			elif e.startswith('{') and doc:
+				e = e.replace('{', '').replace('}', '')
+				part = doc.get(e)
+			elif doc and doc.get(e):
+				part = doc.get(e)
+			else:
+				part = e
+
+			if isinstance(part, string_types):
+				n += part
+
+		return n
 
 
 def getseries(key, digits):
@@ -199,10 +211,37 @@ def getseries(key, digits):
 
 
 def revert_series_if_last(key, name, doc=None):
+	"""
+	Reverts the series for particular naming series:
+	* key is naming series		- SINV-.YYYY-.####
+	* name is actual name		- SINV-2021-0001
+		
+	1. This function split the key into two parts prefix (SINV-YYYY) & hashes (####).
+	2. Use prefix to get the current index of that naming series from Series table
+	3. Then revert the current index.
+	*For custom naming series:*
+	1. hash can exist anywhere, if it exist in hashes then it take normal flow.
+	2. If hash doesn't exit in hashes, we get the hash from prefix, then update name and prefix accordingly.
+	*Example:*
+		1. key = SINV-.YYYY.- 
+			* If key doesn't have hash it will add hash at the end
+			* prefix will be SINV-YYYY based on this will get current index from Series table.
+		2. key = SINV-.####.-2021
+			* now prefix = SINV-#### and hashes = 2021 (hash doesn't exist)
+			* will search hash in key then accordingly get prefix = SINV-
+		3. key = ####.-2021
+			* prefix = #### and hashes = 2021 (hash doesn't exist)
+			* will search hash in key then accordingly get prefix = "" 
+	"""
 	if ".#" in key:
 		prefix, hashes = key.rsplit(".", 1)
 		if "#" not in hashes:
-			return
+			# get the hash part from the key
+			hash = re.search("#+", key)
+			if not hash:
+				return
+			name = name.replace(hashes, "")
+			prefix = prefix.replace(hash.group(), "")
 	else:
 		prefix = key
 
@@ -254,7 +293,7 @@ def append_number_if_name_exists(doctype, value, fieldname="name", separator="-"
 	filters.update({fieldname: value})
 	exists = frappe.db.exists(doctype, filters)
 
-	regex = "^{value}{separator}\\d+$".format(value=re.escape(value), separator=separator)
+	regex = "^{value}{separator}\d+$".format(value=re.escape(value), separator=separator)
 
 	if exists:
 		last = frappe.db.sql("""SELECT `{fieldname}` FROM `tab{doctype}`

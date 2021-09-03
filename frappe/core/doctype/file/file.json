@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_import": 1,
  "creation": "2012-12-12 11:19:22",
  "doctype": "DocType",
@@ -64,8 +63,7 @@
    "fieldname": "is_home_folder",
    "fieldtype": "Check",
    "hidden": 1,
-   "label": "Is Home Folder",
-   "search_index": 1
+   "label": "Is Home Folder"
   },
   {
    "default": "0",
@@ -174,8 +172,7 @@
  ],
  "icon": "fa fa-file",
  "idx": 1,
- "links": [],
- "modified": "2020-06-28 12:21:30.772386",
+ "modified": "2019-08-30 19:46:20.796453",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "File",

@@ -3,27 +3,18 @@ context('Recorder', () => {
 		cy.login();
 	});
 
-	beforeEach(() => {
-		cy.visit('/app/recorder');
-		return cy.window().its('frappe').then(frappe => {
-			// reset recorder
-			return frappe.xcall("frappe.recorder.stop").then(() => {
-				return frappe.xcall("frappe.recorder.delete");
-			});
-		});
-	});
-
 	it('Navigate to Recorder', () => {
-		cy.visit('/app');
+		cy.visit('/desk');
 		cy.awesomebar('recorder');
-		cy.get('h3').should('contain', 'Recorder');
-		cy.url().should('include', '/recorder/detail');
+		cy.get('h1').should('contain', 'Recorder');
+		cy.location('hash').should('eq', '#recorder');
 	});
 
 	it('Recorder Empty State', () => {
+		cy.visit('/desk#recorder');
 		cy.get('.title-text').should('contain', 'Recorder');
 
-		cy.get('.indicator-pill').should('contain', 'Inactive').should('have.class', 'red');
+		cy.get('.indicator').should('contain', 'Inactive').should('have.class', 'red');
 
 		cy.get('.primary-action').should('contain', 'Start');
 		cy.get('.btn-secondary').should('contain', 'Clear');
@@ -33,38 +24,52 @@ context('Recorder', () => {
 	});
 
 	it('Recorder Start', () => {
+		cy.visit('/desk#recorder');
 		cy.get('.primary-action').should('contain', 'Start').click();
-		cy.get('.indicator-pill').should('contain', 'Active').should('have.class', 'green');
+		cy.get('.indicator').should('contain', 'Active').should('have.class', 'green');
 
 		cy.get('.msg-box').should('contain', 'No Requests');
 
-		cy.visit('/app/List/DocType/List');
-		cy.intercept('POST', '/api/method/frappe.desk.reportview.get').as('list_refresh');
+		cy.server();
+		cy.visit('/desk#List/DocType/List');
+		cy.route('POST', '/api/method/frappe.desk.reportview.get').as('list_refresh');
 		cy.wait('@list_refresh');
 
 		cy.get('.title-text').should('contain', 'DocType');
 		cy.get('.list-count').should('contain', '20 of ');
 
-		cy.visit('/app/recorder');
+		cy.visit('/desk#recorder');
 		cy.get('.title-text').should('contain', 'Recorder');
 		cy.get('.result-list').should('contain', '/api/method/frappe.desk.reportview.get');
+
+		cy.get('#page-recorder .primary-action').should('contain', 'Stop').click();
+		cy.wait(500);
+		cy.get('#page-recorder .btn-secondary').should('contain', 'Clear').click();
+		cy.get('.msg-box').should('contain', 'Inactive');
 	});
 
-	it.only('Recorder View Request', () => {
+	it('Recorder View Request', () => {
+		cy.visit('/desk#recorder');
 		cy.get('.primary-action').should('contain', 'Start').click();
 
-		cy.visit('/app/List/DocType/List');
-		cy.intercept('POST', '/api/method/frappe.desk.reportview.get').as('list_refresh');
+		cy.server();
+		cy.visit('/desk#List/DocType/List');
+		cy.route('POST', '/api/method/frappe.desk.reportview.get').as('list_refresh');
 		cy.wait('@list_refresh');
 
 		cy.get('.title-text').should('contain', 'DocType');
 		cy.get('.list-count').should('contain', '20 of ');
 
-		cy.visit('/app/recorder');
+		cy.visit('/desk#recorder');
 
-		cy.get('.list-row-container span').contains('/api/method/frappe').click();
+		cy.contains('.list-row-container span', 'frappe.desk.reportview.get').click();
 
-		cy.url().should('include', '/recorder/request');
-		cy.get('form').should('contain', '/api/method/frappe');
+		cy.location('hash').should('contain', '#recorder/request/');
+		cy.get('form').should('contain', 'frappe.desk.reportview.get');
+
+		cy.get('#page-recorder .primary-action').should('contain', 'Stop').click();
+		cy.wait(200);
+		cy.get('#page-recorder .btn-secondary').should('contain', 'Clear').click();
+		cy.location('hash').should('eq', '#recorder');
 	});
 });

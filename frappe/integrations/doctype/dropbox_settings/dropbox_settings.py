@@ -2,23 +2,22 @@
 # Copyright (c) 2015, Frappe Technologies and contributors
 # For license information, please see license.txt
 
-import json
-import os
-from urllib.parse import parse_qs, urlparse
-
+from __future__ import unicode_literals
 import dropbox
-from rq.timeouts import JobTimeoutException
-
+import json
 import frappe
+import os
 from frappe import _
-from frappe.integrations.offsite_backup_utils import (get_chunk_site,
-	get_latest_backup_file, send_email, validate_file_size)
-from frappe.integrations.utils import make_post_request
 from frappe.model.document import Document
-from frappe.utils import (cint, encode, get_backups_path, get_files_path,
-	get_request_site_address, get_url)
-from frappe.utils.background_jobs import enqueue
+from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
+from frappe.integrations.utils import make_post_request
+from frappe.utils import (cint, get_request_site_address,
+	get_files_path, get_backups_path, get_url, encode)
 from frappe.utils.backups import new_backup
+from frappe.utils.background_jobs import enqueue
+from six.moves.urllib.parse import urlparse, parse_qs
+from rq.timeouts import JobTimeoutException
+from six import text_type
 
 ignore_list = [".DS_Store"]
 
@@ -53,7 +52,6 @@ def take_backup_to_dropbox(retry_count=0, upload_db_backup=True):
 	try:
 		if cint(frappe.db.get_value("Dropbox Settings", None, "enabled")):
 			validate_file_size()
-
 			did_not_upload, error_log = backup_to_dropbox(upload_db_backup)
 			if did_not_upload: raise Exception
 
@@ -73,7 +71,6 @@ def take_backup_to_dropbox(retry_count=0, upload_db_backup=True):
 		else:
 			file_and_error = [" - ".join(f) for f in zip(did_not_upload, error_log)]
 			error_message = ("\n".join(file_and_error) + "\n" + frappe.get_traceback())
-
 		send_email(False, "Dropbox", "Dropbox Settings", "send_notifications_to", error_message)
 
 def backup_to_dropbox(upload_db_backup=True):
@@ -92,16 +89,13 @@ def backup_to_dropbox(upload_db_backup=True):
 		dropbox_settings['access_token'] = access_token['oauth2_token']
 		set_dropbox_access_token(access_token['oauth2_token'])
 
-	dropbox_client = dropbox.Dropbox(
-		oauth2_access_token=dropbox_settings['access_token'],
-		timeout=None
-	)
+	dropbox_client = dropbox.Dropbox(dropbox_settings['access_token'], timeout=None)
 
 	if upload_db_backup:
 		if frappe.flags.create_new_backup:
 			backup = new_backup(ignore_files=True)
 			filename = os.path.join(get_backups_path(), os.path.basename(backup.backup_path_db))
-			site_config = os.path.join(get_backups_path(), os.path.basename(backup.backup_path_conf))
+			site_config = os.path.join(get_backups_path(), os.path.basename(backup.site_config_backup_path))
 		else:
 			filename, site_config = get_latest_backup_file()
 
@@ -131,7 +125,7 @@ def upload_from_folder(path, is_private, dropbox_folder, dropbox_client, did_not
 	else:
 		response = frappe._dict({"entries": []})
 
-	path = str(path)
+	path = text_type(path)
 
 	for f in frappe.get_all("File", filters={"is_folder": 0, "is_private": is_private,
 		"uploaded_to_dropbox": 0}, fields=['file_url', 'name', 'file_name']):
@@ -290,11 +284,11 @@ def get_redirect_url():
 def get_dropbox_authorize_url():
 	app_details = get_dropbox_settings(redirect_uri=True)
 	dropbox_oauth_flow = dropbox.DropboxOAuth2Flow(
-		consumer_key=app_details["app_key"],
-		redirect_uri=app_details["redirect_uri"],
-		session={},
-		csrf_token_session_key="dropbox-auth-csrf-token",
-		consumer_secret=app_details["app_secret"]
+		app_details["app_key"],
+		app_details["app_secret"],
+		app_details["redirect_uri"],
+		{},
+		"dropbox-auth-csrf-token"
 	)
 
 	auth_url = dropbox_oauth_flow.start()
@@ -311,13 +305,13 @@ def dropbox_auth_finish(return_access_token=False):
 	close = '<p class="text-muted">' + _('Please close this window') + '</p>'
 
 	dropbox_oauth_flow = dropbox.DropboxOAuth2Flow(
-		consumer_key=app_details["app_key"],
-		redirect_uri=app_details["redirect_uri"],
-		session={
+		app_details["app_key"],
+		app_details["app_secret"],
+		app_details["redirect_uri"],
+		{
 			'dropbox-auth-csrf-token': callback.state
 		},
-		csrf_token_session_key="dropbox-auth-csrf-token",
-		consumer_secret=app_details["app_secret"]
+		"dropbox-auth-csrf-token"
 	)
 
 	if callback.state or callback.code:

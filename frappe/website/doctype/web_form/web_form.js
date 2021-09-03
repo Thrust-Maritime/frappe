@@ -20,10 +20,7 @@ frappe.web_form = {
 							return null;
 						}
 					});
-
-					frm.fields_dict.web_form_fields.grid.update_docfield_property(
-						'fieldname', 'options', fields
-					);
+					frappe.meta.get_docfield("Web Form Field", "fieldname", frm.doc.name).options = [""].concat(fields);
 					frappe.meta.get_docfield("Web Form", "amount_field", frm.doc.name).options = [""].concat(currency_fields);
 					frm.refresh_field("amount_field");
 					resolve();
@@ -62,8 +59,6 @@ frappe.ui.form.on("Web Form", {
 							default: field.default,
 							read_only: field.read_only,
 							depends_on: field.depends_on,
-							mandatory_depends_on: field.mandatory_depends_on,
-							read_only_depends_on: field.read_only_depends_on,
 							hidden: field.hidden,
 							description: field.description
 						});

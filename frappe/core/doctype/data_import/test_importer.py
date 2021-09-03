@@ -6,14 +6,14 @@ from __future__ import unicode_literals
 import unittest
 import frappe
 from frappe.core.doctype.data_import.importer import Importer
-from frappe.utils import getdate, format_duration
+from frappe.utils import getdate
 
 doctype_name = 'DocType for Import'
 
 class TestImporter(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
-		create_doctype_if_not_exists(doctype_name,)
+		create_doctype_if_not_exists(doctype_name)
 
 	def test_data_import_from_file(self):
 		import_file = get_import_file('sample_import_file')
@@ -26,7 +26,6 @@ class TestImporter(unittest.TestCase):
 
 		self.assertEqual(doc1.description, 'test description')
 		self.assertEqual(doc1.number, 1)
-		self.assertEqual(format_duration(doc1.duration), '3h')
 
 		self.assertEqual(doc1.table_field_1[0].child_title, 'child title')
 		self.assertEqual(doc1.table_field_1[0].child_description, 'child description')
@@ -43,10 +42,7 @@ class TestImporter(unittest.TestCase):
 		self.assertEqual(doc1.table_field_1_again[1].child_date, getdate('2021-09-22'))
 
 		self.assertEqual(doc2.description, 'test description 2')
-		self.assertEqual(format_duration(doc2.duration), '4d 3h')
-
 		self.assertEqual(doc3.another_number, 5)
-		self.assertEqual(format_duration(doc3.duration), '5d 5h 45m')
 
 	def test_data_import_preview(self):
 		import_file = get_import_file('sample_import_file')
@@ -54,23 +50,23 @@ class TestImporter(unittest.TestCase):
 		preview = data_import.get_preview_from_template()
 
 		self.assertEqual(len(preview.data), 4)
-		self.assertEqual(len(preview.columns), 16)
+		self.assertEqual(len(preview.columns), 15)
 
 	def test_data_import_without_mandatory_values(self):
 		import_file = get_import_file('sample_import_file_without_mandatory')
 		data_import = self.get_importer(doctype_name, import_file)
-		frappe.local.message_log = []
 		data_import.start_import()
 		data_import.reload()
-		import_log = frappe.parse_json(data_import.import_log)
-		self.assertEqual(import_log[0]['row_indexes'], [2,3])
-		expected_error = "Error: <b>Child 1 of DocType for Import</b> Row #1: Value missing for: Child Title"
-		self.assertEqual(frappe.parse_json(import_log[0]['messages'][0])['message'], expected_error)
-		expected_error = "Error: <b>Child 1 of DocType for Import</b> Row #2: Value missing for: Child Title"
-		self.assertEqual(frappe.parse_json(import_log[0]['messages'][1])['message'], expected_error)
+		warnings = frappe.parse_json(data_import.template_warnings)
 
-		self.assertEqual(import_log[1]['row_indexes'], [4])
-		self.assertEqual(frappe.parse_json(import_log[1]['messages'][0])['message'], "Title is required")
+		self.assertEqual(warnings[0]['row'], 2)
+		self.assertEqual(warnings[0]['message'], "<b>Child Title (Table Field 1)</b> is a mandatory field")
+
+		self.assertEqual(warnings[1]['row'], 3)
+		self.assertEqual(warnings[1]['message'], "<b>Child Title (Table Field 1 Again)</b> is a mandatory field")
+
+		self.assertEqual(warnings[2]['row'], 4)
+		self.assertEqual(warnings[2]['message'], "<b>Title</b> is a mandatory field")
 
 	def test_data_import_update(self):
 		existing_doc = frappe.get_doc(
@@ -104,8 +100,6 @@ class TestImporter(unittest.TestCase):
 		data_import.reference_doctype = doctype
 		data_import.import_file = import_file.file_url
 		data_import.insert()
-		# Commit so that the first import failure does not rollback the Data Import insert.
-		frappe.db.commit()
 
 		return data_import
 
@@ -163,7 +157,6 @@ def create_doctype_if_not_exists(doctype_name, force=False):
 			{'label': 'Title', 'fieldname': 'title', 'reqd': 1, 'fieldtype': 'Data'},
 			{'label': 'Description', 'fieldname': 'description', 'fieldtype': 'Small Text'},
 			{'label': 'Date', 'fieldname': 'date', 'fieldtype': 'Date'},
-			{'label': 'Duration', 'fieldname': 'duration', 'fieldtype': 'Duration'},
 			{'label': 'Number', 'fieldname': 'number', 'fieldtype': 'Int'},
 			{'label': 'Number', 'fieldname': 'another_number', 'fieldtype': 'Int'},
 			{'label': 'Table Field 1', 'fieldname': 'table_field_1', 'fieldtype': 'Table', 'options': table_1_name},

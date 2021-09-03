@@ -1,11 +1,4 @@
 {
- "actions": [
-  {
-   "action": "frappe.sessions.clear",
-   "action_type": "Server Action",
-   "label": "Clear Cache"
-  }
- ],
  "creation": "2013-04-30 12:58:46",
  "doctype": "DocType",
  "document_type": "Other",
@@ -25,36 +18,18 @@
   "set_banner_from_image",
   "favicon",
   "top_bar",
-  "top_bar_items",
-  "hide_login",
   "navbar_search",
-  "show_language_picker",
-  "navbar_template_section",
-  "navbar_template",
-  "navbar_template_values",
-  "edit_navbar_template_values",
-  "call_to_action",
-  "call_to_action_url",
+  "top_bar_items",
   "banner",
   "banner_html",
   "footer",
-  "footer_logo",
   "copyright",
   "address",
   "footer_items",
-  "footer_template",
-  "footer_template_values",
-  "edit_footer_template_values",
   "hide_footer_signup",
   "integrations",
-  "enable_view_tracking",
-  "enable_google_indexing",
-  "authorize_api_indexing_access",
-  "indexing_refresh_token",
-  "indexing_authorization_code",
-  "column_break_17",
   "google_analytics_id",
-  "google_analytics_anonymize_ip",
+  "column_break_17",
   "misc_section",
   "subdomain",
   "disable_signup",
@@ -77,7 +52,7 @@
    "label": "Landing Page"
   },
   {
-   "description": "Link that is the website home page. Standard Links (home, login, products, blog, about, contact)",
+   "description": "Link that is the website home page. Standard Links (index, login, products, blog, about, contact)",
    "fieldname": "home_page",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -144,10 +119,9 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "top_bar_items",
    "fieldname": "top_bar",
    "fieldtype": "Section Break",
-   "label": "Navbar"
+   "label": "Top Bar"
   },
   {
    "default": "0",
@@ -163,7 +137,6 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "banner_html",
    "fieldname": "banner",
    "fieldtype": "Section Break",
    "label": "Banner"
@@ -177,7 +150,6 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "footer_items",
    "fieldname": "footer",
    "fieldtype": "Section Break",
    "label": "Footer"
@@ -212,6 +184,7 @@
    "label": "Integrations"
   },
   {
+   "description": "Add Google Analytics ID: eg. UA-89XXX57-1. Please search help on Google Analytics for more information.",
    "fieldname": "google_analytics_id",
    "fieldtype": "Data",
    "label": "Google Analytics ID"
@@ -314,126 +287,13 @@
    "fieldtype": "Table",
    "label": "Route Redirects",
    "options": "Website Route Redirect"
-  },
-  {
-   "default": "0",
-   "description": "To use Google Indexing, enable <a href=\"#Form/Google Settings\">Google Settings</a>.",
-   "fieldname": "enable_google_indexing",
-   "fieldtype": "Check",
-   "label": "Enable Google Indexing"
-  },
-  {
-   "fieldname": "indexing_refresh_token",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Indexing Refresh Token",
-   "read_only": 1
-  },
-  {
-   "fieldname": "indexing_authorization_code",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Indexing Authorization Code",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval: doc.enable_google_indexing",
-   "fieldname": "authorize_api_indexing_access",
-   "fieldtype": "Button",
-   "label": "Authorize API Indexing  Access"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_view_tracking",
-   "fieldtype": "Check",
-   "label": "Enable In App Website Tracking"
-  },
-  {
-   "fieldname": "footer_logo",
-   "fieldtype": "Attach Image",
-   "label": "Footer Logo"
-  },
-  {
-   "fieldname": "call_to_action",
-   "fieldtype": "Data",
-   "label": "Call To Action"
-  },
-  {
-   "fieldname": "call_to_action_url",
-   "fieldtype": "Data",
-   "label": "Call To Action URL"
-  },
-  {
-   "default": "0",
-   "fieldname": "hide_login",
-   "fieldtype": "Check",
-   "label": "Hide Login"
-  },
-  {
-   "fieldname": "navbar_template",
-   "fieldtype": "Link",
-   "label": "Navbar Template",
-   "options": "Web Template"
-  },
-  {
-   "fieldname": "navbar_template_values",
-   "fieldtype": "Code",
-   "hidden": 1,
-   "label": "Navbar Template Values",
-   "options": "JSON"
-  },
-  {
-   "depends_on": "eval:doc.navbar_template && doc.navbar_template !== 'Standard Navbar'",
-   "fieldname": "edit_navbar_template_values",
-   "fieldtype": "Button",
-   "label": "Edit Values"
-  },
-  {
-   "fieldname": "footer_template",
-   "fieldtype": "Link",
-   "label": "Footer Template",
-   "options": "Web Template"
-  },
-  {
-   "fieldname": "footer_template_values",
-   "fieldtype": "Code",
-   "hidden": 1,
-   "label": "Footer Template Values",
-   "options": "JSON"
-  },
-  {
-   "depends_on": "eval:doc.footer_template && doc.footer_template !== 'Standard Footer'",
-   "fieldname": "edit_footer_template_values",
-   "fieldtype": "Button",
-   "label": "Edit Values"
-  },
-  {
-   "default": "1",
-   "fieldname": "google_analytics_anonymize_ip",
-   "fieldtype": "Check",
-   "label": "Google Analytics Anonymize IP"
-  },
-  {
-   "default": "0",
-   "fieldname": "show_language_picker",
-   "fieldtype": "Check",
-   "label": "Show Language Picker"
-  },
-  {
-   "collapsible": 1,
-   "collapsible_depends_on": "navbar_template",
-   "fieldname": "navbar_template_section",
-   "fieldtype": "Section Break",
-   "label": "Navbar Template"
   }
  ],
  "icon": "fa fa-cog",
  "idx": 1,
- "index_web_pages_for_search": 1,
  "issingle": 1,
- "links": [],
  "max_attachments": 10,
- "modified": "2021-07-15 17:39:56.609771",
+ "modified": "2019-06-12 17:16:37.452872",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "Website Settings",

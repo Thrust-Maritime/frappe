@@ -1,18 +1,16 @@
 // Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 // MIT License. See license.txt
 import './linked_with';
-import './form_viewers';
 
-frappe.ui.form.Toolbar = class Toolbar {
-	constructor(opts) {
+frappe.ui.form.Toolbar = Class.extend({
+	init: function(opts) {
 		$.extend(this, opts);
 		this.refresh();
 		this.add_update_button_on_dirty();
 		this.setup_editable_title();
-	}
-	refresh() {
+	},
+	refresh: function() {
 		this.make_menu();
-		this.make_viewers();
 		this.set_title();
 		this.page.clear_user_actions();
 		this.show_title_as_dirty();
@@ -29,22 +27,15 @@ frappe.ui.form.Toolbar = class Toolbar {
 				this.print_icon && this.print_icon.removeClass("hide");
 			}
 		}
-	}
-	set_title() {
-		if (this.frm.is_new()) {
-			var title = __('New {0}', [__(this.frm.meta.name)]);
-		} else if (this.frm.meta.title_field) {
+	},
+	set_title: function() {
+		if(this.frm.meta.title_field) {
 			let title_field = (this.frm.doc[this.frm.meta.title_field] || "").toString().trim();
 			var title = strip_html(title_field || this.frm.docname);
 			if(this.frm.doc.__islocal || title === this.frm.docname || this.frm.meta.autoname==="hash") {
 				this.page.set_title_sub("");
 			} else {
 				this.page.set_title_sub(this.frm.docname);
-				this.page.$sub_title_area.css("cursor", "copy");
-				this.page.$sub_title_area.on('click', (event) => {
-					event.stopImmediatePropagation();
-					frappe.utils.copy_to_clipboard(this.frm.docname);
-				});
 			}
 		} else {
 			var title = this.frm.docname;
@@ -60,8 +51,8 @@ frappe.ui.form.Toolbar = class Toolbar {
 			!!(this.is_title_editable() || this.can_rename()));
 
 		this.set_indicator();
-	}
-	is_title_editable() {
+	},
+	is_title_editable: function() {
 		let title_field = this.frm.meta.title_field;
 		let doc_field = this.frm.get_docfield(title_field);
 
@@ -74,69 +65,20 @@ frappe.ui.form.Toolbar = class Toolbar {
 		} else {
 			return false;
 		}
-	}
-	can_rename() {
+	},
+	can_rename: function() {
 		return this.frm.perm[0].write && this.frm.meta.allow_rename && !this.frm.doc.__islocal;
-	}
-	show_unchanged_document_alert() {
-		frappe.show_alert({
-			indicator: "info",
-			message: __("Unchanged")
-		});
-	}
-	rename_document_title(new_name, new_title, merge=false) {
-		const docname = this.frm.doc.name;
-		const title_field = this.frm.meta.title_field || '';
-		const doctype = this.frm.doctype;
-
-		let confirm_message=null;
-
-		if (new_name) {
-			const warning = __("This cannot be undone");
-			const message = __("Are you sure you want to merge {0} with {1}?", [docname.bold(), new_name.bold()]);
-			confirm_message = `${message}<br><b>${warning}<b>`;
-		}
-
-		let rename_document = () => {
-			return frappe.xcall("frappe.model.rename_doc.update_document_title", {
-				doctype,
-				docname,
-				new_name,
-				title_field,
-				old_title: this.frm.doc[title_field],
-				new_title,
-				merge
-			}).then(new_docname => {
-				if (new_name != docname) {
-					$(document).trigger("rename", [doctype, docname, new_docname || new_name]);
-					if (locals[doctype] && locals[doctype][docname]) delete locals[doctype][docname];
-				}
-				this.frm.reload_doc();
-			});
-		};
-
-		return new Promise((resolve, reject) => {
-			if (new_title === this.frm.doc[title_field] && new_name === docname) {
-				this.show_unchanged_document_alert();
-				resolve();
-			} else if (merge) {
-				frappe.confirm(confirm_message, () => {
-					rename_document().then(resolve).catch(reject);
-				}, reject);
-			} else {
-				rename_document().then(resolve).catch(reject);
-			}
-		});
-	}
-	setup_editable_title () {
+	},
+	setup_editable_title: function () {
 		let me = this;
 
 		this.page.$title_area.find(".title-text").on("click", () => {
 			let fields = [];
+			let doctype = me.frm.doctype;
 			let docname = me.frm.doc.name;
 			let title_field = me.frm.meta.title_field || '';
 
-			// check if title is updatable
+			// check if title is updateable
 			if (me.is_title_editable()) {
 				let title_field_label = me.frm.get_docfield(title_field).label;
 
@@ -149,7 +91,7 @@ frappe.ui.form.Toolbar = class Toolbar {
 				});
 			}
 
-			// check if docname is updatable
+			// check if docname is updateable
 			if (me.can_rename()) {
 				fields.push(...[{
 					label: __("New Name"),
@@ -172,86 +114,77 @@ frappe.ui.form.Toolbar = class Toolbar {
 					fields: fields
 				});
 				d.show();
-				d.set_primary_action(__("Rename"), (values) => {
-					d.disable_primary_action();
-					this.rename_document_title(values.name, values.title, values.merge)
-						.then(() => {
-							d.hide();
-						})
-						.catch(() => {
-							d.enable_primary_action();
+
+				d.set_primary_action(__("Rename"), function () {
+					let args = d.get_values();
+					if (args.title != me.frm.doc[title_field] || args.name != docname) {
+						frappe.call({
+							method: "frappe.model.rename_doc.update_document_title",
+							args: {
+								doctype,
+								docname,
+								title_field,
+								old_title: me.frm.doc[title_field],
+								new_title: args.title,
+								new_name: args.name,
+								merge: args.merge
+							},
+							btn: d.get_primary_btn()
+						}).then((res) => {
+							me.frm.reload_doc();
+							if (!res.exc && (args.name != docname)) {
+								$(document).trigger("rename", [doctype, docname, res.message || args.name]);
+								if (locals[doctype] && locals[doctype][docname]) delete locals[doctype][docname];
+							}
 						});
+					} else {
+						frappe.show_alert({
+							indicator: "yellow",
+							message: __("Unchanged")
+						});
+					}
+					d.hide();
 				});
 			}
 		});
-	}
-	get_dropdown_menu(label) {
+	},
+	get_dropdown_menu: function(label) {
 		return this.page.add_dropdown(label);
-	}
-	set_indicator() {
+	},
+	set_indicator: function() {
 		var indicator = frappe.get_indicator(this.frm.doc);
-		if (this.frm.save_disabled && indicator && [__('Saved'), __('Not Saved')].includes(indicator[0])) {
-			return;
-		}
-		if(indicator) {
+
+		if (indicator) {
+			if (this.frm.save_disabled && [__('Saved'), __('Not Saved')].includes(indicator[0])) {
+				return;
+			}
 			this.page.set_indicator(indicator[0], indicator[1]);
 		} else {
 			this.page.clear_indicator();
 		}
-	}
-	make_menu() {
+	},
+	make_menu: function() {
 		this.page.clear_icons();
 		this.page.clear_menu();
+		var me = this;
+		var p = this.frm.perm[0];
+		var docstatus = cint(this.frm.doc.docstatus);
+		var is_submittable = frappe.model.is_submittable(this.frm.doc.doctype)
+		var issingle = this.frm.meta.issingle;
+		var print_settings = frappe.model.get_doc(":Print Settings", "Print Settings")
+		var allow_print_for_draft = cint(print_settings.allow_print_for_draft);
+		var allow_print_for_cancelled = cint(print_settings.allow_print_for_cancelled);
 
-		if (frappe.boot.desk_settings.form_sidebar) {
-			this.make_navigation();
-			this.make_menu_items();
-		}
-	}
-
-	make_viewers() {
-		if (this.frm.viewers) {
-			return;
-		}
-		this.frm.viewers = new frappe.ui.form.FormViewers({
-			frm: this.frm,
-			parent: $('<div class="form-viewers d-flex"></div>').prependTo(this.frm.page.page_actions)
-		});
-	}
-
-	make_navigation() {
-		// Navigate
-		if (!this.frm.is_new() && !this.frm.meta.issingle) {
-			this.page.add_action_icon("left", () => {
-				this.frm.navigate_records(1);
-			}, 'prev-doc', __("Previous Document"));
-			this.page.add_action_icon("right", ()=> {
-				this.frm.navigate_records(0);
-			}, 'next-doc', __("Next Document"));
-		}
-	}
-
-	make_menu_items() {
 		// Print
-		const me = this;
-		const p = this.frm.perm[0];
-		const docstatus = cint(this.frm.doc.docstatus);
-		const is_submittable = frappe.model.is_submittable(this.frm.doc.doctype);
-
-		const print_settings = frappe.model.get_doc(":Print Settings", "Print Settings");
-		const allow_print_for_draft = cint(print_settings.allow_print_for_draft);
-		const allow_print_for_cancelled = cint(print_settings.allow_print_for_cancelled);
-
-		if (!is_submittable || docstatus == 1  ||
+		if(!is_submittable || docstatus == 1  ||
 			(allow_print_for_cancelled && docstatus == 2)||
 			(allow_print_for_draft && docstatus == 0)) {
-			if (frappe.model.can_print(null, me.frm) && !this.frm.meta.issingle) {
+			if(frappe.model.can_print(null, me.frm) && !issingle) {
 				this.page.add_menu_item(__("Print"), function() {
+					me.frm.print_doc();}, true);
+				this.print_icon = this.page.add_action_icon("fa fa-print", function() {
 					me.frm.print_doc();
-				}, true);
-				this.print_icon = this.page.add_action_icon("printer", function() {
-					me.frm.print_doc();
-				}, '', __("Print"));
+				});
 			}
 		}
 
@@ -277,17 +210,12 @@ frappe.ui.form.Toolbar = class Toolbar {
 			}, true)
 		}
 
-		// duplicate
+		// copy
 		if(in_list(frappe.boot.user.can_create, me.frm.doctype) && !me.frm.meta.allow_copy) {
 			this.page.add_menu_item(__("Duplicate"), function() {
 				me.frm.copy_doc();
 			}, true);
 		}
-
-		// copy doc to clipboard
-		this.page.add_menu_item(__("Copy to Clipboard"), function() {
-			frappe.utils.copy_to_clipboard(JSON.stringify(me.frm.doc));
-		}, true);
 
 		// rename
 		if(this.can_rename()) {
@@ -312,7 +240,30 @@ frappe.ui.form.Toolbar = class Toolbar {
 			});
 		}
 
-		this.make_customize_buttons();
+		if (frappe.user_roles.includes("System Manager") && me.frm.meta.issingle === 0) {
+			let is_doctype_form = me.frm.doctype === 'DocType';
+			let doctype = is_doctype_form ? me.frm.docname : me.frm.doctype;
+			let is_doctype_custom = is_doctype_form ? me.frm.doc.custom : false;
+
+			if (doctype != 'DocType' && !is_doctype_custom) {
+				this.page.add_menu_item(__("Customize"), function() {
+					if (me.frm.meta && me.frm.meta.custom) {
+						frappe.set_route('Form', 'DocType', doctype);
+					} else {
+						frappe.set_route('Form', 'Customize Form', {
+							doc_type: doctype
+						});
+					}
+				}, true);
+			}
+
+			if (frappe.boot.developer_mode===1 && !is_doctype_form) {
+				// edit doctype
+				this.page.add_menu_item(__("Edit DocType"), function() {
+					frappe.set_route('Form', 'DocType', me.frm.doctype);
+				}, true);
+			}
+		}
 
 		// Auto Repeat
 		if(this.can_repeat()) {
@@ -330,84 +281,65 @@ frappe.ui.form.Toolbar = class Toolbar {
 				condition: () => !this.frm.is_new()
 			});
 		}
-	}
 
-	make_customize_buttons() {
-		if (frappe.user_roles.includes("System Manager")) {
-			let is_doctype_form = this.frm.doctype === 'DocType';
-			let doctype = is_doctype_form ? this.frm.docname : this.frm.doctype;
-			let is_doctype_custom = is_doctype_form ? this.frm.doc.custom : false;
-
-			if (doctype != 'DocType' && !is_doctype_custom && this.frm.meta.issingle === 0) {
-				this.page.add_menu_item(__("Customize"), () => {
-					if (this.frm.meta && this.frm.meta.custom) {
-						frappe.set_route('Form', 'DocType', doctype);
-					} else {
-						frappe.set_route('Form', 'Customize Form', {
-							doc_type: doctype
-						});
-					}
-				}, true);
-			}
-
-			if (frappe.boot.developer_mode===1 && !is_doctype_form) {
-				// edit doctype
-				this.page.add_menu_item(__("Edit DocType"), () => {
-					frappe.set_route('Form', 'DocType', this.frm.doctype);
-				}, true);
-			}
+		// Navigate
+		if(!this.frm.is_new() && !issingle) {
+			this.page.add_action_icon("fa fa-chevron-left prev-doc", function() {
+				me.frm.navigate_records(1);
+			});
+			this.page.add_action_icon("fa fa-chevron-right next-doc", function() {
+				me.frm.navigate_records(0);
+			});
 		}
-
-	}
-
-	can_repeat() {
+	},
+	can_repeat: function() {
 		return this.frm.meta.allow_auto_repeat
 			&& !this.frm.is_new()
 			&& !this.frm.doc.auto_repeat;
-	}
-	can_save() {
+	},
+	can_save: function() {
 		return this.get_docstatus()===0;
-	}
-	can_submit() {
+	},
+	can_submit: function() {
 		return this.get_docstatus()===0
 			&& !this.frm.doc.__islocal
 			&& !this.frm.doc.__unsaved
 			&& this.frm.perm[0].submit
 			&& !this.has_workflow();
-	}
-	can_update() {
+	},
+	can_update: function() {
 		return this.get_docstatus()===1
 			&& !this.frm.doc.__islocal
 			&& this.frm.perm[0].submit
-			&& this.frm.doc.__unsaved;
-	}
-	can_cancel() {
+			&& this.frm.doc.__unsaved
+	},
+	can_cancel: function() {
 		return this.get_docstatus()===1
 			&& this.frm.perm[0].cancel
 			&& !this.read_only;
-	}
-	can_amend() {
+	},
+	can_amend: function() {
 		return this.get_docstatus()===2
 			&& this.frm.perm[0].amend
 			&& !this.read_only;
-	}
-	has_workflow() {
+	},
+	has_workflow: function() {
 		if(this._has_workflow === undefined)
 			this._has_workflow = frappe.get_list("Workflow", {document_type: this.frm.doctype}).length;
 		return this._has_workflow;
-	}
-	get_docstatus() {
+	},
+	get_docstatus: function() {
 		return cint(this.frm.doc.docstatus);
-	}
-	show_linked_with() {
+	},
+	show_linked_with: function() {
 		if(!this.frm.linked_with) {
 			this.frm.linked_with = new frappe.ui.form.LinkedWith({
 				frm: this.frm
 			});
 		}
 		this.frm.linked_with.show();
-	}
-	set_primary_action(dirty) {
+	},
+	set_primary_action: function(dirty) {
 		if (!dirty) {
 			// don't clear actions menu if dirty
 			this.page.clear_user_actions();
@@ -438,8 +370,8 @@ frappe.ui.form.Toolbar = class Toolbar {
 			this.page.clear_actions();
 			this.current_status = null;
 		}
-	}
-	get_action_status() {
+	},
+	get_action_status: function() {
 		var status = null;
 		if (this.frm.page.current_view_name==='print' || this.frm.hidden) {
 			status = "Edit";
@@ -460,8 +392,8 @@ frappe.ui.form.Toolbar = class Toolbar {
 			status = "Amend";
 		}
 		return status;
-	}
-	set_page_actions(status) {
+	},
+	set_page_actions: function(status) {
 		var me = this;
 		this.page.clear_actions();
 
@@ -475,17 +407,18 @@ frappe.ui.form.Toolbar = class Toolbar {
 		if(status === "Edit") {
 			this.page.set_primary_action(__("Edit"), function() {
 				me.frm.page.set_view('main');
-			}, 'edit');
+			}, 'octicon octicon-pencil');
 		} else if(status === "Cancel") {
 			let add_cancel_button = () => {
 				this.page.set_secondary_action(__(status), function() {
 					me.frm.savecancel(this);
-				});
+				}, "octicon octicon-circle-slash");
 			};
 			if (this.has_workflow()) {
-				frappe.xcall('frappe.model.workflow.can_cancel_document', {
-					'doctype': this.frm.doc.doctype,
-				}).then((can_cancel) => {
+				frappe.xcall(
+					'frappe.model.workflow.can_cancel_document', {
+						'doctype': this.frm.doc.doctype,
+					}).then((can_cancel) => {
 					if (can_cancel) {
 						add_cancel_button();
 					}
@@ -510,15 +443,18 @@ frappe.ui.form.Toolbar = class Toolbar {
 			}[status];
 
 			var icon = {
-				"Update": "edit",
+				"Save": "octicon octicon-check",
+				"Submit": "octicon octicon-lock",
+				"Update": "octicon octicon-check",
+				"Amend": "octicon octicon-split"
 			}[status];
 
 			this.page.set_primary_action(__(status), click, icon);
 		}
 
 		this.current_status = status;
-	}
-	add_update_button_on_dirty() {
+	},
+	add_update_button_on_dirty: function() {
 		var me = this;
 		$(this.frm.wrapper).on("dirty", function() {
 			me.show_title_as_dirty();
@@ -531,8 +467,8 @@ frappe.ui.form.Toolbar = class Toolbar {
 				me.set_primary_action(true);
 			}
 		});
-	}
-	show_title_as_dirty() {
+	},
+	show_title_as_dirty: function() {
 		if(this.frm.save_disabled)
 			return;
 
@@ -541,7 +477,7 @@ frappe.ui.form.Toolbar = class Toolbar {
 		}
 
 		$(this.frm.wrapper).attr("data-state", this.frm.doc.__unsaved ? "dirty" : "clean");
-	}
+	},
 
 	show_jump_to_field_dialog() {
 		let visible_fields_filter = f =>
@@ -551,7 +487,7 @@ frappe.ui.form.Toolbar = class Toolbar {
 
 		let fields = this.frm.fields
 			.filter(visible_fields_filter)
-			.map(f => ({ label: __(f.df.label), value: f.df.fieldname }));
+			.map(f => ({ label: f.df.label, value: f.df.fieldname }));
 
 		let dialog = new frappe.ui.Dialog({
 			title: __('Jump to field'),
@@ -573,4 +509,4 @@ frappe.ui.form.Toolbar = class Toolbar {
 
 		dialog.show();
 	}
-};
+})

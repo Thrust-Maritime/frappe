@@ -8,8 +8,9 @@ import frappe
 import json
 from email.utils import formataddr
 from frappe.core.utils import get_parent_doc
-from frappe.utils import (get_url, get_formatted_email, cint, list_to_str,
-	validate_email_address, split_emails, parse_addr, get_datetime)
+from frappe.utils import (get_url, get_formatted_email, cint,
+  validate_email_address, split_emails, time_diff_in_seconds, parse_addr, get_datetime)
+from frappe.utils.scheduler import log
 from frappe.email.email_body import get_message_id
 import frappe.email.smtp
 import time
@@ -20,8 +21,7 @@ from frappe.utils.background_jobs import enqueue
 def make(doctype=None, name=None, content=None, subject=None, sent_or_received = "Sent",
 	sender=None, sender_full_name=None, recipients=None, communication_medium="Email", send_email=False,
 	print_html=None, print_format=None, attachments='[]', send_me_a_copy=False, cc=None, bcc=None,
-	flags=None, read_receipt=None, print_letterhead=True, email_template=None, communication_type=None,
-	ignore_permissions=False):
+	flags=None, read_receipt=None, print_letterhead=True, email_template=None):
 	"""Make a new communication.
 
 	:param doctype: Reference DocType.
@@ -43,17 +43,15 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 	is_error_report = (doctype=="User" and name==frappe.session.user and subject=="Error Report")
 	send_me_a_copy = cint(send_me_a_copy)
 
-	if not ignore_permissions:
-		if doctype and name and not is_error_report and not frappe.has_permission(doctype, "email", name) and not (flags or {}).get('ignore_doctype_permissions'):
-			raise frappe.PermissionError("You are not allowed to send emails related to: {doctype} {name}".format(
-				doctype=doctype, name=name))
+	if doctype and name and not is_error_report and not frappe.has_permission(doctype, "email", name) and not (flags or {}).get('ignore_doctype_permissions'):
+		raise frappe.PermissionError("You are not allowed to send emails related to: {doctype} {name}".format(
+			doctype=doctype, name=name))
 
 	if not sender:
 		sender = get_formatted_email(frappe.session.user)
 
-	recipients = list_to_str(recipients) if isinstance(recipients, list) else recipients
-	cc = list_to_str(cc) if isinstance(cc, list) else cc
-	bcc = list_to_str(bcc) if isinstance(bcc, list) else bcc
+	if isinstance(recipients, list):
+		recipients = ', '.join(recipients)
 
 	comm = frappe.get_doc({
 		"doctype":"Communication",
@@ -71,8 +69,7 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 		"email_template": email_template,
 		"message_id":get_message_id().strip(" <>"),
 		"read_receipt":read_receipt,
-		"has_attachment": 1 if attachments else 0,
-		"communication_type": communication_type
+		"has_attachment": 1 if attachments else 0
 	}).insert(ignore_permissions=True)
 
 	comm.save(ignore_permissions=True)
@@ -83,6 +80,8 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 	# if not committed, delayed task doesn't find the communication
 	if attachments:
 		add_attachments(comm.name, attachments)
+
+	frappe.db.commit()
 
 	if cint(send_email):
 		frappe.flags.print_letterhead = cint(print_letterhead)
@@ -174,6 +173,33 @@ def _notify(doc, print_html=None, print_format=None, attachments=None,
 		print_letterhead=frappe.flags.print_letterhead
 	)
 
+def update_parent_mins_to_first_response(doc):
+	"""Update mins_to_first_communication of parent document based on who is replying."""
+
+	parent = get_parent_doc(doc)
+	if not parent:
+		return
+
+	# update parent mins_to_first_communication only if we create the Email communication
+	# ignore in case of only Comment is added
+	if doc.communication_type == "Comment":
+		return
+
+	status_field = parent.meta.get_field("status")
+	if status_field:
+		options = (status_field.options or '').splitlines()
+
+		# if status has a "Replied" option, then update the status for received communication
+		if ('Replied' in options) and doc.sent_or_received=="Received":
+			parent.db_set("status", "Open")
+		else:
+			# update the modified date for document
+			parent.update_modified()
+
+	update_mins_to_first_communication(parent, doc)
+	parent.run_method('notify_communication', doc)
+	parent.notify_update()
+
 def get_recipients_cc_and_bcc(doc, recipients, cc, bcc, fetched_from_email_account=False):
 	doc.all_email_addresses = []
 	doc.sent_email_addresses = []
@@ -213,9 +239,8 @@ def get_recipients_cc_and_bcc(doc, recipients, cc, bcc, fetched_from_email_accou
 	return recipients, cc, bcc
 
 def remove_administrator_from_email_list(email_list):
-	administrator_email = list(filter(lambda emails: "Administrator" in emails, email_list))
-	if administrator_email:
-		email_list.remove(administrator_email[0])
+	if 'Administrator' in email_list:
+		email_list.remove('Administrator')
 
 def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None):
 	"""Prepare to make multipart MIME Email
@@ -223,7 +248,7 @@ def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None)
 	:param print_html: Send given value as HTML attachment.
 	:param print_format: Attach print format of parent document."""
 
-	view_link = frappe.utils.cint(frappe.db.get_value("System Settings", "System Settings", "attach_view_link"))
+	view_link = frappe.utils.cint(frappe.db.get_value("Print Settings", "Print Settings", "attach_view_link"))
 
 	if print_format and view_link:
 		doc.content += get_attach_link(doc, print_format)
@@ -280,12 +305,27 @@ def set_incoming_outgoing_accounts(doc):
 		doc.incoming_email_account = frappe.db.get_value("Email Account",
 			{"append_to": doc.reference_doctype, }, "email_id")
 
+		doc.outgoing_email_account = frappe.db.get_value("Email Account",
+			{"append_to": doc.reference_doctype, "enable_outgoing": 1},
+			["email_id", "always_use_account_email_id_as_sender", "name",
+			"always_use_account_name_as_sender_name"], as_dict=True)
+
 	if not doc.incoming_email_account:
 		doc.incoming_email_account = frappe.db.get_value("Email Account",
 			{"default_incoming": 1, "enable_incoming": 1},  "email_id")
 
-	doc.outgoing_email_account = frappe.email.smtp.get_outgoing_email_account(raise_exception_not_set=False,
-		append_to=doc.doctype, sender=doc.sender)
+	if not doc.outgoing_email_account:
+		# if from address is not the default email account
+		doc.outgoing_email_account = frappe.db.get_value("Email Account",
+			{"email_id": doc.sender, "enable_outgoing": 1},
+			["email_id", "always_use_account_email_id_as_sender", "name",
+			"send_unsubscribe_message", "always_use_account_name_as_sender_name"], as_dict=True) or frappe._dict()
+
+	if not doc.outgoing_email_account:
+		doc.outgoing_email_account = frappe.db.get_value("Email Account",
+			{"default_outgoing": 1, "enable_outgoing": 1},
+			["email_id", "always_use_account_email_id_as_sender", "name",
+			"send_unsubscribe_message", "always_use_account_name_as_sender_name"],as_dict=True) or frappe._dict()
 
 	if doc.sent_or_received == "Sent":
 		doc.db_set("email_account", doc.outgoing_email_account.name)
@@ -471,8 +511,27 @@ def sendmail(communication_name, print_html=None, print_format=None, attachments
 				break
 
 	except:
-		traceback = frappe.log_error("frappe.core.doctype.communication.email.sendmail")
+		traceback = log("frappe.core.doctype.communication.email.sendmail", frappe.as_json({
+			"communication_name": communication_name,
+			"print_html": print_html,
+			"print_format": print_format,
+			"attachments": attachments,
+			"recipients": recipients,
+			"cc": cc,
+			"bcc": bcc,
+			"lang": lang
+		}))
+		frappe.logger(__name__).error(traceback)
 		raise
+
+def update_mins_to_first_communication(parent, communication):
+	if parent.meta.has_field('mins_to_first_response') and not parent.get('mins_to_first_response'):
+		if frappe.db.get_all('User', filters={'email': communication.sender,
+			'user_type': 'System User', 'enabled': 1}, limit=1):
+			first_responded_on = communication.creation
+			if parent.meta.has_field('first_responded_on') and communication.sent_or_received == "Sent":
+				parent.db_set('first_responded_on', first_responded_on)
+			parent.db_set('mins_to_first_response', round(time_diff_in_seconds(first_responded_on, parent.creation) / 60), 2)
 
 @frappe.whitelist(allow_guest=True)
 def mark_email_as_seen(name=None):

@@ -12,12 +12,8 @@ ignore_values = {
 	"Report": ["disabled", "prepared_report", "add_total_row"],
 	"Print Format": ["disabled"],
 	"Notification": ["enabled"],
-	"Print Style": ["disabled"],
-	"Module Onboarding": ['is_complete'],
-	"Onboarding Step": ['is_complete', 'is_skipped']
+	"Print Style": ["disabled"]
 }
-
-ignore_doctypes = [""]
 
 def import_files(module, dt=None, dn=None, force=False, pre_process=None, reset_permissions=False):
 	if type(module) is list:
@@ -96,6 +92,8 @@ def read_doc_from_file(path):
 
 	return doc
 
+ignore_doctypes = [""]
+
 def import_doc(docdict, force=False, data_import=False, pre_process=None,
 		ignore_version=None, reset_permissions=False):
 	frappe.flags.in_import = True
@@ -107,15 +105,6 @@ def import_doc(docdict, force=False, data_import=False, pre_process=None,
 
 	doc = frappe.get_doc(docdict)
 
-	# Note on Tree DocTypes:
-	# The tree structure is maintained in the database via the fields "lft" and
-	# "rgt". They are automatically set and kept up-to-date. Importing them
-	# would destroy any existing tree structure.
-	if getattr(doc.meta, 'is_tree', None) and any([doc.lft, doc.rgt]):
-		print('Ignoring values of `lft` and `rgt` for {} "{}"'.format(doc.doctype, doc.name))
-		doc.lft = None
-		doc.rgt = None
-
 	doc.run_method("before_import")
 
 	doc.flags.ignore_version = ignore_version
@@ -125,7 +114,7 @@ def import_doc(docdict, force=False, data_import=False, pre_process=None,
 	ignore = []
 
 	if frappe.db.exists(doc.doctype, doc.name):
-
+		# import pdb; pdb.set_trace()
 		old_doc = frappe.get_doc(doc.doctype, doc.name)
 
 		if doc.doctype in ignore_values:

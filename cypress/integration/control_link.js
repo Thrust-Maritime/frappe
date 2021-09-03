@@ -1,11 +1,7 @@
 context('Control Link', () => {
-	before(() => {
-		cy.login();
-		cy.visit('/app/website');
-	});
-
 	beforeEach(() => {
-		cy.visit('/app/website');
+		cy.login();
+		cy.visit('/desk');
 		cy.create_records({
 			doctype: 'ToDo',
 			description: 'this is a test todo for link'
@@ -29,11 +25,12 @@ context('Control Link', () => {
 	it('should set the valid value', () => {
 		get_dialog_with_link().as('dialog');
 
-		cy.intercept('POST', '/api/method/frappe.desk.search.search_link').as('search_link');
+		cy.server();
+		cy.route('POST', '/api/method/frappe.desk.search.search_link').as('search_link');
 
 		cy.get('.frappe-control[data-fieldname=link] input').focus().as('input');
 		cy.wait('@search_link');
-		cy.get('@input').type('todo for link', { delay: 200 });
+		cy.get('@input').type('todo for link');
 		cy.wait('@search_link');
 		cy.get('.frappe-control[data-fieldname=link] ul').should('be.visible');
 		cy.get('.frappe-control[data-fieldname=link] input').type('{enter}', { delay: 100 });
@@ -49,7 +46,8 @@ context('Control Link', () => {
 	it('should unset invalid value', () => {
 		get_dialog_with_link().as('dialog');
 
-		cy.intercept('GET', '/api/method/frappe.desk.form.utils.validate_link*').as('validate_link');
+		cy.server();
+		cy.route('GET', '/api/method/frappe.desk.form.utils.validate_link*').as('validate_link');
 
 		cy.get('.frappe-control[data-fieldname=link] input')
 			.type('invalid value', { delay: 100 })
@@ -61,8 +59,9 @@ context('Control Link', () => {
 	it('should route to form on arrow click', () => {
 		get_dialog_with_link().as('dialog');
 
-		cy.intercept('GET', '/api/method/frappe.desk.form.utils.validate_link*').as('validate_link');
-		cy.intercept('POST', '/api/method/frappe.desk.search.search_link').as('search_link');
+		cy.server();
+		cy.route('GET', '/api/method/frappe.desk.form.utils.validate_link*').as('validate_link');
+		cy.route('POST', '/api/method/frappe.desk.search.search_link').as('search_link');
 
 		cy.get('@todos').then(todos => {
 			cy.get('.frappe-control[data-fieldname=link] input').as('input');
@@ -74,7 +73,7 @@ context('Control Link', () => {
 			cy.get('.frappe-control[data-fieldname=link] .link-btn')
 				.should('be.visible')
 				.click();
-			cy.location('pathname').should('eq', `/app/todo/${todos[0]}`);
+			cy.location('hash').should('eq', `#Form/ToDo/${todos[0]}`);
 		});
 	});
 });

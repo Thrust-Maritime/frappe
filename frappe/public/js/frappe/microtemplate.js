@@ -119,10 +119,6 @@ frappe.render_grid = function(opts) {
 	// render HTML wrapper page
 	opts.base_url = frappe.urllib.get_base_url();
 	opts.print_css = frappe.boot.print_css;
-
-	opts.lang = opts.lang || frappe.boot.lang,
-	opts.layout_direction = opts.layout_direction || frappe.utils.is_rtl() ? "rtl" : "ltr";
-
 	var html = frappe.render_template("print_template", opts);
 
 	var w = window.open();
@@ -175,4 +171,4 @@ frappe.render_pdf = function(html, opts = {}) {
 		}
 	};
 	xhr.send(formData);
-}
+};

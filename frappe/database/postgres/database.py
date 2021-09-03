@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import re
 import frappe
 import psycopg2
@@ -49,7 +51,7 @@ class PostgresDatabase(Database):
 			'Data':			('varchar', self.VARCHAR_LEN),
 			'Link':			('varchar', self.VARCHAR_LEN),
 			'Dynamic Link':	('varchar', self.VARCHAR_LEN),
-			'Password':		('text', ''),
+			'Password':		('varchar', self.VARCHAR_LEN),
 			'Select':		('varchar', self.VARCHAR_LEN),
 			'Rating':		('smallint', None),
 			'Read Only':	('varchar', self.VARCHAR_LEN),
@@ -58,11 +60,11 @@ class PostgresDatabase(Database):
 			'Signature':	('text', ''),
 			'Color':		('varchar', self.VARCHAR_LEN),
 			'Barcode':		('text', ''),
-			'Geolocation':	('text', ''),
-			'Duration':		('decimal', '18,6')
+			'Geolocation':	('text', '')
 		}
 
 	def get_connection(self):
+		# warnings.filterwarnings('ignore', category=psycopg2.Warning)
 		conn = psycopg2.connect("host='{}' dbname='{}' user='{}' password='{}' port={}".format(
 			self.host, self.user, self.user, self.password, self.port
 		))
@@ -105,7 +107,7 @@ class PostgresDatabase(Database):
 			from information_schema.tables
 			where table_catalog='{0}'
 				and table_type = 'BASE TABLE'
-				and table_schema='{1}'""".format(frappe.conf.db_name, frappe.conf.get("db_schema", "public")))]
+				and table_schema='public'""".format(frappe.conf.db_name))]
 
 	def format_date(self, date):
 		if not date:
@@ -137,11 +139,11 @@ class PostgresDatabase(Database):
 
 	@staticmethod
 	def is_table_missing(e):
-		return getattr(e, 'pgcode', None) == '42P01'
+		return e.pgcode == '42P01'
 
 	@staticmethod
 	def is_missing_column(e):
-		return getattr(e, 'pgcode', None) == '42703'
+		return e.pgcode == '42703'
 
 	@staticmethod
 	def is_access_denied(e):
@@ -176,7 +178,7 @@ class PostgresDatabase(Database):
 				"doctype" VARCHAR(140) NOT NULL,
 				"name" VARCHAR(255) NOT NULL,
 				"fieldname" VARCHAR(140) NOT NULL,
-				"password" TEXT NOT NULL,
+				"password" VARCHAR(255) NOT NULL,
 				"encrypted" INT NOT NULL DEFAULT 0,
 				PRIMARY KEY ("doctype", "name", "fieldname")
 			)""")

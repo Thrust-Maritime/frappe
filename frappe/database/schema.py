@@ -30,9 +30,6 @@ class DBTable:
 		self.get_columns_from_docfields()
 
 	def sync(self):
-		if self.meta.get('is_virtual'):
-			# no schema to sync for virtual doctypes
-			return
 		if self.is_new():
 			self.create()
 		else:
@@ -140,14 +137,16 @@ class DBTable:
 						if frappe.db.is_missing_column(e):
 							# Unknown column 'column_name' in 'field list'
 							continue
-						raise
+						else:
+							raise
 
 					if max_length and max_length[0][0] and max_length[0][0] > new_length:
 						if col.fieldname in self.columns:
 							self.columns[col.fieldname].length = current_length
-						info_message = _("Reverting length to {0} for '{1}' in '{2}'. Setting the length as {3} will cause truncation of data.") \
-							.format(current_length, col.fieldname, self.doctype, new_length)
-						frappe.msgprint(info_message)
+
+						frappe.msgprint(_("""Reverting length to {0} for '{1}' in '{2}';
+							Setting the length as {3} will cause truncation of data.""")
+							.format(current_length, col.fieldname, self.doctype, new_length))
 
 	def is_new(self):
 		return self.table_name not in frappe.db.get_tables()
@@ -189,7 +188,7 @@ class DbColumn:
 			column_def += ' not null default {0}'.format(default_value)
 
 		elif self.default and (self.default not in frappe.db.DEFAULT_SHORTCUTS) \
-			and not cstr(self.default).startswith(":") and column_def not in ('text', 'longtext'):
+			and not self.default.startswith(":") and column_def not in ('text', 'longtext'):
 			column_def += " default {}".format(frappe.db.escape(self.default))
 
 		if self.unique and (column_def not in ('text', 'longtext')):

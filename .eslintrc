@@ -5,7 +5,7 @@
 		"es6": true
 	},
 	"parserOptions": {
-		"ecmaVersion": 9,
+		"ecmaVersion": 8,
 		"sourceType": "module"
 	},
 	"extends": "eslint:recommended",
@@ -78,9 +78,6 @@
 		"has_common": true,
 		"has_words": true,
 		"validate_email": true,
-		"validate_name": true,
-		"validate_phone": true,
-		"validate_url": true,
 		"get_number_format": true,
 		"format_number": true,
 		"format_currency": true,
@@ -88,7 +85,6 @@
 		"open_url_post": true,
 		"toTitle": true,
 		"lstrip": true,
-		"rstrip": true,
 		"strip": true,
 		"strip_html": true,
 		"replace_all": true,
@@ -136,6 +132,7 @@
 		"PhotoSwipeUI_Default": true,
 		"fluxify": true,
 		"io": true,
+		"QUnit": true,
 		"JsBarcode": true,
 		"L": true,
 		"Chart": true,
@@ -148,7 +145,6 @@
 		"context": true,
 		"before": true,
 		"beforeEach": true,
-		"qz": true,
-		"localforage": true
+		"qz": true
 	}
 }

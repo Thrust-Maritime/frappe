@@ -23,22 +23,21 @@ frappe.ui.SortSelector = Class.extend({
 
 		// order
 		this.wrapper.find('.btn-order').on('click', function() {
-			let btn = $(this);
-			const order = $(this).attr('data-value') === 'desc' ? 'asc' : 'desc';
-			const title = $(this).attr('data-value' )=== 'desc' ? 'ascending' : 'descending';
+			var btn = $(this);
+			var order = $(this).attr('data-value')==='desc' ? 'asc' : 'desc';
 
 			btn.attr('data-value', order);
-			btn.attr('title', title);
 			me.sort_order = order;
-			const icon_name = order === 'asc'? 'sort-ascending' : 'sort-descending';
-			btn.find('.sort-order').html(frappe.utils.icon(icon_name, 'sm'));
+			btn.find('.octicon')
+				.removeClass('octicon-arrow-' + (order==='asc' ? 'down' : 'up'))
+				.addClass('octicon-arrow-' + (order==='desc' ? 'down' : 'up'));
 			(me.onchange || me.change)(me.sort_by, me.sort_order);
 		});
 
 		// select field
-		this.wrapper.find('.dropdown-menu a.option').on('click', function() {
+		this.wrapper.find('.dropdown a.option').on('click', function() {
 			me.sort_by = $(this).attr('data-value');
-			me.wrapper.find('.dropdown-text').html($(this).html());
+			me.wrapper.find('.dropdown .dropdown-text').html($(this).html());
 			(me.onchange || me.change)(me.sort_by, me.sort_order);
 		});
 

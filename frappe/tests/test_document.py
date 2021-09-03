@@ -2,13 +2,10 @@
 # MIT License. See license.txt
 from __future__ import unicode_literals
 
-import os
-import unittest
-
-import frappe
-from frappe.utils import cint
+import frappe, unittest, os
+from frappe.utils import cint, now
+from frappe.utils.data import add_to_date
 from frappe.model.naming import revert_series_if_last, make_autoname, parse_naming_series
-
 
 class TestDocument(unittest.TestCase):
 	def test_get_return_empty_list_for_table_field_if_none(self):
@@ -65,13 +62,6 @@ class TestDocument(unittest.TestCase):
 
 		self.assertEqual(frappe.db.get_value(d.doctype, d.name, "subject"), "subject changed")
 
-	def test_value_changed(self):
-		d = self.test_insert()
-		d.subject = "subject changed again"
-		d.save()
-		self.assertTrue(d.has_value_changed('subject'))
-		self.assertFalse(d.has_value_changed('event_type'))
-
 	def test_mandatory(self):
 		# TODO: recheck if it is OK to force delete
 		frappe.delete_doc_if_exists("User", "test_mandatory@example.com", 1)
@@ -86,13 +76,13 @@ class TestDocument(unittest.TestCase):
 		d.insert()
 		self.assertEqual(frappe.db.get_value("User", d.name), d.name)
 
-	def test_conflict_validation(self):
+	def test_confict_validation(self):
 		d1 = self.test_insert()
 		d2 = frappe.get_doc(d1.doctype, d1.name)
 		d1.save()
 		self.assertRaises(frappe.TimestampMismatchError, d2.save)
 
-	def test_conflict_validation_single(self):
+	def test_confict_validation_single(self):
 		d1 = frappe.get_doc("Website Settings", "Website Settings")
 		d1.home_page = "test-web-page-1"
 
@@ -109,7 +99,7 @@ class TestDocument(unittest.TestCase):
 
 	def test_permission_single(self):
 		frappe.set_user("Guest")
-		d = frappe.get_doc("Website Settings", "Website Settings")
+		d = frappe.get_doc("Website Settings", "Website Settigns")
 		self.assertRaises(frappe.PermissionError, d.save)
 		frappe.set_user("Administrator")
 
@@ -195,6 +185,41 @@ class TestDocument(unittest.TestCase):
 		self.assertTrue(xss not in d.subject)
 		self.assertTrue(escaped_xss in d.subject)
 
+	def test_link_count(self):
+		if os.environ.get('CI'):
+			# cannot run this test reliably in travis due to its handling
+			# of parallelism
+			return
+
+		from frappe.model.utils.link_count import update_link_count
+
+		update_link_count()
+
+		doctype, name = 'User', 'test@example.com'
+
+		d = self.test_insert()
+		d.append('event_participants', {"reference_doctype": doctype, "reference_docname": name})
+
+		d.save()
+
+		link_count = frappe.cache().get_value('_link_count') or {}
+		old_count = link_count.get((doctype, name)) or 0
+
+		frappe.db.commit()
+
+		link_count = frappe.cache().get_value('_link_count') or {}
+		new_count = link_count.get((doctype, name)) or 0
+
+		self.assertEqual(old_count + 1, new_count)
+
+		before_update = frappe.db.get_value(doctype, name, 'idx')
+
+		update_link_count()
+
+		after_update = frappe.db.get_value(doctype, name, 'idx')
+
+		self.assertEqual(before_update + new_count, after_update)
+
 	def test_naming_series(self):
 		data = ["TEST-", "TEST/17-18/.test_data./.####", "TEST.YYYY.MM.####"]
 
@@ -213,19 +238,78 @@ class TestDocument(unittest.TestCase):
 
 			self.assertEqual(cint(old_current) - 1, new_current)
 
-	def test_non_negative_check(self):
-		frappe.delete_doc_if_exists("Currency", "Frappe Coin", 1)
+	def test_rename_doc(self):
+		from random import choice, sample
 
-		d = frappe.get_doc({
-			'doctype': 'Currency',
-			'currency_name': 'Frappe Coin',
-			'smallest_currency_fraction_value': -1
+		available_documents = []
+		doctype = "ToDo"
+
+		# data generation: 4 todo documents
+		for num in range(1, 5):
+			doc = frappe.get_doc({
+				"doctype": doctype,
+				"date": add_to_date(now(), days=num),
+				"description": "this is todo #{}".format(num)
+			}).insert()
+			available_documents.append(doc.name)
+
+		# test 1: document renaming
+		old_name = choice(available_documents)
+		new_name = old_name + '.new'
+		self.assertEqual(new_name, frappe.rename_doc(doctype, old_name, new_name, force=True))
+		available_documents.remove(old_name)
+		available_documents.append(new_name)
+
+		# test 2: merge documents
+		first_todo, second_todo = sample(available_documents, 2)
+
+		second_todo_doc = frappe.get_doc(doctype, second_todo)
+		second_todo_doc.priority = "High"
+		second_todo_doc.save()
+
+		merged_todo = frappe.rename_doc(doctype, first_todo, second_todo, merge=True, force=True)
+		merged_todo_doc = frappe.get_doc(doctype, merged_todo)
+		available_documents.remove(first_todo)
+
+		with self.assertRaises(frappe.DoesNotExistError):
+			frappe.get_doc(doctype, first_todo)
+
+		self.assertEqual(merged_todo_doc.priority, second_todo_doc.priority)
+
+		for docname in available_documents:
+			frappe.delete_doc(doctype, docname)
+
+	def test_rename_doctype(self):
+		from frappe.core.doctype.doctype.test_doctype import new_doctype
+
+		fields =[{
+			"label": "Linked To",
+			"fieldname": "linked_to_doctype",
+			"fieldtype": "Link",
+			"options": "DocType",
+			"unique": 0
+		}]
+		if not frappe.db.exists("DocType", "Rename This"):
+			new_doctype("Rename This", unique=0, fields=fields).insert()
+
+		to_rename_record = frappe.get_doc({
+			"doctype": "Rename This",
+			"linked_to_doctype": "Rename This"
 		})
+		to_rename_record.insert()
 
-		self.assertRaises(frappe.NonNegativeError, d.insert)
+		# Rename doctype
+		self.assertEqual("Renamed Doc", frappe.rename_doc("DocType", "Rename This", "Renamed Doc", force=True))
 
-		d.set('smallest_currency_fraction_value', 1)
-		d.insert()
-		self.assertEqual(frappe.db.get_value("Currency", d.name), d.name)
+		# Test if Doctype value has changed in Link field
+		renamed_doctype_record = frappe.get_doc("Renamed Doc", to_rename_record.name)
+		self.assertEqual(renamed_doctype_record.linked_to_doctype, "Renamed Doc")
 
-		frappe.delete_doc_if_exists("Currency", "Frappe Coin", 1)
+		# Test if there are conflicts between a record and a DocType
+		# having the same name
+		old_name = to_rename_record.name
+		new_name = "ToDo"
+		self.assertEqual(new_name, frappe.rename_doc("Renamed Doc", old_name, new_name, force=True))
+
+		frappe.delete_doc_if_exists("Renamed Doc", "ToDo")
+		frappe.delete_doc_if_exists("DocType", "Renamed Doc")

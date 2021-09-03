@@ -1,11 +1,9 @@
 {
- "actions": [],
  "allow_import": 1,
  "autoname": "EV.#####",
  "creation": "2013-06-10 13:17:47",
  "doctype": "DocType",
  "document_type": "Document",
- "email_append_to": 1,
  "engine": "InnoDB",
  "field_order": [
   "details",
@@ -19,7 +17,6 @@
   "starts_on",
   "ends_on",
   "status",
-  "sender",
   "all_day",
   "sync_with_google_calendar",
   "sb_00",
@@ -265,19 +262,11 @@
    "fieldtype": "Check",
    "label": "Pulled from Google Calendar",
    "read_only": 1
-  },
-  {
-   "fieldname": "sender",
-   "fieldtype": "Data",
-   "label": "Sender",
-   "options": "Email",
-   "read_only": 1
   }
  ],
  "icon": "fa fa-calendar",
  "idx": 1,
- "links": [],
- "modified": "2020-01-14 21:47:15.825287",
+ "modified": "2019-08-08 16:01:19.489396",
  "modified_by": "Administrator",
  "module": "Desk",
  "name": "Event",
@@ -308,10 +297,8 @@
   }
  ],
  "read_only": 1,
- "sender_field": "sender",
  "sort_field": "modified",
  "sort_order": "DESC",
- "subject_field": "subject",
  "title_field": "subject",
  "track_changes": 1,
  "track_seen": 1,

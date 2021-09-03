@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-# imports - standard imports
+# imports - standard  - Hello, World!
 import os, shutil
 from distutils.command.clean import clean as Clean
 
@@ -58,6 +58,5 @@ setup(
 	cmdclass = \
 	{
 		'clean': CleanCommand
-	},
-	python_requires='>=3.6'
+	}
 )

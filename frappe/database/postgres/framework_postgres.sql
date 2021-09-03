@@ -40,8 +40,6 @@ CREATE TABLE "tabDocField" (
   "show_preview_popup" smallint NOT NULL DEFAULT 0,
   "trigger" varchar(255) DEFAULT NULL,
   "collapsible_depends_on" text,
-  "mandatory_depends_on" text,
-  "read_only_depends_on" text,
   "depends_on" text,
   "permlevel" bigint NOT NULL DEFAULT 0,
   "ignore_user_permissions" smallint NOT NULL DEFAULT 0,
@@ -63,9 +61,6 @@ CREATE TABLE "tabDocField" (
   "precision" varchar(255) DEFAULT NULL,
   "length" bigint NOT NULL DEFAULT 0,
   "translatable" smallint NOT NULL DEFAULT 0,
-  "hide_border" smallint NOT NULL DEFAULT 0,
-  "hide_days" smallint NOT NULL DEFAULT 0,
-  "hide_seconds" smallint NOT NULL DEFAULT 0,
   PRIMARY KEY ("name")
 ) ;
 
@@ -110,57 +105,6 @@ CREATE TABLE "tabDocPerm" (
 ) ;
 
 create index on "tabDocPerm" ("parent");
-
---
--- Table structure for table "tabDocType Action"
---
-
-DROP TABLE IF EXISTS "tabDocType Action";
-CREATE TABLE "tabDocType Action" (
-  "name" varchar(255) NOT NULL,
-  "creation" timestamp(6) DEFAULT NULL,
-  "modified" timestamp(6) DEFAULT NULL,
-  "modified_by" varchar(255) DEFAULT NULL,
-  "owner" varchar(255) DEFAULT NULL,
-  "docstatus" smallint NOT NULL DEFAULT 0,
-  "parent" varchar(255) DEFAULT NULL,
-  "parentfield" varchar(255) DEFAULT NULL,
-  "parenttype" varchar(255) DEFAULT NULL,
-  "idx" bigint NOT NULL DEFAULT 0,
-  "label" varchar(140) NOT NULL,
-  "group" text DEFAULT NULL,
-  "action_type" varchar(140) NOT NULL,
-  "action" varchar(140) NOT NULL,
-  PRIMARY KEY ("name")
-) ;
-
-create index on "tabDocType Action" ("parent");
-
---
--- Table structure for table "tabDocType Link"
---
-
-DROP TABLE IF EXISTS "tabDocType Link";
-CREATE TABLE "tabDocType Link" (
-  "name" varchar(255) NOT NULL,
-  "creation" timestamp(6) DEFAULT NULL,
-  "modified" timestamp(6) DEFAULT NULL,
-  "modified_by" varchar(255) DEFAULT NULL,
-  "owner" varchar(255) DEFAULT NULL,
-  "docstatus" smallint NOT NULL DEFAULT 0,
-  "parent" varchar(255) DEFAULT NULL,
-  "parentfield" varchar(255) DEFAULT NULL,
-  "parenttype" varchar(255) DEFAULT NULL,
-  "idx" bigint NOT NULL DEFAULT 0,
-  "label" varchar(140) DEFAULT NULL,
-  "group" varchar(140) DEFAULT NULL,
-  "link_doctype" varchar(140) NOT NULL,
-  "link_fieldname" varchar(140) NOT NULL,
-  PRIMARY KEY ("name")
-) ;
-
-create index on "tabDocType Link" ("parent");
-
 
 --
 -- Table structure for table "tabDocType"
@@ -225,9 +169,6 @@ CREATE TABLE "tabDocType" (
   "allow_guest_to_view" smallint NOT NULL DEFAULT 0,
   "route" varchar(255) DEFAULT NULL,
   "is_published_field" varchar(255) DEFAULT NULL,
-  "email_append_to" smallint NOT NULL DEFAULT 0,
-  "subject_field" varchar(255) DEFAULT NULL,
-  "sender_field" varchar(255) DEFAULT NULL,
   PRIMARY KEY ("name")
 ) ;
 
@@ -281,7 +222,7 @@ CREATE TABLE "__Auth" (
 	"doctype" VARCHAR(140) NOT NULL,
 	"name" VARCHAR(255) NOT NULL,
 	"fieldname" VARCHAR(140) NOT NULL,
-	"password" TEXT NOT NULL,
+	"password" VARCHAR(255) NOT NULL,
 	"encrypted" int NOT NULL DEFAULT 0,
 	PRIMARY KEY ("doctype", "name", "fieldname")
 );

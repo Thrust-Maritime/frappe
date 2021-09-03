@@ -8,11 +8,12 @@ from frappe.website.render import clear_cache
 class BlogCategory(WebsiteGenerator):
 	def autoname(self):
 		# to override autoname of WebsiteGenerator
-		self.name = self.scrub(self.title)
+		self.name = self.category_name
 
 	def on_update(self):
 		clear_cache()
 
-	def set_route(self):
-		# Override blog route since it has to been templated
-		self.route = 'blog/' + self.name
+	def validate(self):
+		if not self.route:
+			self.route = 'blog/' + self.scrub(self.name)
+		super(BlogCategory, self).validate()

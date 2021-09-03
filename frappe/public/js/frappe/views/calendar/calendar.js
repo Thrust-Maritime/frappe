@@ -10,7 +10,7 @@ frappe.views.CalendarView = class CalendarView extends frappe.views.ListView {
 		if (route.length === 3) {
 			const doctype = route[1];
 			const user_settings = frappe.get_user_settings(doctype)['Calendar'] || {};
-			route.push(user_settings.last_calendar || 'default');
+			route.push(user_settings.last_calendar || 'Default');
 			frappe.set_route(route);
 			return true;
 		} else {
@@ -29,13 +29,8 @@ frappe.views.CalendarView = class CalendarView extends frappe.views.ListView {
 			.then(() => {
 				this.page_title = __('{0} Calendar', [this.page_title]);
 				this.calendar_settings = frappe.views.calendar[this.doctype] || {};
-				this.calendar_name = frappe.utils.to_title_case(frappe.get_route()[3] || '');
+				this.calendar_name = frappe.get_route()[3];
 			});
-	}
-
-	setup_page() {
-		this.hide_page_form = true;
-		super.setup_page();
 	}
 
 	setup_view() {
@@ -83,8 +78,7 @@ frappe.views.CalendarView = class CalendarView extends frappe.views.ListView {
 							id: "name",
 							start: doc.start_date_field,
 							end: doc.end_date_field,
-							title: doc.subject_field,
-							allDay: doc.all_day ? 1 : 0
+							title: doc.subject_field
 						}
 					});
 					resolve(options);
@@ -94,15 +88,11 @@ frappe.views.CalendarView = class CalendarView extends frappe.views.ListView {
 	}
 
 	get required_libs() {
-		let assets = [
+		return [
 			'assets/frappe/js/lib/fullcalendar/fullcalendar.min.css',
 			'assets/frappe/js/lib/fullcalendar/fullcalendar.min.js',
+			'assets/frappe/js/lib/fullcalendar/locale-all.js'
 		];
-		let user_language = frappe.boot.user.language;
-		if (user_language && user_language !== 'en') {
-			assets.push('assets/frappe/js/lib/fullcalendar/locale-all.js');
-		}
-		return assets;
 	}
 };
 
@@ -189,19 +179,12 @@ frappe.views.Calendar = Class.extend({
 			.removeClass("fc-state-default")
 			.addClass("btn btn-default");
 
-		this.$wrapper
-			.find('.fc-month-button, .fc-agendaWeek-button, .fc-agendaDay-button')
-			.wrapAll('<div class="btn-group" />');
+		this.$wrapper.find(".fc-button-group").addClass("btn-group");
 
 		this.$wrapper.find('.fc-prev-button span')
-			.attr('class', '').html(frappe.utils.icon('left'));
+			.attr('class', '').addClass('fa fa-chevron-left');
 		this.$wrapper.find('.fc-next-button span')
-			.attr('class', '').html(frappe.utils.icon('right'));
-
-		this.$wrapper.find('.fc-today-button')
-			.prepend(frappe.utils.icon('today'));
-
-		this.$wrapper.find('.fc-day-number').wrap('<div class="fc-day"></div>');
+			.attr('class', '').addClass('fa fa-chevron-right');
 
 		var btn_group = this.$wrapper.find(".fc-button-group");
 		btn_group.find(".fc-state-active").addClass("active");
@@ -229,18 +212,17 @@ frappe.views.Calendar = Class.extend({
 	},
 	setup_options: function(defaults) {
 		var me = this;
-		defaults.meridiem = 'false';
 		this.cal_options = {
 			locale: frappe.boot.user.language || "en",
 			header: {
-				left: 'prev, title, next',
-				right: 'today, month, agendaWeek, agendaDay'
+				left: 'title',
+				center: '',
+				right: 'prev,today,next month,agendaWeek,agendaDay'
 			},
 			editable: true,
 			selectable: true,
 			selectHelper: true,
 			forceEventDuration: true,
-			displayEventTime: true,
 			defaultView: defaults.defaultView,
 			weekends: defaults.weekends,
 			nowIndicator: true,
@@ -256,7 +238,6 @@ frappe.views.Calendar = Class.extend({
 					}
 				});
 			},
-			displayEventEnd: true,
 			eventRender: function(event, element) {
 				element.attr('title', event.tooltip);
 			},
@@ -327,7 +308,6 @@ frappe.views.Calendar = Class.extend({
 			doctype: this.doctype,
 			start: this.get_system_datetime(start),
 			end: this.get_system_datetime(end),
-			fields: this.fields,
 			filters: this.list_view.filter_area.get(),
 			field_map: this.field_map
 		};
@@ -372,20 +352,16 @@ frappe.views.Calendar = Class.extend({
 			me.prepare_colors(d);
 
 			d.title = frappe.utils.html2text(d.title);
-
+			
 			return d;
 		});
 	},
 	prepare_colors: function(d) {
 		let color, color_name;
 		if(this.get_css_class) {
-			color_name = this.color_map[this.get_css_class(d)] || 'blue';
-
-			if (color_name.startsWith("#")) {
-				color_name = frappe.ui.color.validate_hex(color_name) ?
-					color_name : 'blue';
-			}
-
+			color_name = this.color_map[this.get_css_class(d)];
+			color_name = frappe.ui.color.validate_hex(color_name) ?
+				color_name : 'blue';
 			d.backgroundColor = frappe.ui.color.get(color_name, 'extra-light');
 			d.textColor = frappe.ui.color.get(color_name, 'dark');
 		} else {

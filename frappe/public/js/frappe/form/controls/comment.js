@@ -6,9 +6,12 @@ Quill.register('modules/mention', Mention, true);
 frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 	make_wrapper() {
 		this.comment_wrapper = !this.no_wrapper ? $(`
-			<div class="comment-input-wrapper">
-				<div class="comment-input-header">
-					<span>${__("Add a comment")}</span>
+				<div class="comment-input-wrapper">
+					<div class="comment-input-header">
+					<span class="small text-muted">${__("Add a comment")}</span>
+					<button class="btn btn-default btn-comment btn-xs pull-right">
+						${__("Comment")}
+					</button>
 				</div>
 				<div class="comment-input-container">
 					<div class="frappe-control"></div>
@@ -16,9 +19,6 @@ frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 						${__("Ctrl+Enter to add comment")}
 					</div>
 				</div>
-				<button class="btn btn-default btn-comment btn-xs">
-					${__("Comment")}
-				</button>
 			</div>
 		`) : $('<div class="frappe-control"></div>');
 
@@ -60,7 +60,7 @@ frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 
 	update_state() {
 		const value = this.get_value();
-		if (strip_html(value).trim() != "" || value.includes('img')) {
+		if (strip_html(value).trim() != "") {
 			this.button.removeClass('btn-default').addClass('btn-primary');
 		} else {
 			this.button.addClass('btn-default').removeClass('btn-primary');
@@ -78,33 +78,48 @@ frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 	},
 
 	get_mention_options() {
-		if (!this.enable_mentions) {
+		if (!(this.mentions && this.mentions.length)) {
 			return null;
 		}
-		let me = this;
+
+		const at_values = this.mentions.slice();
+
 		return {
 			allowedChars: /^[A-Za-z0-9_]*$/,
 			mentionDenotationChars: ["@"],
 			isolateCharacter: true,
-			source: frappe.utils.debounce(async function(search_term, renderList) {
-				let method = me.mention_search_method || 'frappe.desk.search.get_names_for_mentions';
-				let values = await frappe.xcall(method, {
-					search_term
-				});
-				renderList(values, search_term);
-			}, 300),
-			renderItem(item) {
-				let value = item.value;
-				return `${value} ${item.is_group ? frappe.utils.icon('users') : ''}`;
-			}
+			source: function (searchTerm, renderList, mentionChar) {
+				let values;
+
+				if (mentionChar === "@") {
+					values = at_values;
+				}
+
+				if (searchTerm.length === 0) {
+					renderList(values, searchTerm);
+				} else {
+					const matches = [];
+					for (let i = 0; i < values.length; i++) {
+						if (~values[i].value.toLowerCase().indexOf(searchTerm.toLowerCase())) {
+							matches.push(values[i]);
+						}
+					}
+					renderList(matches, searchTerm);
+				}
+			},
 		};
 	},
 
 	get_toolbar_options() {
+		let direction = frappe.utils.is_rtl() ? 'rtl' : 'ltr';
+		let align = frappe.utils.is_rtl() ? 'right' : 'left';
 		return [
 			['bold', 'italic', 'underline'],
 			['blockquote', 'code-block'],
 			['link', 'image'],
+			// Adding Direction tool to give the user the ability to change text direction.
+			[{ 'direction': direction }],
+			[{ 'align': align }],
 			[{ 'list': 'ordered' }, { 'list': 'bullet' }],
 			['clean']
 		];
@@ -112,15 +127,5 @@ frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 
 	clear() {
 		this.quill.setText('');
-	},
-
-	disable() {
-		this.quill.disable();
-		this.button.prop('disabled', true);
-	},
-
-	enable() {
-		this.quill.enable();
-		this.button.prop('disabled', false);
 	}
 });

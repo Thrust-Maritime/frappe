@@ -1,11 +1,16 @@
 <template>
 	<div>
-		<div class="page-form">
+		<div class="frappe-list">
+			<div class="list-filters"></div>
+			<div style="margin-bottom:9px" class="list-toolbar-wrapper hide">
+				<div class="list-toolbar btn-group" style="display:inline-block; margin-right: 10px;"></div>
+			</div>
+			<div style="clear:both"></div>
 			<div class="filter-list">
 				<div class="tag-filters-area">
 					<div class="active-tag-filters">
 						<button class="btn btn-default btn-xs add-filter text-muted">
-							{{ __("Add Filter") }}
+							Add Filter
 						</button>
 					</div>
 				</div>
@@ -21,13 +26,6 @@
 					</button>
 				</div>
 			</div>
-		</div>
-		<div class="frappe-list">
-			<div class="list-filters"></div>
-			<div style="margin-bottom:9px" class="list-toolbar-wrapper hide">
-				<div class="list-toolbar btn-group" style="display:inline-block; margin-right: 10px;"></div>
-			</div>
-			<div style="clear:both"></div>
 			<div  v-if="requests.length != 0" class="result">
 				<div class="list-headers">
 					<header class="level list-row list-row-head text-muted small">
@@ -71,12 +69,12 @@
 			</div>
 			<div v-if="requests.length == 0" class="no-result text-muted flex justify-center align-center" style="">
 				<div class="msg-box no-border" v-if="status.status == 'Inactive'" >
-					<p>{{ __("Recorder is Inactive") }}</p>
-					<p><button class="btn btn-primary btn-sm btn-new-doc" @click="start()">{{ __("Start Recording") }}</button></p>
+					<p>Recorder is Inactive</p>
+					<p><button class="btn btn-primary btn-sm btn-new-doc" @click="start()">Start Recording</button></p>
 				</div>
 				<div class="msg-box no-border" v-if="status.status == 'Active'" >
-					<p>{{ __("No Requests found") }}</p>
-					<p>{{ __("Go make some noise") }}</p>
+					<p>No Requests found</p>
+					<p>Go make some noise</p>
 				</div>
 			</div>
 			<div v-if="requests.length != 0" class="list-paging-area">
@@ -108,12 +106,12 @@ export default {
 		return {
 			requests: [],
 			columns: [
-				{label: __("Path"), slug: "path"},
-				{label: __("Duration (ms)"), slug: "duration", sortable: true, number: true},
-				{label: __("Time in Queries (ms)"), slug: "time_queries", sortable: true, number: true},
-				{label: __("Queries"), slug: "queries", sortable: true, number: true},
-				{label: __("Method"), slug: "method"},
-				{label: __("Time"), slug: "time", sortable: true},
+				{label: "Path", slug: "path"},
+				{label: "Duration (ms)", slug: "duration", sortable: true, number: true},
+				{label: "Time in Queries (ms)", slug: "time_queries", sortable: true, number: true},
+				{label: "Queries", slug: "queries", sortable: true, number: true},
+				{label: "Method", slug: "method"},
+				{label: "Time", slug: "time", sortable: true},
 			],
 			query: {
 				sort: "duration",
@@ -140,7 +138,7 @@ export default {
 	mounted() {
 		this.fetch_status();
 		this.refresh();
-		this.$root.page.set_secondary_action(__("Clear"), () => {
+		this.$root.page.set_secondary_action("Clear", () => {
 			frappe.set_route("recorder");
 			this.clear();
 		});
@@ -151,11 +149,11 @@ export default {
 			const current_page = this.query.pagination.page;
 			const total_pages = this.query.pagination.total;
 			return [{
-				label: __("First"),
+				label: "First",
 				number: 1,
 				status: (current_page == 1) ? "disabled" : "",
 			},{
-				label: __("Previous"),
+				label: "Previous",
 				number: Math.max(current_page - 1, 1),
 				status: (current_page == 1) ? "disabled" : "",
 			}, {
@@ -163,11 +161,11 @@ export default {
 				number: current_page,
 				status: "btn-info",
 			}, {
-				label: __("Next"),
+				label: "Next",
 				number: Math.min(current_page + 1, total_pages),
 				status: (current_page == total_pages) ? "disabled" : "",
 			}, {
-				label: __("Last"),
+				label: "Last",
 				number: total_pages,
 				status: (current_page == total_pages) ? "disabled" : "",
 			}];
@@ -230,11 +228,11 @@ export default {
 		},
 		update_buttons: function() {
 			if(this.status.status == "Active") {
-				this.$root.page.set_primary_action(__("Stop"), () => {
+				this.$root.page.set_primary_action("Stop", () => {
 					this.stop();
 				});
 			} else {
-				this.$root.page.set_primary_action(__("Start"), () => {
+				this.$root.page.set_primary_action("Start", () => {
 					this.start();
 				});
 			}

@@ -77,11 +77,7 @@ function log_css_change({output}) {
 
 function log_error(error) {
 	log(chalk.yellow('Error in: ' +  error.id));
-	if (error.stack) {
-		log(chalk.red(error.stack));
-	} else {
-		log(chalk.red(error.toString()));
-	}
+	log(chalk.red(error.toString()));
 
 	if (error.frame) {
 		log(chalk.red(error.frame));
