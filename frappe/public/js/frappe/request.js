@@ -8,7 +8,6 @@ frappe.provide('frappe.request.error_handlers');
 frappe.request.url = '/';
 frappe.request.ajax_count = 0;
 frappe.request.waiting_for_ajax = [];
-frappe.request.logs = {};
 
 frappe.xcall = function(method, params) {
 	return new Promise((resolve, reject) => {
@@ -30,8 +29,7 @@ frappe.call = function(opts) {
 	if (!frappe.is_online()) {
 		frappe.show_alert({
 			indicator: 'orange',
-			message: __('Connection Lost'),
-			subtitle: __('You are not connected to Internet. Retry after sometime.')
+			message: __('You are not connected to Internet. Retry after sometime.')
 		}, 3);
 		opts.always && opts.always();
 		return $.ajax();
@@ -55,7 +53,7 @@ frappe.call = function(opts) {
 		args.cmd = opts.module+'.page.'+opts.page+'.'+opts.page+'.'+opts.method;
 	} else if(opts.doc) {
 		$.extend(args, {
-			cmd: "run_doc_method",
+			cmd: "runserverobj",
 			docs: frappe.get_doc(opts.doc.doctype, opts.doc.name),
 			method: opts.method,
 			args: opts.args,
@@ -90,11 +88,6 @@ frappe.call = function(opts) {
 		delete args.cmd;
 	}
 
-	// debouce if required
-	if (opts.debounce && frappe.request.is_fresh(args, opts.debounce)) {
-		return Promise.resolve();
-	}
-
 	return frappe.request.call({
 		type: opts.type || "POST",
 		args: args,
@@ -108,7 +101,6 @@ frappe.call = function(opts) {
 		error_handlers: opts.error_handlers || {},
 		// show_spinner: !opts.no_spinner,
 		async: opts.async,
-		silent: opts.silent,
 		url,
 	});
 }
@@ -129,35 +121,33 @@ frappe.request.call = function(opts) {
 			}
 		},
 		404: function(xhr) {
-			if (frappe.flags.setting_original_route) {
-				// original route is wrong, redirect to login
-				frappe.app.redirect_to_login();
-			} else {
-				frappe.msgprint({title: __("Not found"), indicator: 'red',
-					message: __('The resource you are looking for is not available')});
-			}
+			frappe.msgprint({title:__("Not found"), indicator:'red',
+				message: __('The resource you are looking for is not available')});
 		},
 		403: function(xhr) {
-			if (frappe.session.user === "Guest" && frappe.session.logged_in_user !== "Guest") {
+			if (frappe.get_cookie('sid')==='Guest') {
 				// session expired
 				frappe.app.handle_session_expired();
-			} else if (xhr.responseJSON && xhr.responseJSON._error_message) {
+			}
+			else if(xhr.responseJSON && xhr.responseJSON._error_message) {
 				frappe.msgprint({
-					title: __("Not permitted"), indicator: 'red',
+					title:__("Not permitted"), indicator:'red',
 					message: xhr.responseJSON._error_message
 				});
 
 				xhr.responseJSON._server_messages = null;
-			} else if (xhr.responseJSON && xhr.responseJSON._server_messages) {
+			}
+			else if (xhr.responseJSON && xhr.responseJSON._server_messages) {
 				var _server_messages = JSON.parse(xhr.responseJSON._server_messages);
 
 				// avoid double messages
-				if (_server_messages.indexOf(__("Not permitted")) !== -1) {
+				if (_server_messages.indexOf(__("Not permitted"))!==-1) {
 					return;
 				}
-			} else {
+			}
+			else {
 				frappe.msgprint({
-					title: __("Not permitted"), indicator: 'red',
+					title:__("Not permitted"), indicator:'red',
 					message: __('You do not have enough permissions to access this resource. Please contact your manager to get access.')});
 			}
 
@@ -221,7 +211,7 @@ frappe.request.call = function(opts) {
 	};
 
 	if (opts.args && opts.args.doctype) {
-		ajax_args.headers["X-Frappe-Doctype"] = encodeURIComponent(opts.args.doctype);
+		ajax_args.headers["X-Frappe-Doctype"] = opts.args.doctype;
 	}
 
 	frappe.last_request = ajax_args.data;
@@ -247,7 +237,7 @@ frappe.request.call = function(opts) {
 					status_code_handler(data, xhr);
 				}
 			} catch(e) {
-				console.log("Unable to handle success response", data); // eslint-disable-line
+				console.log("Unable to handle success response"); // eslint-disable-line
 				console.trace(e); // eslint-disable-line
 			}
 
@@ -285,27 +275,6 @@ frappe.request.call = function(opts) {
 			}
 		});
 }
-
-frappe.request.is_fresh = function(args, threshold) {
-	// return true if a request with similar args has been sent recently
-	if (!frappe.request.logs[args.cmd]) {
-		frappe.request.logs[args.cmd] = [];
-	}
-
-	for (let past_request of frappe.request.logs[args.cmd]) {
-		// check if request has same args and was made recently
-		if ((new Date() - past_request.timestamp) < threshold
-			&& frappe.utils.deep_equal(args, past_request.args)) {
-			// eslint-disable-next-line no-console
-			console.log('throttled');
-			return true;
-		}
-	}
-
-	// log the request
-	frappe.request.logs[args.cmd].push({args: args, timestamp: new Date()});
-	return false;
-};
 
 // call execute serverside request
 frappe.request.prepare = function(opts) {
@@ -351,8 +320,7 @@ frappe.request.cleanup = function(opts, r) {
 	if(r) {
 
 		// session expired? - Guest has no business here!
-		if (r.session_expired ||
-			(frappe.session.user === 'Guest' && frappe.session.logged_in_user !== "Guest")) {
+		if(r.session_expired || frappe.get_cookie("sid")==="Guest") {
 			frappe.app.handle_session_expired();
 			return;
 		}
@@ -426,11 +394,11 @@ frappe.after_ajax = function(fn) {
 	return new Promise(resolve => {
 		if(frappe.request.ajax_count) {
 			frappe.request.waiting_for_ajax.push(() => {
-				if(fn) return resolve(fn());
+				if(fn) fn();
 				resolve();
 			});
 		} else {
-			if(fn) return resolve(fn());
+			if(fn) fn();
 			resolve();
 		}
 	});
@@ -492,7 +460,7 @@ frappe.request.report_error = function(xhr, request_opts) {
 
 		if (!frappe.error_dialog) {
 			frappe.error_dialog = new frappe.ui.Dialog({
-				title: __('Server Error'),
+				title: 'Server Error',
 				primary_action_label: __('Report'),
 				primary_action: () => {
 					if (error_report_email) {

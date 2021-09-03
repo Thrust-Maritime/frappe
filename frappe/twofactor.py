@@ -73,11 +73,11 @@ def cache_2fa_data(user, token, otp_secret, tmp_id):
 
 	# set increased expiry time for SMS and Email
 	if verification_method in ['SMS', 'Email']:
-		expiry_time = frappe.flags.token_expiry or 300
+		expiry_time = 300
 		frappe.cache().set(tmp_id + '_token', token)
 		frappe.cache().expire(tmp_id + '_token', expiry_time)
 	else:
-		expiry_time = frappe.flags.otp_expiry or 180
+		expiry_time = 180
 	for k, v in iteritems({'_usr': user, '_pwd': pwd, '_otp_secret': otp_secret}):
 		frappe.cache().set("{0}{1}".format(tmp_id, k), v)
 		frappe.cache().expire("{0}{1}".format(tmp_id, k), expiry_time)
@@ -118,7 +118,6 @@ def get_verification_method():
 
 def confirm_otp_token(login_manager, otp=None, tmp_id=None):
 	'''Confirm otp matches.'''
-	from frappe.auth import get_login_attempt_tracker
 	if not otp:
 		otp = frappe.form_dict.get('otp')
 	if not otp:
@@ -131,17 +130,12 @@ def confirm_otp_token(login_manager, otp=None, tmp_id=None):
 	otp_secret = frappe.cache().get(tmp_id + '_otp_secret')
 	if not otp_secret:
 		raise ExpiredLoginException(_('Login session expired, refresh page to retry'))
-
-	tracker = get_login_attempt_tracker(login_manager.user)
-
 	hotp = pyotp.HOTP(otp_secret)
 	if hotp_token:
 		if hotp.verify(otp, int(hotp_token)):
 			frappe.cache().delete(tmp_id + '_token')
-			tracker.add_success_attempt()
 			return True
 		else:
-			tracker.add_failure_attempt()
 			login_manager.fail(_('Incorrect Verification code'), login_manager.user)
 
 	totp = pyotp.TOTP(otp_secret)
@@ -150,16 +144,15 @@ def confirm_otp_token(login_manager, otp=None, tmp_id=None):
 		if not frappe.db.get_default(login_manager.user + '_otplogin'):
 			frappe.db.set_default(login_manager.user + '_otplogin', 1)
 			delete_qrimage(login_manager.user)
-		tracker.add_success_attempt()
 		return True
 	else:
-		tracker.add_failure_attempt()
 		login_manager.fail(_('Incorrect Verification code'), login_manager.user)
 
 
 def get_verification_obj(user, token, otp_secret):
 	otp_issuer = frappe.db.get_value('System Settings', 'System Settings', 'otp_issuer_name')
 	verification_method = get_verification_method()
+
 	verification_obj = None
 	if verification_method == 'SMS':
 		verification_obj = process_2fa_for_sms(user, token, otp_secret)
@@ -206,6 +199,7 @@ def process_2fa_for_email(user, token, otp_secret, otp_issuer, method='Email'):
 	message = None
 	status = True
 	prompt = ''
+
 	if method == 'OTP App' and not frappe.db.get_default(user + '_otplogin'):
 		'''Sending one-time email for OTP App'''
 		totp_uri = pyotp.TOTP(otp_secret).provisioning_uri(user, issuer_name=otp_issuer)
@@ -233,11 +227,7 @@ def get_email_subject_for_2fa(kwargs_dict):
 
 def get_email_body_for_2fa(kwargs_dict):
 	'''Get email body for 2fa.'''
-	body_template = """
-		Enter this code to complete your login:
-		<br><br>
-		<b style="font-size: 18px;">{{ otp }}</b>
-	"""
+	body_template = 'Enter this code to complete your login:<br><br> <b>{{otp}}</b>'
 	body = frappe.render_template(body_template, kwargs_dict)
 	return body
 
@@ -258,7 +248,9 @@ def get_link_for_qrcode(user, totp_uri):
 	key = frappe.generate_hash(length=20)
 	key_user = "{}_user".format(key)
 	key_uri = "{}_uri".format(key)
-	lifespan = int(frappe.db.get_value('System Settings', 'System Settings', 'lifespan_qrcode_image')) or 240
+	lifespan = int(frappe.db.get_value('System Settings', 'System Settings', 'lifespan_qrcode_image'))
+	if lifespan<=0:
+		lifespan = 240
 	frappe.cache().set_value(key_uri, totp_uri, expires_in_sec=lifespan)
 	frappe.cache().set_value(key_user, user, expires_in_sec=lifespan)
 	return get_url('/qrcode?k={}'.format(key))
@@ -395,7 +387,7 @@ def should_remove_barcode_image(barcode):
 	'''Check if it's time to delete barcode image from server. '''
 	if isinstance(barcode, string_types):
 		barcode = frappe.get_doc('File', barcode)
-	lifespan = frappe.db.get_value('System Settings', 'System Settings', 'lifespan_qrcode_image') or 240
+	lifespan = frappe.db.get_value('System Settings', 'System Settings', 'lifespan_qrcode_image')
 	if time_diff_in_seconds(get_datetime(), barcode.creation) > int(lifespan):
 		return True
 	return False

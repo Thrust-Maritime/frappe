@@ -242,6 +242,8 @@ frappe.views.InteractionComposer = class InteractionComposer {
 						me.add_attachments(r.message, selected_attachments);
 					}
 					if (cur_frm) {
+						// clear input
+						cur_frm.timeline.input && cur_frm.timeline.input.val("");
 						cur_frm.reload_doc();
 					}
 				} else {
@@ -259,7 +261,7 @@ frappe.views.InteractionComposer = class InteractionComposer {
 				args: {
 					doctype: doc.doctype,
 					name: doc.name,
-					assign_to: JSON.stringify([assignee]),
+					assign_to: assignee,
 				},
 				callback:function(r) {
 					if(!r.exc) {

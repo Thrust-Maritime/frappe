@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.desk.doctype.notification_settings.notification_settings import (is_notifications_enabled, is_email_notifications_enabled_for_type, set_seen_value)
+from frappe.desk.doctype.notification_settings.notification_settings import (is_notifications_enabled, is_email_notifications_enabled_for_type)
 
 class NotificationLog(Document):
 	def after_insert(self):
@@ -48,7 +48,6 @@ def enqueue_create_notification(users, doc):
 
 	if isinstance(users, frappe.string_types):
 		users = [user.strip() for user in users.split(',') if user.strip()]
-	users = list(set(users))
 
 	frappe.enqueue(
 		'frappe.desk.doctype.notification_log.notification_log.make_notification_logs',
@@ -59,9 +58,8 @@ def enqueue_create_notification(users, doc):
 
 def make_notification_logs(doc, users):
 	from frappe.social.doctype.energy_point_settings.energy_point_settings import is_energy_point_enabled
-
 	for user in users:
-		if frappe.db.exists('User', {"email": user, "enabled": 1}):
+		if frappe.db.exists('User', user):
 			if is_notifications_enabled(user):
 				if doc.type == 'Energy Point' and not is_energy_point_enabled():
 					return
@@ -69,7 +67,8 @@ def make_notification_logs(doc, users):
 				_doc = frappe.new_doc('Notification Log')
 				_doc.update(doc)
 				_doc.for_user = user
-				if _doc.for_user != _doc.from_user or doc.type == 'Energy Point' or doc.type == 'Alert':
+				_doc.subject = _doc.subject.replace('<div>', '').replace('</div>', '')
+				if _doc.for_user != _doc.from_user or doc.type == 'Energy Point':
 					_doc.insert(ignore_permissions=True)
 
 def send_notification_email(doc):
@@ -109,6 +108,7 @@ def get_email_header(doc):
 	}
 
 	return header_map[doc.type or 'Default']
+
 
 @frappe.whitelist()
 def mark_all_as_read():

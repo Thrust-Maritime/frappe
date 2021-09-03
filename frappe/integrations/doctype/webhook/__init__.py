@@ -21,9 +21,7 @@ def run_webhooks(doc, method):
 		if webhooks is None:
 			# query webhooks
 			webhooks_list = frappe.get_all('Webhook',
-						fields=["name", "`condition`", "webhook_docevent", "webhook_doctype"], 
-						filters={"enabled": True}
-					)
+				fields=["name", "`condition`", "webhook_docevent", "webhook_doctype"])
 
 			# make webhooks map for cache
 			webhooks = {}

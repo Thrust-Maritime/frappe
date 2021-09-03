@@ -10,12 +10,12 @@ frappe.db = {
 		if (!args.fields) {
 			args.fields = ['name'];
 		}
-		if (!('limit' in args)) {
+		if (!args.limit) {
 			args.limit = 20;
 		}
 		return new Promise ((resolve) => {
 			frappe.call({
-				method: 'frappe.desk.reportview.get_list',
+				method: 'frappe.model.db_query.get_list',
 				args: args,
 				type: 'GET',
 				callback: function(r) {
@@ -92,19 +92,25 @@ frappe.db = {
 	},
 	count: function(doctype, args={}) {
 		let filters = args.filters || {};
-
-		// has a filter with childtable?
-		const distinct = Array.isArray(filters) && filters.some(filter => {
+		const with_child_table_filter = Array.isArray(filters) && filters.some(filter => {
 			return filter[0] !== doctype;
 		});
 
-		const fields = [];
+		const fields = [
+			// cannot break this line as it adds extra \n's and \t's which breaks the query
+			`count(${with_child_table_filter ? 'distinct': ''} ${frappe.model.get_full_column_name('name', doctype)}) AS total_count`
+		];
 
-		return frappe.xcall('frappe.desk.reportview.get_count', {
-			doctype,
-			filters,
-			fields,
-			distinct,
+		return frappe.call({
+			type: 'GET',
+			method: 'frappe.desk.reportview.get',
+			args: {
+				doctype,
+				filters,
+				fields,
+			}
+		}).then(r => {
+			return r.message.values[0][0];
 		});
 	},
 	get_link_options(doctype, txt = '', filters={}) {

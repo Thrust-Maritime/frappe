@@ -1,5 +1,4 @@
 {
- "actions": [],
  "allow_events_in_timeline": 1,
  "allow_import": 1,
  "allow_rename": 1,
@@ -34,8 +33,8 @@
   "email_ids",
   "phone_nos",
   "contact_details",
-  "links",
   "is_primary_contact",
+  "links",
   "more_info",
   "department",
   "unsubscribed"
@@ -116,7 +115,6 @@
    "label": "Phone",
    "oldfieldname": "contact_no",
    "oldfieldtype": "Data",
-   "options": "Phone",
    "read_only": 1
   },
   {
@@ -202,7 +200,6 @@
    "fieldname": "mobile_no",
    "fieldtype": "Data",
    "label": "Mobile No",
-   "options": "Phone",
    "read_only": 1
   },
   {
@@ -248,9 +245,7 @@
  "icon": "fa fa-user",
  "idx": 1,
  "image_field": "image",
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2020-08-27 14:12:09.906719",
+ "modified": "2019-10-10 22:04:41.070479",
  "modified_by": "Administrator",
  "module": "Contacts",
  "name": "Contact",

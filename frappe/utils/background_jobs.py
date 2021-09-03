@@ -15,6 +15,7 @@ import frappe.monitor
 
 default_timeout = 300
 queue_timeout = {
+	'background': 2500,
 	'long': 1500,
 	'default': 300,
 	'short': 300
@@ -80,6 +81,8 @@ def run_doc_method(doctype, name, doc_method, **kwargs):
 
 def execute_job(site, method, event, job_name, kwargs, user=None, is_async=True, retry=0):
 	'''Executes job in a worker, performs commit/rollback and logs if there is any error'''
+	from frappe.utils.scheduler import log
+
 	if is_async:
 		frappe.connect(site)
 		if os.environ.get('CI'):
@@ -115,14 +118,12 @@ def execute_job(site, method, event, job_name, kwargs, user=None, is_async=True,
 				is_async=is_async, retry=retry+1)
 
 		else:
-			frappe.log_error(title=method_name)
+			log(method_name, message=repr(locals()))
 			raise
 
 	except:
 		frappe.db.rollback()
-		frappe.log_error(title=method_name)
-		frappe.db.commit()
-		print(frappe.get_traceback())
+		log(method_name, message=repr(locals()))
 		raise
 
 	else:
@@ -166,23 +167,19 @@ def get_worker_name(queue):
 def get_jobs(site=None, queue=None, key='method'):
 	'''Gets jobs per queue or per site or both'''
 	jobs_per_site = defaultdict(list)
-
-	def add_to_dict(job):
-		if key in job.kwargs:
-			jobs_per_site[job.kwargs['site']].append(job.kwargs[key])
-
-		elif key in job.kwargs.get('kwargs', {}):
-			# optional keyword arguments are stored in 'kwargs' of 'kwargs'
-			jobs_per_site[job.kwargs['site']].append(job.kwargs['kwargs'][key])
-
 	for queue in get_queue_list(queue):
 		q = get_queue(queue)
-		jobs = q.jobs + get_running_jobs_in_queue(q)
-		for job in jobs:
+
+		for job in q.jobs:
 			if job.kwargs.get('site'):
-				# if job belongs to current site, or if all jobs are requested
-				if (job.kwargs['site'] == site) or site is None:
-					add_to_dict(job)
+				if site is None:
+					# get jobs for all sites
+					jobs_per_site[job.kwargs['site']].append(job.kwargs[key])
+
+				elif job.kwargs['site'] == site:
+					# get jobs only for given site
+					jobs_per_site[site].append(job.kwargs[key])
+
 			else:
 				print('No site found in job', job.__dict__)
 
@@ -203,24 +200,16 @@ def get_queue_list(queue_list=None):
 	else:
 		return default_queue_list
 
-def get_workers(queue):
-	'''Returns a list of Worker objects tied to a queue object'''
-	return Worker.all(queue=queue)
-
-def get_running_jobs_in_queue(queue):
-	'''Returns a list of Jobs objects that are tied to a queue object and are currently running'''
-	jobs = []
-	workers = get_workers(queue)
-	for worker in workers:
-		current_job = worker.get_current_job()
-		if current_job:
-			jobs.append(current_job)
-	return jobs
-
 def get_queue(queue, is_async=True):
 	'''Returns a Queue object tied to a redis connection'''
 	validate_queue(queue)
-	return Queue(queue, connection=get_redis_conn(), is_async=is_async)
+
+	kwargs = {
+		'connection': get_redis_conn(),
+		'async': is_async
+	}
+
+	return Queue(queue, **kwargs)
 
 def validate_queue(queue, default_queue_list=None):
 	if not default_queue_list:

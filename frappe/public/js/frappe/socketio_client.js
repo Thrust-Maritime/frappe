@@ -88,15 +88,7 @@ frappe.socketio = {
 			frappe.socketio.doc_close(frm.doctype, frm.docname);
 		});
 
-		$(document).on('form-typing', function(e, frm) {
-			frappe.socketio.form_typing(frm.doctype, frm.docname);
-		});
-
-		$(document).on('form-stopped-typing', function(e, frm) {
-			frappe.socketio.form_stopped_typing(frm.doctype, frm.docname);
-		});
-
-		window.addEventListener('beforeunload', () => {
+		window.onbeforeunload = function() {
 			if (!cur_frm || cur_frm.is_new()) {
 				return;
 			}
@@ -105,7 +97,7 @@ frappe.socketio = {
 			if (cur_frm.doc) {
 				frappe.socketio.doc_close(cur_frm.doctype, cur_frm.docname);
 			}
-		});
+		}
 	},
 	get_host: function(port = 3000) {
 		var host = window.location.origin;
@@ -159,30 +151,17 @@ frappe.socketio = {
 	},
 	doc_open: function(doctype, docname) {
 		// notify that the user has opened this doc, if not already notified
-		if (!frappe.socketio.last_doc
-			|| (frappe.socketio.last_doc[0] != doctype || frappe.socketio.last_doc[1] != docname)) {
+		if(!frappe.socketio.last_doc
+			|| (frappe.socketio.last_doc[0]!=doctype && frappe.socketio.last_doc[1]!=docname)) {
 			frappe.socketio.socket.emit('doc_open', doctype, docname);
-
-			frappe.socketio.last_doc &&
-				frappe.socketio.doc_close(frappe.socketio.last_doc[0], frappe.socketio.last_doc[1]);
 		}
 		frappe.socketio.last_doc = [doctype, docname];
 	},
 	doc_close: function(doctype, docname) {
 		// notify that the user has closed this doc
 		frappe.socketio.socket.emit('doc_close', doctype, docname);
+	},
 
-		// if the doc is closed the user has also stopped typing
-		frappe.socketio.socket.emit('doc_typing_stopped', doctype, docname);
-	},
-	form_typing: function(doctype, docname) {
-		// notifiy that the user is typing on the doc
-		frappe.socketio.socket.emit('doc_typing', doctype, docname);
-	},
-	form_stopped_typing: function(doctype, docname) {
-		// notifiy that the user has stopped typing
-		frappe.socketio.socket.emit('doc_typing_stopped', doctype, docname);
-	},
 	setup_listeners: function() {
 		frappe.socketio.socket.on('task_status_change', function(data) {
 			frappe.socketio.process_response(data, data.status.toLowerCase());

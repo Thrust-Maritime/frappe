@@ -12,11 +12,9 @@ class MentionBlot extends Embed {
     denotationChar.innerHTML = data.denotationChar;
     node.appendChild(denotationChar);
     node.innerHTML += data.value;
-    node.innerHTML += `${data.isGroup === 'true' ? frappe.utils.icon('users') : ''}`;
     node.dataset.id = data.id;
     node.dataset.value = data.value;
     node.dataset.denotationChar = data.denotationChar;
-	node.dataset.isGroup = data.isGroup;
     if (data.link) {
       node.dataset.link = data.link;
     }
@@ -29,7 +27,6 @@ class MentionBlot extends Embed {
       value: domNode.dataset.value,
       link: domNode.dataset.link || null,
       denotationChar: domNode.dataset.denotationChar,
-      isGroup: domNode.dataset.isGroup,
     };
   }
 }

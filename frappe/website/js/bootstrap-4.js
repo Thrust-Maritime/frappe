@@ -18,7 +18,7 @@ $('.dropdown-menu a.dropdown-toggle').on('click', function (e) {
 	return false;
 });
 
-frappe.get_modal = function (title, content) {
+frappe.get_modal = function(title, content) {
 	return $(
 		`<div class="modal" tabindex="-1" role="dialog">
 			<div class="modal-dialog" role="document">
@@ -26,17 +26,13 @@ frappe.get_modal = function (title, content) {
 					<div class="modal-header">
 						<h5 class="modal-title">${title}</h5>
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						${frappe.utils.icon('close-alt', 'sm', 'close-alt')}
+							<span aria-hidden="true">&times;</span>
 						</button>
 					</div>
-					<div class="modal-body">
+					<div class="modal-body py-4">
 						${content}
 					</div>
 					<div class="modal-footer hidden">
-						<button type="button" class="btn btn-default btn-sm btn-modal-close" data-dismiss="modal">
-							<i class="octicon octicon-x visible-xs" style="padding: 1px 0px;"></i>
-							<span class="hidden-xs">${__("Close")}</span>
-						</button>
 						<button type="button" class="btn btn-sm btn-primary hidden"></button>
 					</div>
 				</div>

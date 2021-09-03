@@ -84,12 +84,12 @@ frappe.ui.form.ControlMultiSelectPills = frappe.ui.form.ControlAutocomplete.exte
 
 	get_pill_html(value) {
 		const encoded_value = encodeURIComponent(value);
-		return `
-			<button class="data-pill btn tb-selected-value" data-value="${encoded_value}">
-				<span class="btn-link-to-form">${__(value)}</span>
-				<span class="btn-remove">${frappe.utils.icon('close')}</span>
+		return `<div class="btn-group tb-selected-value" data-value="${encoded_value}">
+			<button class="btn btn-default btn-xs btn-link-to-form">${__(value)}</button>
+			<button class="btn btn-default btn-xs btn-remove">
+				<i class="fa fa-remove text-muted"></i>
 			</button>
-		`;
+		</div>`;
 	},
 
 	get_awesomplete_settings() {
@@ -129,8 +129,7 @@ frappe.ui.form.ControlMultiSelectPills = frappe.ui.form.ControlAutocomplete.exte
 	get_data() {
 		let data;
 		if(this.df.get_data) {
-			let txt = this.$input.val();
-			data = this.df.get_data(txt);
+			data = this.df.get_data();
 			if (data && data.then) {
 				data.then((r) => {
 					this.set_data(r);

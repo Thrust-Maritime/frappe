@@ -12,7 +12,6 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import (format_time, get_link_to_form, get_url_to_report,
 	global_date_format, now, now_datetime, validate_email_address, today, add_to_date)
-from frappe.model.naming import append_number_if_name_exists
 from frappe.utils.csvutils import to_csv
 from frappe.utils.xlsxutils import make_xlsx
 
@@ -22,8 +21,6 @@ max_reports_per_user = frappe.local.conf.max_reports_per_user or 3
 class AutoEmailReport(Document):
 	def autoname(self):
 		self.name = _(self.report)
-		if frappe.db.exists('Auto Email Report', self.name):
-			self.name = append_number_if_name_exists('Auto Email Report', self.name)
 
 	def validate(self):
 		self.validate_report_count()
@@ -54,8 +51,8 @@ class AutoEmailReport(Document):
 		""" check if user has select correct report format """
 		valid_report_formats = ["HTML", "XLSX", "CSV"]
 		if self.format not in valid_report_formats:
-			frappe.throw(_("{0} is not a valid report format. Report format should one of the following {1}")
-				.format(frappe.bold(self.format), frappe.bold(", ".join(valid_report_formats))))
+			frappe.throw(_("%s is not a valid report format. Report format should \
+				one of the following %s"%(frappe.bold(self.format), frappe.bold(", ".join(valid_report_formats)))))
 
 	def validate_mandatory_fields(self):
 		# Check if all Mandatory Report Filters are filled by the User
@@ -245,7 +242,6 @@ def send_monthly():
 
 def make_links(columns, data):
 	for row in data:
-		doc_name = row.get('name')
 		for col in columns:
 			if col.fieldtype == "Link" and col.options != "Currency":
 				if col.options and row.get(col.fieldname):
@@ -253,10 +249,9 @@ def make_links(columns, data):
 			elif col.fieldtype == "Dynamic Link":
 				if col.options and row.get(col.fieldname) and row.get(col.options):
 					row[col.fieldname] = get_link_to_form(row[col.options], row[col.fieldname])
-			elif col.fieldtype == "Currency" and row.get(col.fieldname):
-				doc = frappe.get_doc(col.parent, doc_name) if doc_name else None
-				# Pass the Document to get the currency based on docfield option
-				row[col.fieldname] = frappe.format_value(row[col.fieldname], col, doc=doc)
+			elif col.fieldtype == "Currency":
+				row[col.fieldname] = frappe.format_value(row[col.fieldname], col)
+
 	return columns, data
 
 def update_field_types(columns):

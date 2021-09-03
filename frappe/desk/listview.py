@@ -4,19 +4,20 @@ from __future__ import unicode_literals
 
 import frappe
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_list_settings(doctype):
 	try:
-		return frappe.get_cached_doc("List View Settings", doctype)
+		return frappe.get_cached_doc("List View Setting", doctype)
 	except frappe.DoesNotExistError:
 		frappe.clear_messages()
+
 
 @frappe.whitelist()
 def set_list_settings(doctype, values):
 	try:
-		doc = frappe.get_doc("List View Settings", doctype)
+		doc = frappe.get_doc("List View Setting", doctype)
 	except frappe.DoesNotExistError:
-		doc = frappe.new_doc("List View Settings")
+		doc = frappe.new_doc("List View Setting")
 		doc.name = doctype
 		frappe.clear_messages()
 	doc.update(frappe.parse_json(values))

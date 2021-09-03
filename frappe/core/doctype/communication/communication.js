@@ -99,7 +99,8 @@ frappe.ui.form.on("Communication", {
 		}
 	},
 
-	show_relink_dialog: function(frm) {
+	show_relink_dialog: function(frm){
+		var lib = "frappe.email";
 		var d = new frappe.ui.Dialog ({
 			title: __("Relink Communication"),
 			fields: [{
@@ -137,10 +138,8 @@ frappe.ui.form.on("Communication", {
 							}
 						});
 					},
-					function() {
-						frappe.show_alert({
-							message: __('Document not Relinked'), 'indicator': 'info'
-						});
+					function () {
+						frappe.show_alert('Document not Relinked')
 					}
 				);
 			}
@@ -169,17 +168,8 @@ frappe.ui.form.on("Communication", {
 			primary_action_label: __("Move"),
 			primary_action(values) {
 				d.hide();
-				frappe.call({
-					method: "frappe.email.inbox.move_email",
-					args: {
-						communication: frm.doc.name,
-						email_account: values.email_account
-					},
-					freeze: true,
-					callback: function() {
-						window.history.back();
-					}
-				});
+				frm.set_value('email_account', values.email_account);
+				frm.save(null, () => frappe.set_route("List", "Communication"));
 			}
 		});
 		d.show();
@@ -205,18 +195,8 @@ frappe.ui.form.on("Communication", {
 
 	mark_as_closed_open: function(frm) {
 		var status = frm.doc.status == "Open" ? "Closed" : "Open";
-
-		return frappe.call({
-			method: "frappe.email.inbox.mark_as_closed_open",
-			args: {
-				communication: frm.doc.name,
-				status: status
-			},
-			freeze: true,
-			callback: function() {
-				frm.reload_doc();
-			}
-		});
+		frm.set_value("status", status);
+		frm.save();
 	},
 
 	reply: function(frm) {

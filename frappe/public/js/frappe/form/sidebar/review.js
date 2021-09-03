@@ -4,12 +4,12 @@
 
 
 frappe.ui.form.Review = class Review {
-	constructor({ parent, frm }) {
+	constructor({parent, frm}) {
 		this.parent = parent;
 		this.frm = frm;
 		this.points = frappe.boot.points;
-		this.reviews = this.parent.find('.reviews');
-		this.setup_add_review_button();
+		this.make_review_container();
+		this.add_review_button();
 		this.update_reviewers();
 	}
 	update_points() {
@@ -20,8 +20,18 @@ frappe.ui.form.Review = class Review {
 			this.points = data;
 		});
 	}
-	setup_add_review_button() {
-		const review_button = this.reviews.find('.add-review-btn');
+	make_review_container() {
+		this.review_list_wrapper = this.parent.find('.review-list');
+	}
+	add_review_button() {
+
+		this.review_list_wrapper.append(`
+			<span class="avatar avatar-small avatar-empty btn-add-review" title="${__('Add Review')}">
+				<i class="octicon octicon-plus text-muted"></i>
+			</span>
+		`);
+
+		const review_button = this.review_list_wrapper.find('.btn-add-review');
 
 		if (!this.points.review_points) {
 			review_button.click(false);
@@ -49,7 +59,7 @@ frappe.ui.form.Review = class Review {
 		const docinfo = this.frm.get_docinfo();
 
 		involved_users = involved_users.concat(
-			docinfo.communications.map(d => d.sender && d.delivery_status === 'sent'),
+			docinfo.communications.map(d => d.sender && d.delivery_status==='sent'),
 			docinfo.comments.map(d => d.owner),
 			docinfo.versions.map(d => d.owner),
 			docinfo.assignments.map(d => d.owner)
@@ -62,6 +72,7 @@ frappe.ui.form.Review = class Review {
 	}
 	show_review_dialog() {
 		const user_options = this.get_involved_users();
+		const doc_owner = this.frm.doc.owner;
 		const review_dialog = new frappe.ui.Dialog({
 			'title': __('Add Review'),
 			'fields': [{
@@ -89,7 +100,7 @@ frappe.ui.form.Review = class Review {
 				fieldtype: 'Int',
 				label: __('Points'),
 				reqd: 1,
-				description: __("Currently you have {0} review points", [this.points.review_points])
+				description: __(`Currently you have ${this.points.review_points} review points`)
 			}, {
 				fieldtype: 'Small Text',
 				fieldname: 'reason',
@@ -129,17 +140,15 @@ frappe.ui.form.Review = class Review {
 		const review_logs = this.frm.get_docinfo().energy_point_logs
 			.filter(log => ['Appreciation', 'Criticism'].includes(log.type));
 
-		this.reviews.find('.review').remove();
+		this.review_list_wrapper.find('.review-pill').remove();
 		review_logs.forEach(log => {
 			let review_pill = $(`
-				<div class="review ${log.points < 0 ? 'criticism' : 'appreciation'} cursor-pointer">
+				<span class="review-pill">
 					${frappe.avatar(log.owner)}
-					<span class="review-points">
-						${log.points > 0 ? '+': ''}${log.points}
-					</span>
-				</div>
+					${frappe.energy_points.get_points(log.points)}
+				</span>
 			`);
-			this.reviews.prepend(review_pill);
+			this.review_list_wrapper.prepend(review_pill);
 			this.setup_detail_popover(review_pill, log);
 		});
 	}
@@ -150,46 +159,36 @@ frappe.ui.form.Review = class Review {
 		let message_parts = [Math.abs(data.points), fullname, timestamp];
 		if (data.type === 'Appreciation') {
 			if (data.points == 1) {
-				subject = __('{0} appreciation point for {1}', message_parts);
+				subject = __('{0} appreciation point for {1} {2}', message_parts);
 			} else {
-				subject = __('{0} appreciation points for {1}', message_parts);
+				subject = __('{0} appreciation points for {1} {2}', message_parts);
 			}
 		} else {
 			if (data.points == -1) {
-				subject = __('{0} criticism point for {1}', message_parts);
+				subject = __('{0} criticism point for {1} {2}', message_parts);
 			} else {
-				subject = __('{0} criticism points for {1}', message_parts);
+				subject = __('{0} criticism points for {1} {2}', message_parts);
 			}
 		}
-
 		el.popover({
 			animation: true,
 			trigger: 'hover',
 			delay: 500,
 			placement: 'top',
-			template: `
-				<div class="review-popover popover" role="tooltip">
+			template:`
+				<div class="review-popover popover">
 					<div class="arrow"></div>
-					<h3 class="popover-header"></h3>
-					<div class="popover-body">
-					</div>
-				</div>'
+					<div class="popover-content"></div>
+				</div>
 			`,
 			content: () => {
 				return `
 					<div class="text-medium">
+						<div class="subject">
+							${subject}
+						</div>
 						<div class="body">
 							<div>${data.reason}</div>
-						</div>
-
-						<div class="subject">
-							${frappe.utils.icon('review')}
-							${subject}
-
-							<p class="mt-1">
-								<!-- ${frappe.avatar("shivam@example.com", "avatar-xs")} -->
-								<span>${frappe.user.full_name(data.owner)}</span> - ${timestamp}
-							</p>
 						</div>
 					</div>
 				`;
@@ -197,8 +196,6 @@ frappe.ui.form.Review = class Review {
 			html: true,
 			container: 'body'
 		});
-
-
 		return el;
 	}
 };

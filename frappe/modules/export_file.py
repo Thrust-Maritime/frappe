@@ -12,17 +12,16 @@ def export_doc(doc):
 
 def export_to_files(record_list=None, record_module=None, verbose=0, create_init=None):
 	"""
-		Export record_list to files. record_list is a list of lists ([doctype, docname, folder name],)  ,
+		Export record_list to files. record_list is a list of lists ([doctype],[docname] )  ,
 	"""
 	if frappe.flags.in_import:
 		return
 
 	if record_list:
 		for record in record_list:
-			folder_name = record[2] if len(record) == 3 else None
-			write_document_file(frappe.get_doc(record[0], record[1]), record_module, create_init=create_init, folder_name=folder_name)
+			write_document_file(frappe.get_doc(record[0], record[1]), record_module, create_init=create_init)
 
-def write_document_file(doc, record_module=None, create_init=True, folder_name=None):
+def write_document_file(doc, record_module=None, create_init=True):
 	newdoc = doc.as_dict(no_nulls=True)
 	doc.run_method("before_export", newdoc)
 
@@ -36,10 +35,7 @@ def write_document_file(doc, record_module=None, create_init=True, folder_name=N
 	module = record_module or get_module_name(doc)
 
 	# create folder
-	if folder_name:
-		folder = create_folder(module, folder_name, doc.name, create_init)
-	else:
-		folder = create_folder(module, doc.doctype, doc.name, create_init)
+	folder = create_folder(module, doc.doctype, doc.name, create_init)
 
 	# write the data file
 	fname = scrub(doc.name)

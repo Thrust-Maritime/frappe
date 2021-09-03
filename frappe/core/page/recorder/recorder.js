@@ -1,9 +1,8 @@
 frappe.pages['recorder'].on_page_load = function(wrapper) {
 	frappe.ui.make_app_page({
 		parent: wrapper,
-		title: __('Recorder'),
-		single_column: true,
-		card_layout: true
+		title: 'Recorder',
+		single_column: true
 	});
 
 	frappe.recorder = new Recorder(wrapper);
@@ -22,7 +21,6 @@ class Recorder {
 	}
 
 	show() {
-		if (!this.view || this.view.$route.name == "recorder-detail") return;
-		this.view.$router.replace({name: "recorder-detail"});
+
 	}
 }

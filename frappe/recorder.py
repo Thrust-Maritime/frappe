@@ -53,18 +53,16 @@ def sql(*args, **kwargs):
 
 
 def get_current_stack_frames():
-	try:
-		current = inspect.currentframe()
-		frames = inspect.getouterframes(current, context=10)
-		for frame, filename, lineno, function, context, index in list(reversed(frames))[:-2]:
-			if "/apps/" in filename:
-				yield {
-					"filename": re.sub(".*/apps/", "", filename),
-					"lineno": lineno,
-					"function": function,
-				}
-	except Exception:
-		pass
+	current = inspect.currentframe()
+	frames = inspect.getouterframes(current, context=10)
+	for frame, filename, lineno, function, context, index in list(reversed(frames))[:-2]:
+		if "/apps/" in filename:
+			yield {
+				"filename": re.sub(".*/apps/", "", filename),
+				"lineno": lineno,
+				"function": function,
+			}
+
 
 def record():
 	if __debug__:

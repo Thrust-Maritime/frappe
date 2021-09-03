@@ -3,7 +3,5 @@
 from __future__ import unicode_literals
 
 import frappe
-import unittest
 
-class TestBlogCategory(unittest.TestCase):
-	pass
+test_records = frappe.get_test_records('Blog Category')

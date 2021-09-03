@@ -6,7 +6,8 @@ from __future__ import unicode_literals
 import frappe
 import glob
 import os
-from frappe.utils import split_emails, cint
+from frappe.utils import split_emails, now_datetime, cint
+
 
 def send_email(success, service_name, doctype, email_field, error_status=None):
 	recipients = get_recipients(doctype, email_field)
@@ -27,6 +28,7 @@ def send_email(success, service_name, doctype, email_field, error_status=None):
 <p>Hi there, this is just to inform you that your backup was successfully uploaded to your {0} bucket. So relax!</p>""".format(
 			service_name
 		)
+
 	else:
 		subject = "[Warning] Backup Upload Failed"
 		message = """
@@ -105,12 +107,19 @@ def validate_file_size():
 	if file_size > 1:
 		frappe.flags.create_new_backup = False
 
-def generate_files_backup():
+def backup_files():
+	"""Only zips and places public and private files in backup folder"""
 	from frappe.utils.backups import BackupGenerator
 
-	backup = BackupGenerator(frappe.conf.db_name, frappe.conf.db_name,
-		frappe.conf.db_password, db_host = frappe.db.host,
-		db_type=frappe.conf.db_type, db_port=frappe.conf.db_port)
+	odb = BackupGenerator(
+		frappe.conf.db_name,
+		frappe.conf.db_name,
+		frappe.conf.db_password,
+		db_host=frappe.db.host,
+		db_type=frappe.conf.db_type,
+		db_port=frappe.conf.db_port,
+	)
 
-	backup.set_backup_file_name()
-	backup.zip_files()
+	odb.todays_date = now_datetime().strftime('%Y%m%d_%H%M%S')
+	odb.set_backup_file_name()
+	odb.zip_files() 

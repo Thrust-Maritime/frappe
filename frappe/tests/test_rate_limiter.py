@@ -4,15 +4,13 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
-
 import unittest
-from werkzeug.wrappers import Response
-import time
-
 import frappe
+import time
 import frappe.rate_limiter
 from frappe.rate_limiter import RateLimiter
 from frappe.utils import cint
+from werkzeug.wrappers import Response
 
 
 class TestRateLimiter(unittest.TestCase):

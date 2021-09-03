@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 import datetime
-from frappe.utils import formatdate, fmt_money, flt, cstr, cint, format_datetime, format_time, format_duration
+from frappe.utils import formatdate, fmt_money, flt, cstr, cint, format_datetime, format_time
 from frappe.model.meta import get_field_currency, get_field_precision
 import re
 from six import string_types
@@ -78,7 +78,7 @@ def format_value(value, df=None, doc=None, currency=None, translated=False):
 		return "{}%".format(flt(value, 2))
 
 	elif df.get("fieldtype") in ("Text", "Small Text"):
-		if not re.search(r"(<br|<div|<p)", value):
+		if not re.search("(\<br|\<div|\<p)", value):
 			return frappe.safe_decode(value).replace("\n", "<br>")
 
 	elif df.get("fieldtype") == "Markdown Editor":
@@ -89,12 +89,5 @@ def format_value(value, df=None, doc=None, currency=None, translated=False):
 		link_field = [df for df in meta.fields if df.fieldtype == 'Link'][0]
 		values = [v.get(link_field.fieldname, 'asdf') for v in value]
 		return ', '.join(values)
-
-	elif df.get("fieldtype") == "Duration":
-		hide_days = df.hide_days
-		return format_duration(value, hide_days)
-
-	elif df.get("fieldtype") == "Text Editor":
-		return "<div class='ql-snow'>{}</div>".format(value)
 
 	return value

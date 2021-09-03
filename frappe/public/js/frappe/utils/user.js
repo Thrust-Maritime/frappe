@@ -1,3 +1,5 @@
+
+
 frappe.user_info = function(uid) {
 	if(!uid)
 		uid = frappe.session.user;
@@ -53,7 +55,7 @@ $.extend(frappe.user, {
 	name: 'Guest',
 	full_name: function(uid) {
 		return uid === frappe.session.user ?
-			__("You", null, "Name of the current user. For example: You edited this 5 hours ago.") :
+			__("You") :
 			frappe.user_info(uid).fullname;
 	},
 	image: function(uid) {

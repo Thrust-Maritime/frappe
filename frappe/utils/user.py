@@ -22,7 +22,6 @@ class UserPermissions:
 
 		self.all_read = []
 		self.can_create = []
-		self.can_select = []
 		self.can_read = []
 		self.can_write = []
 		self.can_cancel = []
@@ -105,9 +104,6 @@ class UserPermissions:
 			if not p.get("read") and (dt in user_shared):
 				p["read"] = 1
 
-			if p.get('select'):
-				self.can_select.append(dt)
-
 			if not dtp.get('istable'):
 				if p.get('create') and not dtp.get('issingle'):
 					if dtp.get('in_create'):
@@ -187,7 +183,7 @@ class UserPermissions:
 
 	def load_user(self):
 		d = frappe.db.sql("""select email, first_name, last_name, creation,
-			email_signature, user_type, desk_theme, language,
+			email_signature, user_type, language,
 			mute_sounds, send_me_a_copy, document_follow_notify
 			from tabUser where name = %s""", (self.name,), as_dict=1)[0]
 
@@ -197,8 +193,9 @@ class UserPermissions:
 		d.name = self.name
 		d.roles = self.get_roles()
 		d.defaults = self.get_defaults()
-		for key in ("can_select", "can_create", "can_write", "can_read", "can_cancel",
-			"can_delete", "can_get_report", "allow_modules", "all_read", "can_search",
+
+		for key in ("can_create", "can_write", "can_read", "can_cancel", "can_delete",
+			"can_get_report", "allow_modules", "all_read", "can_search",
 			"in_create", "can_export", "can_import", "can_print", "can_email",
 			"can_set_user_permissions"):
 			d[key] = list(set(getattr(self, key)))
@@ -295,7 +292,7 @@ def is_website_user():
 	return frappe.db.get_value('User', frappe.session.user, 'user_type') == "Website User"
 
 def is_system_user(username):
-	return frappe.db.get_value("User", {"email": username, "enabled": 1, "user_type": "System User"})
+	return frappe.db.get_value("User", {"name": username, "enabled": 1, "user_type": "System User"})
 
 def get_users():
 	from frappe.core.doctype.user.user import get_system_users
@@ -337,6 +334,7 @@ def get_link_to_reset_password(user):
 		'link': link
 	}
 
+@frappe.whitelist()
 def get_users_with_role(role):
 	return [p[0] for p in frappe.db.sql("""SELECT DISTINCT `tabUser`.`name`
 		FROM `tabHas Role`, `tabUser`

@@ -38,14 +38,14 @@ $.extend(frappe.meta, {
 		frappe.meta.docfield_list[df.parent].push(df);
 	},
 
-	make_docfield_copy_for: function(doctype, docname, docfield_list=null) {
+	make_docfield_copy_for: function(doctype, docname) {
 		var c = frappe.meta.docfield_copy;
 		if(!c[doctype])
 			c[doctype] = {};
 		if(!c[doctype][docname])
 			c[doctype][docname] = {};
 
-		docfield_list = docfield_list || frappe.meta.docfield_list[doctype] || [];
+		var docfield_list = frappe.meta.docfield_list[doctype] || [];
 		for(var i=0, j=docfield_list.length; i<j; i++) {
 			var df = docfield_list[i];
 			c[doctype][docname][df.fieldname || df.label] = copy_dict(df);
@@ -161,7 +161,8 @@ $.extend(frappe.meta, {
 
 			if(!out) {
 				// eslint-disable-next-line
-				console.log(__('Warning: Unable to find {0} in any table related to {1}', [key, __(doctype)]));
+				console.log(__('Warning: Unable to find {0} in any table related to {1}', [
+					key, __(doctype)]));
 			}
 		}
 		return out;
@@ -265,5 +266,5 @@ $.extend(frappe.meta, {
 			precision = cint(frappe.defaults.get_default("float_precision")) || 3;
 		}
 		return precision;
-	}
+	},
 });

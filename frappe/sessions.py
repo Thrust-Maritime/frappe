@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
@@ -15,12 +15,13 @@ from frappe.utils import cint, cstr
 import frappe.model.meta
 import frappe.defaults
 import frappe.translate
+from frappe.utils.change_log import get_change_log
 import redis
 from six.moves.urllib.parse import unquote
 from six import text_type
 from frappe.cache_manager import clear_user_cache
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def clear(user=None):
 	frappe.local.session_obj.update(force=True)
 	frappe.local.db.commit()
@@ -32,7 +33,7 @@ def clear_sessions(user=None, keep_current=False, device=None, force=False):
 
 	:param user: user name (default: current user)
 	:param keep_current: keep current session (default: false)
-	:param device: delete sessions of this device (default: desktop, mobile)
+	:param device: delete sessions of this device (default: desktop)
 	:param force: triggered by the user (default false)
 	'''
 
@@ -48,16 +49,13 @@ def get_sessions_to_clear(user=None, keep_current=False, device=None):
 
 	:param user: user name (default: current user)
 	:param keep_current: keep current session (default: false)
-	:param device: delete sessions of this device (default: desktop, mobile)
+	:param device: delete sessions of this device (default: desktop)
 	'''
 	if not user:
 		user = frappe.session.user
 
 	if not device:
-		device = ("desktop", "mobile")
-
-	if not isinstance(device, (tuple, list)):
-		device = (device,)
+		device = frappe.session.data.device or "desktop"
 
 	offset = 0
 	if user == frappe.session.user:
@@ -70,12 +68,12 @@ def get_sessions_to_clear(user=None, keep_current=False, device=None):
 
 	return frappe.db.sql_list("""
 		SELECT `sid` FROM `tabSessions`
-		WHERE `tabSessions`.user=%(user)s
-		AND device in %(device)s
+		WHERE user=%s
+		AND device=%s
 		{condition}
 		ORDER BY `lastupdate` DESC
 		LIMIT 100 OFFSET {offset}""".format(condition=condition, offset=offset),
-		{"user": user, "device": device})
+		(user, device))
 
 def delete_session(sid=None, user=None, reason="Session Expired"):
 	from frappe.core.doctype.activity_log.feed import logout_feed
@@ -114,9 +112,9 @@ def clear_expired_sessions():
 		delete_session(sid, reason="Session Expired")
 
 def get():
+
 	"""get session boot info"""
 	from frappe.boot import get_bootinfo, get_unseen_notes
-	from frappe.utils.change_log import get_change_log
 
 	bootinfo = None
 	if not getattr(frappe.conf,'disable_session_cache', None):
@@ -157,7 +155,7 @@ def get():
 	bootinfo["disable_async"] = frappe.conf.disable_async
 
 	bootinfo["setup_complete"] = cint(frappe.db.get_single_value('System Settings', 'setup_complete'))
-	bootinfo["is_first_startup"] = cint(frappe.db.get_single_value('System Settings', 'is_first_startup'))
+
 
 	return bootinfo
 
@@ -170,6 +168,13 @@ def get_csrf_token():
 def generate_csrf_token():
 	frappe.local.session.data.csrf_token = frappe.generate_hash()
 	frappe.local.session_obj.update(force=True)
+
+	# send sid and csrf token to the user
+	# handles the case when a user logs in again from another tab
+	# and it leads to invalid request in the current tab
+	frappe.publish_realtime(event="csrf_generated",
+		message={"sid": frappe.local.session.sid, "csrf_token": frappe.local.session.data.csrf_token},
+		user=frappe.session.user, after_commit=True)
 
 class Session:
 	def __init__(self, user, resume=False, full_name=None, user_type=None):
@@ -250,6 +255,7 @@ class Session:
 		data = self.get_session_record()
 
 		if data:
+			# set language
 			self.data.update({'data': data, 'user':data.user, 'sid': self.sid})
 			self.user = data.user
 			validate_ip_address(self.user)
@@ -295,7 +301,8 @@ class Session:
 			expiry = get_expiry_in_seconds(session_data.get("session_expiry"))
 
 			if self.time_diff > expiry:
-				self._delete_session()
+				print('deleting...')
+				self.delete_session()
 				data = None
 
 		return data and data.data
@@ -314,12 +321,12 @@ class Session:
 			data = frappe._dict(eval(rec and rec[0][1] or '{}'))
 			data.user = rec[0][0]
 		else:
-			self._delete_session()
+			self.delete_session()
 			data = None
 
 		return data
 
-	def _delete_session(self):
+	def delete_session(self):
 		delete_session(self.sid, reason="Session Expired")
 
 	def start_as_guest(self):
@@ -335,7 +342,7 @@ class Session:
 		now = frappe.utils.now()
 
 		self.data['data']['last_updated'] = now
-		self.data['data']['lang'] = str(frappe.lang)
+		self.data['data']['lang'] = text_type(frappe.lang)
 
 		# update session in db
 		last_updated = frappe.cache().hget("last_db_session_update", self.sid)

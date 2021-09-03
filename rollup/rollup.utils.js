@@ -44,14 +44,7 @@ const get_build_json_path = app => path.resolve(get_public_path(app), 'build.jso
 
 function get_build_json(app) {
 	try {
-		let build_json = Object.assign({}, require(get_build_json_path(app)));
-		let rtl_assets = {};
-		Object.keys(build_json).forEach(key => {
-			if (key.endsWith('.css')) {
-				rtl_assets[key.replace('css/', 'css-rtl/')] = build_json[key];
-			}
-		});
-		return Object.assign(build_json, rtl_assets);
+		return require(get_build_json_path(app));
 	} catch (e) {
 		// build.json does not exist
 		return null;
@@ -79,6 +72,7 @@ const get_app_path = app => app_paths[app];
 const get_options_for_scss = () => {
 	const node_modules_path = path.resolve(get_app_path('frappe'), '..', 'node_modules');
 	const app_paths = apps_list.map(get_app_path).map(app_path => path.resolve(app_path, '..'));
+
 	return {
 		includePaths: [
 			node_modules_path,

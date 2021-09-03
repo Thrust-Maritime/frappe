@@ -204,7 +204,9 @@ frappe.views.InboxView = class InboxView extends frappe.views.ListView {
 			};
 			frappe.new_doc('Email Account');
 		} else {
-			new frappe.views.CommunicationComposer();
+			new frappe.views.CommunicationComposer({
+				doc: {}
+			});
 		}
 	}
 };

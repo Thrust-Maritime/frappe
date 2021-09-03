@@ -5,10 +5,7 @@ from __future__ import unicode_literals
 import frappe, os
 import unittest, email
 
-from frappe.test_runner import make_test_records
-
-make_test_records("User")
-make_test_records("Email Account")
+test_records = frappe.get_test_records('Email Account')
 
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
