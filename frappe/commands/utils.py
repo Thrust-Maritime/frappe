@@ -464,7 +464,7 @@ def console(context):
 @click.option('--skip-test-records', is_flag=True, default=False, help="Don't create test records")
 @click.option('--skip-before-tests', is_flag=True, default=False, help="Don't run before tests hook")
 @click.option('--junit-xml-output', help="Destination file path for junit xml report")
-@click.option('--failfast', is_flag=True, default=False)
+@click.option('--failfast', is_flag=True, default=False, help="Stop the test run on the first error or failure")
 @pass_context
 def run_tests(context, app=None, module=None, doctype=None, test=(),
 	driver=None, profile=False, coverage=False, junit_xml_output=False, ui_tests = False,
@@ -522,8 +522,26 @@ def run_ui_tests(context, app, headless=False):
 	admin_password = frappe.get_conf(site).admin_password
 
 	# override baseUrl using env variable
-	site_env = 'CYPRESS_baseUrl={}'.format(site_url)
-	password_env = 'CYPRESS_adminPassword={}'.format(admin_password) if admin_password else ''
+	site_env = f'CYPRESS_baseUrl={site_url}'
+	password_env = f'CYPRESS_adminPassword={admin_password}' if admin_password else ''
+
+	os.chdir(app_base_path)
+
+	node_bin = subprocess.getoutput("npm bin")
+	cypress_path = f"{node_bin}/cypress"
+	plugin_path = f"{node_bin}/../cypress-file-upload"
+	testing_library_path = f"{node_bin}/../@testing-library"
+
+	# check if cypress in path...if not, install it.
+	if not (
+		os.path.exists(cypress_path)
+		and os.path.exists(plugin_path)
+		and os.path.exists(testing_library_path)
+		and cint(subprocess.getoutput("npm view cypress version")[:1]) >= 6
+	):
+		# install cypress
+		click.secho("Installing Cypress...", fg="yellow")
+		frappe.commands.popen("yarn add cypress@^6 cypress-file-upload@^5 @testing-library/cypress@^8 --no-lockfile")
 
 	# run for headless mode
 	run_or_open = 'run' if headless else 'open'
@@ -539,9 +557,8 @@ def run_setup_wizard_ui_test(context, app=None, profile=False):
 	"Run setup wizard UI test"
 	import frappe.test_runner
 
-	site = get_site(context)
-	frappe.init(site=site)
-	frappe.connect()
+	if ci_build_id:
+		formatted_command += f' --ci-build-id {ci_build_id}'
 
 	ret = frappe.test_runner.run_setup_wizard_ui_test(app=app, verbose=context.verbose,
 		profile=profile)

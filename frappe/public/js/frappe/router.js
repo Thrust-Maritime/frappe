@@ -78,6 +78,44 @@ frappe.route = function() {
 			frappe.route_titles[frappe.get_route_str()] = frappe._original_title || document.title;
 		}, 1000);
 	}
+	clear_re_route(doctype, docname) {
+		delete frappe.re_route[
+			`${encodeURIComponent(frappe.router.slug(doctype))}/${encodeURIComponent(docname)}`
+		];
+	},
+
+	set_title(sub_path) {
+		if (frappe.route_titles[sub_path]) {
+			frappe.utils.set_title(frappe.route_titles[sub_path]);
+		}
+	},
+
+	set_route() {
+		// set the route (push state) with given arguments
+		// example 1: frappe.set_route('a', 'b', 'c');
+		// example 2: frappe.set_route(['a', 'b', 'c']);
+		// example 3: frappe.set_route('a/b/c');
+		let route = Array.from(arguments);
+
+		return new Promise(resolve => {
+			route = this.get_route_from_arguments(route);
+			route = this.convert_from_standard_route(route);
+			const sub_path = this.make_url(route);
+			this.push_state(sub_path);
+
+			setTimeout(() => {
+				frappe.after_ajax && frappe.after_ajax(() => {
+					resolve();
+				});
+			}, 100);
+		});
+	},
+
+	get_route_from_arguments(route) {
+		if (route.length===1 && $.isArray(route[0])) {
+			// called as frappe.set_route(['a', 'b', 'c']);
+			route = route[0];
+		}
 
 	if(window.mixpanel) {
 		window.mixpanel.track(route.slice(0, 2).join(' '));

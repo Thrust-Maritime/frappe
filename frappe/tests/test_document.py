@@ -311,5 +311,29 @@ class TestDocument(unittest.TestCase):
 		new_name = "ToDo"
 		self.assertEqual(new_name, frappe.rename_doc("Renamed Doc", old_name, new_name, force=True))
 
-		frappe.delete_doc_if_exists("Renamed Doc", "ToDo")
-		frappe.delete_doc_if_exists("DocType", "Renamed Doc")
+		frappe.delete_doc_if_exists("Currency", "Frappe Coin", 1)
+
+	def test_get_formatted(self):
+		frappe.get_doc({
+			'doctype': 'DocType',
+			'name': 'Test Formatted',
+			'module': 'Custom',
+			'custom': 1,
+			'fields': [
+				{'label': 'Currency', 'fieldname': 'currency', 'reqd': 1, 'fieldtype': 'Currency'},
+			]
+		}).insert()
+
+		frappe.delete_doc_if_exists("Currency", "INR", 1)
+
+		d = frappe.get_doc({
+			'doctype': 'Currency',
+			'currency_name': 'INR',
+			'symbol': '₹',
+		}).insert()
+
+		d = frappe.get_doc({
+			'doctype': 'Test Formatted',
+			'currency': 100000
+		})
+		self.assertEquals(d.get_formatted('currency', currency='INR', format="#,###.##"), '₹ 100,000.00')

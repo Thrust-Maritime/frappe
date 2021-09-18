@@ -22,5 +22,19 @@ frappe.ui.form.ControlDatetime = frappe.ui.form.ControlDate.extend({
 			}
 		}
 		this._super();
+	},
+	set_datepicker: function() {
+		this._super();
+		if (this.datepicker.opts.timeFormat.indexOf('s') == -1) {
+			// No seconds in time format
+			const $tp = this.datepicker.timepicker;
+			$tp.$seconds.parent().css('display', 'none');
+			$tp.$secondsText.css('display', 'none');
+			$tp.$secondsText.prev().css('display', 'none');
+		}
+	},
+	get_model_value() {
+		let value = this._super();
+		return frappe.datetime.get_datetime_as_string(value);
 	}
 });

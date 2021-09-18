@@ -7,6 +7,7 @@ from six import iteritems, string_types
 
 """build query for doclistview and return results"""
 
+from typing import List
 import frappe.defaults
 import frappe.share
 from frappe import _
@@ -37,8 +38,12 @@ class DatabaseQuery(object):
 		ignore_permissions=False, user=None, with_comment_count=False,
 		join='left join', distinct=False, start=None, page_length=None, limit=None,
 		ignore_ifnull=False, save_user_settings=False, save_user_settings_fields=False,
-		update=None, add_total_row=None, user_settings=None, reference_doctype=None, return_query=False, strict=True):
-		if not ignore_permissions and not frappe.has_permission(self.doctype, "read", user=user):
+		update=None, add_total_row=None, user_settings=None, reference_doctype=None,
+		return_query=False, strict=True, pluck=None, ignore_ddl=False) -> List:
+		if not ignore_permissions and \
+			not frappe.has_permission(self.doctype, "select", user=user) and \
+			not frappe.has_permission(self.doctype, "read", user=user):
+
 			frappe.flags.error_message = _('Insufficient Permission for {0}').format(frappe.bold(self.doctype))
 			raise frappe.PermissionError(self.doctype)
 

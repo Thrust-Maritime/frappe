@@ -145,7 +145,15 @@ frappe.ui.Dialog = class Dialog extends frappe.ui.FieldGroup {
 	}
 
 	set_secondary_action(click) {
-		this.get_close_btn().on('click', click);
+		// this.get_close_btn().on('click', click);
+		this.footer.removeClass('hide');
+		this.get_secondary_btn().removeClass('hide').off('click').on('click', click);
+	}
+
+	set_secondary_action_label(label) {
+		this.get_secondary_btn()
+			.removeClass("hide")
+			.html(label);
 	}
 
 	disable_primary_action() {

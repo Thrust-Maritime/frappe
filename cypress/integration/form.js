@@ -24,8 +24,8 @@ context('Form', () => {
 		cy.get('.fieldname-select-area').should('exist');
 		cy.get('.fieldname-select-area input').type('Number{enter}', { force: true });
 		cy.get('.filter-field .input-with-feedback.form-control').type('123', { force: true });
-		cy.get('.filter-box .btn:contains("Apply")').click({ force: true });
-		cy.visit('/desk#Form/Contact/Test Form Contact 3');
+		cy.findByRole('button', {name: 'Apply Filters'}).click({ force: true });
+		cy.visit('/app/contact/Test Form Contact 3');
 		cy.get('.prev-doc').should('be.visible').click();
 		cy.get('.msgprint-dialog .modal-body').contains('No further records').should('be.visible');
 		cy.get('.btn-modal-close:visible').click();

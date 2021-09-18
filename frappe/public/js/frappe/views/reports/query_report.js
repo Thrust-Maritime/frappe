@@ -252,6 +252,9 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 		} else {
 			this.page.show_form();
 		}
+
+		this.page.body[0].style.setProperty('--report-filter-height', this.page.page_form.css('height'));
+		this.page.body.parent().css('margin-bottom', 'unset');
 	}
 
 	set_filters(filters) {
@@ -533,6 +536,7 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 		if (this.raw_data.add_total_row) {
 			data = data.slice();
 			data.splice(-1, 1);
+			this.$page.find('.layout-main-section')[0].style.setProperty('--report-total-height', '310px');
 		}
 
 		if (this.datatable && this.datatable.options

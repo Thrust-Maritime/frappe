@@ -116,11 +116,13 @@ frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 		return [
 			['bold', 'italic', 'underline'],
 			['blockquote', 'code-block'],
+			[{ 'direction': "rtl" }],
 			['link', 'image'],
 			// Adding Direction tool to give the user the ability to change text direction.
 			[{ 'direction': direction }],
 			[{ 'align': align }],
 			[{ 'list': 'ordered' }, { 'list': 'bullet' }],
+			[{ 'align': [] }],
 			['clean']
 		];
 	},

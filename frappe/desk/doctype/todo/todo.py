@@ -30,8 +30,15 @@ class ToDo(Document):
 		else:
 			# NOTE the previous value is only available in validate method
 			if self.get_db_value("status") != self.status:
+				if self.owner == frappe.session.user:
+					removal_message = frappe._("{0} removed their assignment.").format(
+						get_fullname(frappe.session.user))
+				else:
+					removal_message = frappe._("Assignment of {0} removed by {1}").format(
+						get_fullname(self.owner), get_fullname(frappe.session.user))
+
 				self._assignment = {
-					"text": frappe._("Assignment closed by {0}".format(get_fullname(frappe.session.user))),
+					"text": removal_message,
 					"comment_type": "Assignment Completed"
 				}
 
@@ -96,6 +103,9 @@ def get_permission_query_conditions(user):
 
 	#TechSquid - Allow all users to see all ToDo's
 	return None
+	todo_roles = frappe.permissions.get_doctype_roles('ToDo')
+	if 'All' in todo_roles:
+		todo_roles.remove('All')
 
 	if "System Manager" in frappe.get_roles(user):
 		return None
@@ -103,7 +113,11 @@ def get_permission_query_conditions(user):
 		return """(`tabToDo`.owner = {user} or `tabToDo`.assigned_by = {user})"""\
 			.format(user=frappe.db.escape(user))
 
-def has_permission(doc, user):
+def has_permission(doc, ptype="read", user=None):
+	user = user or frappe.session.user
+	todo_roles = frappe.permissions.get_doctype_roles('ToDo', ptype)
+	if 'All' in todo_roles:
+		todo_roles.remove('All')
 
 	#TechSquid - Allow all users to see all ToDo's
 	return True

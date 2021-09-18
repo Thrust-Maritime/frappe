@@ -2,6 +2,7 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
+from typing import Dict, List, Union
 import frappe, json
 import frappe.utils
 import frappe.share
@@ -98,6 +99,10 @@ def get_docinfo(doc=None, doctype=None, name=None):
 		"assignments": get_assignments(doc.doctype, doc.name),
 		"permissions": get_doc_permissions(doc),
 		"shared": frappe.share.get_users(doc.doctype, doc.name),
+		"info_logs": get_comments(doc.doctype, doc.name, comment_type=['Info', 'Edit', 'Label']),
+		"share_logs": get_comments(doc.doctype, doc.name, 'share'),
+		"like_logs": get_comments(doc.doctype, doc.name, 'Like'),
+		"workflow_logs": get_comments(doc.doctype, doc.name, comment_type="Workflow"),
 		"views": get_view_logs(doc.doctype, doc.name),
 		"energy_point_logs": get_point_logs(doc.doctype, doc.name),
 		"milestones": get_milestones(doc.doctype, doc.name),
@@ -127,15 +132,34 @@ def get_communications(doctype, name, start=0, limit=20):
 	return _get_communications(doctype, name, start, limit)
 
 
-def get_comments(doctype, name):
-	comments = frappe.get_all('Comment', fields = ['*'], filters = dict(
-		reference_doctype = doctype,
-		reference_name = name
-	))
+def get_comments(doctype: str, name: str, comment_type : Union[str, List[str]] = "Comment") -> List[frappe._dict]:
+	if isinstance(comment_type, list):
+		comment_types = comment_type
+
+	elif comment_type == 'share':
+		comment_types = ['Shared', 'Unshared']
+
+	elif comment_type == 'assignment':
+		comment_types = ['Assignment Completed', 'Assigned']
+
+	elif comment_type == 'attachment':
+		comment_types = ['Attachment', 'Attachment Removed']
+
+	else:
+		comment_types = [comment_type]
+
+	comments = frappe.get_all("Comment",
+		fields=["name", "creation", "content", "owner", "comment_type"],
+		filters={
+			"reference_doctype": doctype,
+			"reference_name": name,
+			"comment_type": ['in', comment_types],
+		}
+	)
 
 	# convert to markdown (legacy ?)
 	for c in comments:
-		if c.comment_type == 'Comment':
+		if c.comment_type == "Comment":
 			c.content = frappe.utils.markdown(c.content)
 
 	return comments

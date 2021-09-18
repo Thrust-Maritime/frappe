@@ -12,6 +12,8 @@ import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
 from frappe.utils.testutils import clear_custom_fields
 
+from .test_query_builder import run_only_if, db_type_is
+
 
 class TestDB(unittest.TestCase):
 	def test_get_value(self):
@@ -94,3 +96,178 @@ class TestDB(unittest.TestCase):
 		self.assertIn('tabCustom Field', frappe.flags.touched_tables)
 		frappe.flags.in_migrate = False
 		frappe.flags.touched_tables.clear()
+
+
+	def test_db_keywords_as_fields(self):
+		"""Tests if DB keywords work as docfield names. If they're wrapped with grave accents."""
+		# Using random.choices, picked out a list of 40 keywords for testing
+		all_keywords = {
+			"mariadb": ["CHARACTER", "DELAYED", "LINES", "EXISTS", "YEAR_MONTH", "LOCALTIME", "BOTH", "MEDIUMINT",
+			"LEFT", "BINARY", "DEFAULT", "KILL", "WRITE", "SQL_SMALL_RESULT", "CURRENT_TIME", "CROSS", "INHERITS",
+			"SELECT", "TABLE", "ALTER", "CURRENT_TIMESTAMP", "XOR", "CASE", "ALL", "WHERE", "INT", "TO", "SOME",
+			"DAY_MINUTE", "ERRORS", "OPTIMIZE", "REPLACE", "HIGH_PRIORITY", "VARBINARY", "HELP", "IS",
+			"CHAR", "DESCRIBE", "KEY"],
+			"postgres": ["WORK", "LANCOMPILER", "REAL", "HAVING", "REPEATABLE", "DATA", "USING", "BIT", "DEALLOCATE",
+			"SERIALIZABLE", "CURSOR", "INHERITS", "ARRAY", "TRUE", "IGNORE", "PARAMETER_MODE", "ROW", "CHECKPOINT",
+			"SHOW", "BY", "SIZE", "SCALE", "UNENCRYPTED", "WITH", "AND", "CONVERT", "FIRST", "SCOPE", "WRITE", "INTERVAL",
+			"CHARACTER_SET_SCHEMA", "ADD", "SCROLL", "NULL", "WHEN", "TRANSACTION_ACTIVE",
+			"INT", "FORTRAN", "STABLE"]
+		}
+		created_docs = []
+
+		# edit by rushabh: added [:1]
+		# don't run every keyword! - if one works, they all do
+		fields = all_keywords[frappe.conf.db_type][:1]
+		test_doctype = "ToDo"
+
+		def add_custom_field(field):
+			create_custom_field(test_doctype, {
+				"fieldname": field.lower(),
+				"label": field.title(),
+				"fieldtype": 'Data',
+			})
+
+		# Create custom fields for test_doctype
+		for field in fields:
+			add_custom_field(field)
+
+		# Create documents under that doctype and query them via ORM
+		for _ in range(10):
+			docfields = {key.lower(): random_string(10) for key in fields}
+			doc = frappe.get_doc({"doctype": test_doctype, "description": random_string(20), **docfields})
+			doc.insert()
+			created_docs.append(doc.name)
+
+		random_field = choice(fields).lower()
+		random_doc = choice(created_docs)
+		random_value = random_string(20)
+
+		# Testing read
+		self.assertEqual(list(frappe.get_all("ToDo", fields=[random_field], limit=1)[0])[0], random_field)
+		self.assertEqual(list(frappe.get_all("ToDo", fields=[f"`{random_field}` as total"], limit=1)[0])[0], "total")
+
+		# Testing read for distinct and sql functions
+		self.assertEqual(list(
+			frappe.get_all("ToDo",
+				fields=[f"`{random_field}` as total"],
+				distinct=True,
+				limit=1,
+			)[0]
+		)[0], "total")
+		self.assertEqual(list(
+			frappe.get_all("ToDo",
+			fields=[f"`{random_field}`"],
+			distinct=True,
+			limit=1,
+			)[0]
+		)[0], random_field)
+		self.assertEqual(list(
+			frappe.get_all("ToDo",
+				fields=[f"count(`{random_field}`)"],
+				limit=1
+			)[0]
+		)[0], "count" if frappe.conf.db_type == "postgres" else f"count(`{random_field}`)")
+
+		# Testing update
+		frappe.db.set_value(test_doctype, random_doc, random_field, random_value)
+		self.assertEqual(frappe.db.get_value(test_doctype, random_doc, random_field), random_value)
+
+		# Cleanup - delete records and remove custom fields
+		for doc in created_docs:
+			frappe.delete_doc(test_doctype, doc)
+		clear_custom_fields(test_doctype)
+
+@run_only_if(db_type_is.MARIADB)
+class TestDDLCommandsMaria(unittest.TestCase):
+	test_table_name = "TestNotes"
+
+	def setUp(self) -> None:
+		frappe.db.commit()
+		frappe.db.sql(
+			f"""
+			CREATE TABLE `tab{self.test_table_name}` (`id` INT NULL,PRIMARY KEY (`id`));
+			"""
+		)
+
+	def tearDown(self) -> None:
+		frappe.db.sql(f"DROP TABLE tab{self.test_table_name};")
+		self.test_table_name = "TestNotes"
+
+	def test_rename(self) -> None:
+		new_table_name = f"{self.test_table_name}_new"
+		frappe.db.rename_table(self.test_table_name, new_table_name)
+		check_exists = frappe.db.sql(
+			f"""
+			SELECT * FROM INFORMATION_SCHEMA.TABLES
+			WHERE TABLE_NAME = N'tab{new_table_name}';
+			"""
+		)
+		self.assertGreater(len(check_exists), 0)
+		self.assertIn(f"tab{new_table_name}", check_exists[0])
+
+		# * so this table is deleted after the rename
+		self.test_table_name = new_table_name
+
+	def test_describe(self) -> None:
+		self.assertEqual(
+			(("id", "int(11)", "NO", "PRI", None, ""),),
+			frappe.db.describe(self.test_table_name),
+		)
+
+	def test_change_type(self) -> None:
+		frappe.db.change_column_type("TestNotes", "id", "varchar(255)")
+		test_table_description = frappe.db.sql(f"DESC tab{self.test_table_name};")
+		self.assertGreater(len(test_table_description), 0)
+		self.assertIn("varchar(255)", test_table_description[0])
+
+
+@run_only_if(db_type_is.POSTGRES)
+class TestDDLCommandsPost(unittest.TestCase):
+	test_table_name = "TestNotes"
+
+	def setUp(self) -> None:
+		frappe.db.sql(
+			f"""
+			CREATE TABLE "tab{self.test_table_name}" ("id" INT NULL,PRIMARY KEY ("id"))
+			"""
+		)
+
+	def tearDown(self) -> None:
+		frappe.db.sql(f'DROP TABLE "tab{self.test_table_name}"')
+		self.test_table_name = "TestNotes"
+
+	def test_rename(self) -> None:
+		new_table_name = f"{self.test_table_name}_new"
+		frappe.db.rename_table(self.test_table_name, new_table_name)
+		check_exists = frappe.db.sql(
+			f"""
+			SELECT EXISTS (
+			SELECT FROM information_schema.tables
+			WHERE  table_name = 'tab{new_table_name}'
+			);
+			"""
+		)
+		self.assertTrue(check_exists[0][0])
+
+		# * so this table is deleted after the rename
+		self.test_table_name = new_table_name
+
+	def test_describe(self) -> None:
+		self.assertEqual([("id",)], frappe.db.describe(self.test_table_name))
+
+	def test_change_type(self) -> None:
+		frappe.db.change_column_type(self.test_table_name, "id", "varchar(255)")
+		check_change = frappe.db.sql(
+			f"""
+			SELECT
+				table_name,
+				column_name,
+				data_type
+			FROM
+				information_schema.columns
+			WHERE
+				table_name = 'tab{self.test_table_name}'
+			"""
+		)
+		self.assertGreater(len(check_change), 0)
+		self.assertIn("character varying", check_change[0])

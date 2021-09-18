@@ -6,27 +6,25 @@ context('Recorder', () => {
 	it('Navigate to Recorder', () => {
 		cy.visit('/desk');
 		cy.awesomebar('recorder');
-		cy.get('h1').should('contain', 'Recorder');
-		cy.location('hash').should('eq', '#recorder');
+		cy.findByTitle('Recorder').should('exist');
+		cy.url().should('include', '/recorder/detail');
 	});
 
 	it('Recorder Empty State', () => {
-		cy.visit('/desk#recorder');
-		cy.get('.title-text').should('contain', 'Recorder');
+		cy.findByTitle('Recorder').should('exist');
 
 		cy.get('.indicator').should('contain', 'Inactive').should('have.class', 'red');
 
-		cy.get('.primary-action').should('contain', 'Start');
-		cy.get('.btn-secondary').should('contain', 'Clear');
+		cy.findByRole('button', {name: 'Start'}).should('exist');
+		cy.findByRole('button', {name: 'Clear'}).should('exist');
 
 		cy.get('.msg-box').should('contain', 'Inactive');
-		cy.get('.msg-box .btn-primary').should('contain', 'Start Recording');
+		cy.findByRole('button', {name: 'Start Recording'}).should('exist');
 	});
 
 	it('Recorder Start', () => {
-		cy.visit('/desk#recorder');
-		cy.get('.primary-action').should('contain', 'Start').click();
-		cy.get('.indicator').should('contain', 'Active').should('have.class', 'green');
+		cy.findByRole('button', {name: 'Start'}).click();
+		cy.get('.indicator-pill').should('contain', 'Active').should('have.class', 'green');
 
 		cy.get('.msg-box').should('contain', 'No Requests');
 
@@ -38,8 +36,8 @@ context('Recorder', () => {
 		cy.get('.title-text').should('contain', 'DocType');
 		cy.get('.list-count').should('contain', '20 of ');
 
-		cy.visit('/desk#recorder');
-		cy.get('.title-text').should('contain', 'Recorder');
+		cy.visit('/app/recorder');
+		cy.findByTitle('Recorder').should('exist');
 		cy.get('.result-list').should('contain', '/api/method/frappe.desk.reportview.get');
 
 		cy.get('#page-recorder .primary-action').should('contain', 'Stop').click();
@@ -49,8 +47,7 @@ context('Recorder', () => {
 	});
 
 	it('Recorder View Request', () => {
-		cy.visit('/desk#recorder');
-		cy.get('.primary-action').should('contain', 'Start').click();
+		cy.findByRole('button', {name: 'Start'}).click();
 
 		cy.server();
 		cy.visit('/desk#List/DocType/List');

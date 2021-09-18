@@ -395,10 +395,15 @@ class DocType(Document):
 			frappe.db.sql("""update tabSingles set value=%s
 				where doctype=%s and field='name' and value = %s""", (new, new, old))
 		else:
-			frappe.db.multisql({
-				"mariadb": "RENAME TABLE `tab{old}` TO `tab{new}`".format(old=old, new=new),
-				"postgres": "ALTER TABLE `tab{old}` RENAME TO `tab{new}`".format(old=old, new=new)
-			})
+			frappe.db.rename_table(old, new)
+			frappe.db.commit()
+
+		# Do not rename and move files and folders for custom doctype
+		if not self.custom:
+			if not frappe.flags.in_patch:
+				self.rename_files_and_folders(old, new)
+
+			clear_controller_cache(old)
 
 
 	def rename_files_and_folders(self, old, new):

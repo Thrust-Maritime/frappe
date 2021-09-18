@@ -205,6 +205,133 @@ class CustomizeForm(Document):
 
 			if not meta_df or meta_df[0].get("is_custom_field"):
 				continue
+			self.set_property_setters_for_docfield(meta, df, meta_df)
+
+		# action and links
+		self.set_property_setters_for_actions_and_links(meta)
+
+	def set_property_setters_for_doctype(self, meta):
+		for prop, prop_type in doctype_properties.items():
+			if self.get(prop) != meta.get(prop):
+				self.make_property_setter(prop, self.get(prop), prop_type)
+
+	def set_property_setters_for_docfield(self, meta, df, meta_df):
+		for prop, prop_type in docfield_properties.items():
+			if prop != "idx" and (df.get(prop) or '') != (meta_df[0].get(prop) or ''):
+				if not self.allow_property_change(prop, meta_df, df):
+					continue
+
+				self.make_property_setter(prop, df.get(prop), prop_type,
+					fieldname=df.fieldname)
+
+	def allow_property_change(self, prop, meta_df, df):
+		if prop == "fieldtype":
+			self.validate_fieldtype_change(df, meta_df[0].get(prop), df.get(prop))
+
+		elif prop == "length":
+			old_value_length = cint(meta_df[0].get(prop))
+			new_value_length = cint(df.get(prop))
+
+			if new_value_length and (old_value_length > new_value_length):
+				self.check_length_for_fieldtypes.append({'df': df, 'old_value': meta_df[0].get(prop)})
+				self.validate_fieldtype_length()
+			else:
+				self.flags.update_db = True
+
+		elif prop == "allow_on_submit" and df.get(prop):
+			if not frappe.db.get_value("DocField",
+				{"parent": self.doc_type, "fieldname": df.fieldname}, "allow_on_submit"):
+				frappe.msgprint(_("Row {0}: Not allowed to enable Allow on Submit for standard fields")\
+					.format(df.idx))
+				return False
+
+		elif prop == "reqd" and \
+			((frappe.db.get_value("DocField",
+				{"parent":self.doc_type,"fieldname":df.fieldname}, "reqd") == 1) \
+				and (df.get(prop) == 0)):
+			frappe.msgprint(_("Row {0}: Not allowed to disable Mandatory for standard fields")\
+					.format(df.idx))
+			return False
+
+		elif prop == "in_list_view" and df.get(prop) \
+			and df.fieldtype!="Attach Image" and df.fieldtype in no_value_fields:
+					frappe.msgprint(_("'In List View' not allowed for type {0} in row {1}")
+						.format(df.fieldtype, df.idx))
+					return False
+
+		elif prop == "precision" and cint(df.get("precision")) > 6 \
+				and cint(df.get("precision")) > cint(meta_df[0].get("precision")):
+			self.flags.update_db = True
+
+		elif prop == "unique":
+			self.flags.update_db = True
+
+		elif (prop == "read_only" and cint(df.get("read_only"))==0
+				and frappe.db.get_value("DocField", {"parent": self.doc_type,
+				"fieldname": df.fieldname}, "read_only")==1):
+			# if docfield has read_only checked and user is trying to make it editable, don't allow it
+			frappe.msgprint(_("You cannot unset 'Read Only' for field {0}").format(df.label))
+			return False
+
+		elif prop == "options" and df.get("fieldtype") not in ALLOWED_OPTIONS_CHANGE:
+			frappe.msgprint(_("You can't set 'Options' for field {0}").format(df.label))
+			return False
+
+		elif prop == 'translatable' and not supports_translation(df.get('fieldtype')):
+			frappe.msgprint(_("You can't set 'Translatable' for field {0}").format(df.label))
+			return False
+
+		elif (prop == 'in_global_search' and
+			df.in_global_search != meta_df[0].get("in_global_search")):
+			self.flags.rebuild_doctype_for_global_search = True
+
+		return True
+
+	def set_property_setters_for_actions_and_links(self, meta):
+		'''
+		Apply property setters or create custom records for DocType Action and DocType Link
+		'''
+		for doctype, fieldname, field_map in (
+				('DocType Link', 'links', doctype_link_properties),
+				('DocType Action', 'actions', doctype_action_properties)
+			):
+			has_custom = False
+			items = []
+			for i, d in enumerate(self.get(fieldname) or []):
+				d.idx = i
+				if frappe.db.exists(doctype, d.name) and not d.custom:
+					# check property and apply property setter
+					original = frappe.get_doc(doctype, d.name)
+					for prop, prop_type in field_map.items():
+						if d.get(prop) != original.get(prop):
+							self.make_property_setter(prop, d.get(prop), prop_type,
+								apply_on=doctype, row_name=d.name)
+					items.append(d.name)
+				else:
+					# custom - just insert/update
+					d.parent = self.doc_type
+					d.custom = 1
+					d.save(ignore_permissions=True)
+					has_custom = True
+					items.append(d.name)
+
+			self.update_order_property_setter(has_custom, fieldname)
+			self.clear_removed_items(doctype, items)
+
+	def update_order_property_setter(self, has_custom, fieldname):
+		'''
+		We need to maintain the order of the link/actions if the user has shuffled them.
+		So we create a new property (ex `links_order`) to keep a list of items.
+		'''
+		property_name = '{}_order'.format(fieldname)
+		if has_custom:
+			# save the order of the actions and links
+			self.make_property_setter(property_name,
+				json.dumps([d.name for d in self.get(fieldname)]), 'Small Text')
+		else:
+			frappe.db.delete('Property Setter', dict(property=property_name,
+				doc_type=self.doc_type))
+
 
 			for property in docfield_properties:
 				if property != "idx" and (df.get(property) or '') != (meta_df[0].get(property) or ''):

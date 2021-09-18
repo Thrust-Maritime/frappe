@@ -91,6 +91,27 @@ class BlogPost(WebsiteGenerator):
 			else:
 				context.comment_text = _('{0} comments').format(len(context.comment_list))
 
+	def load_feedback(self, context):
+		user = frappe.session.user
+		if user == 'Guest':
+			user = ''
+		feedback = frappe.get_all('Feedback',
+			fields=['feedback', 'rating'],
+			filters=dict(
+				reference_doctype=self.doctype,
+				reference_name=self.name,
+				owner=user
+			)
+		)
+		context.user_feedback = feedback[0] if feedback else ''
+
+	def set_read_time(self):
+		content = self.content or self.content_html or ''
+		if self.content_type == "Markdown":
+			content = markdown(self.content_md)
+
+		total_words = len(strip_html_tags(content).split())
+		self.read_time = ceil(total_words/250)
 
 def get_list_context(context=None):
 	list_context = frappe._dict(

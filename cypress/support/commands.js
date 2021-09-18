@@ -1,4 +1,5 @@
 import 'cypress-file-upload';
+import '@testing-library/cypress/add-commands';
 // ***********************************************
 // This example commands.js shows you how to
 // create various custom commands and overwrite
@@ -130,17 +131,29 @@ Cypress.Commands.add('create_records', (doc) => {
 		.then(r => r.message);
 });
 
-Cypress.Commands.add('fill_field', (fieldname, value, fieldtype='Data') => {
-	let selector = `.form-control[data-fieldname="${fieldname}"]`;
+Cypress.Commands.add('get_field', (fieldname, fieldtype = 'Data') => {
+	let selector = `[data-fieldname="${fieldname}"] input:visible`;
 
 	if (fieldtype === 'Text Editor') {
-		selector = `[data-fieldname="${fieldname}"] .ql-editor[contenteditable=true]`;
+		selector = `[data-fieldname="${fieldname}"] .ql-editor[contenteditable=true]:visible`;
 	}
 	if (fieldtype === 'Code') {
 		selector = `[data-fieldname="${fieldname}"] .ace_text-input`;
 	}
 
-	cy.get(selector).as('input');
+	return cy.get(selector).first();
+});
+
+Cypress.Commands.add('fill_table_field', (tablefieldname, row_idx, fieldname, value, fieldtype = 'Data') => {
+	cy.get_table_field(tablefieldname, row_idx, fieldname, fieldtype).as('input');
+
+	if (['Date', 'Time', 'Datetime'].includes(fieldtype)) {
+		cy.get('@input').click().wait(200);
+		cy.get('.datepickers-container .datepicker.active').should('exist');
+	}
+	if (fieldtype === 'Time') {
+		cy.get('@input').clear().wait(200);
+	}
 
 	if (fieldtype === 'Select') {
 		return cy.get('@input').select(value);
@@ -211,4 +224,47 @@ Cypress.Commands.add('insert_doc', (doctype, args, ignore_duplicate) => {
 					return res.body.data;
 				});
 		});
+});
+
+Cypress.Commands.add('add_filter', () => {
+	cy.get('.filter-section .filter-button').click();
+	cy.wait(300);
+	cy.get('.filter-popover').should('exist');
+});
+
+Cypress.Commands.add('clear_filters', () => {
+	cy.get('.filter-section .filter-button').click();
+	cy.wait(300);
+	cy.get('.filter-popover').should('exist');
+	cy.get('.filter-popover').find('.clear-filters').click();
+	cy.get('.filter-section .filter-button').click();
+	cy.window().its('cur_list').then(cur_list => {
+		cur_list && cur_list.filter_area && cur_list.filter_area.clear();
+	});
+
+	
+});
+
+Cypress.Commands.add('click_modal_primary_button', (btn_name) => {
+	cy.get('.modal-footer > .standard-actions > .btn-primary').contains(btn_name).trigger('click', {force: true});
+});
+
+Cypress.Commands.add('click_sidebar_button', (btn_no) => {
+	cy.get('.list-group-by-fields > .group-by-field > .btn').eq(btn_no).click();
+});
+
+Cypress.Commands.add('click_listview_row_item', (row_no) => {
+	cy.get('.list-row > .level-left > .list-subject > .bold > .ellipsis').eq(row_no).click({force: true});
+});
+
+Cypress.Commands.add('click_filter_button', () => {
+	cy.get('.filter-selector > .btn').click();
+});
+
+Cypress.Commands.add('click_listview_primary_button', (btn_name) => {
+	cy.get('.primary-action').contains(btn_name).click({force: true});
+});
+
+Cypress.Commands.add('click_timeline_action_btn', (btn_no) => {
+	cy.get('.timeline-content > .timeline-message-box > .justify-between > .actions > .btn').eq(btn_no).first().click();
 });
