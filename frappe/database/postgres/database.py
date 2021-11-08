@@ -61,8 +61,7 @@ class PostgresDatabase(Database):
 			'Color':		('varchar', self.VARCHAR_LEN),
 			'Barcode':		('text', ''),
 			'Geolocation':	('text', ''),
-			'Duration':		('decimal', '21,9'),
-			'Icon':			('varchar', self.VARCHAR_LEN)
+			'Duration':		('decimal', '21,9')
 		}
 
 	def get_connection(self):
@@ -173,19 +172,6 @@ class PostgresDatabase(Database):
 	@staticmethod
 	def is_data_too_long(e):
 		return e.pgcode == STRING_DATA_RIGHT_TRUNCATION
-
-	def rename_table(self, old_name: str, new_name: str) -> Union[List, Tuple]:
-		old_name = get_table_name(old_name)
-		new_name = get_table_name(new_name)
-		return self.sql(f"ALTER TABLE `{old_name}` RENAME TO `{new_name}`")
-
-	def describe(self, doctype: str)-> Union[List, Tuple]:
-		table_name = get_table_name(doctype)
-		return self.sql(f"SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = '{table_name}'")
-
-	def change_column_type(self, doctype: str, column: str, type: str) -> Union[List, Tuple]:
-		table_name = get_table_name(doctype)
-		return self.sql(f'ALTER TABLE "{table_name}" ALTER COLUMN "{column}" TYPE {type}')
 
 	def rename_table(self, old_name: str, new_name: str) -> Union[List, Tuple]:
 		old_name = get_table_name(old_name)

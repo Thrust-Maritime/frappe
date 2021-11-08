@@ -60,6 +60,13 @@ def get_decrypted_password(doctype, name, fieldname="password", raise_exception=
 	elif raise_exception:
 		frappe.throw(_("Password not found"), frappe.AuthenticationError)
 
+	# TODO: Simplify this via aliasing methods in `frappe.qb`
+	if frappe.db.db_type == "mariadb":
+		query = query.on_duplicate_key_update(Auth.password, Values(Auth.password))
+	elif frappe.db.db_type == "postgres":
+		query = (
+			query.on_conflict(Auth.doctype, Auth.name, Auth.fieldname).do_update(Auth.password)
+		)
 
 def set_encrypted_password(doctype, name, pwd, fieldname="password"):
 	query = (
@@ -91,6 +98,23 @@ def remove_encrypted_password(doctype, name, fieldname='password'):
 		"name": name,
 		"fieldname": fieldname
 	})
+
+def check_password(user, pwd, doctype="User", fieldname="password", delete_tracker_cache=True):
+	"""Checks if user and password are correct, else raises frappe.AuthenticationError"""
+
+	result = (
+		frappe.qb.from_(Auth)
+		.select(Auth.name, Auth.password)
+		.where(
+			(Auth.doctype == doctype)
+			& (Auth.name == user)
+			& (Auth.fieldname == fieldname)
+			& (Auth.encrypted == 0)
+		)
+		.limit(1)
+		.run(as_dict=True)
+	)
+
 
 def check_password(user, pwd, doctype="User", fieldname="password", delete_tracker_cache=True):
 	"""Checks if user and password are correct, else raises frappe.AuthenticationError"""

@@ -135,7 +135,8 @@ def update_tags(doc, tags):
 
 	:param doc: Document to be added to global tags
 	"""
-	new_tags = {tag.strip() for tag in tags.split(",") if tag}
+
+	new_tags = list(set([tag.strip() for tag in tags.split(",") if tag]))
 	existing_tags = [tag.tag for tag in frappe.get_list("Tag Link", filters={
 			"document_type": doc.doctype,
 			"document_name": doc.name

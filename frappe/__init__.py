@@ -30,7 +30,10 @@ from .utils.lazy_loader import lazy_import
 
 from frappe.query_builder import get_query_builder, patch_query_execute
 
-__version__ = '14.0.0-dev'
+# Lazy imports
+faker = lazy_import('faker')
+
+__version__ = '13.13.0'
 
 __title__ = "Frappe Framework"
 

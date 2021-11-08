@@ -4,9 +4,7 @@ import os
 import re
 import json
 import shutil
-import subprocess
 from subprocess import getoutput
-from io import StringIO
 from tempfile import mkdtemp, mktemp
 from distutils.spawn import find_executable
 
@@ -16,7 +14,7 @@ from frappe.utils.minify import JavascriptMinify
 import click
 import psutil
 from urllib.parse import urlparse
-from semantic_version import Version
+from simple_chalk import green
 from requests import head
 from requests.exceptions import HTTPError
 
@@ -77,7 +75,6 @@ def build_missing_files():
 		# no assets.json, run full build
 		bundle(build_mode, apps="frappe")
 
-
 def get_assets_link(frappe_head) -> str:
 	tag = getoutput(
 		r"cd ../apps/frappe && git show-ref --tags -d | grep %s | sed -e 's,.*"
@@ -107,7 +104,7 @@ def fetch_assets(url, frappe_head):
 	if not assets_archive:
 		raise AssetsNotDownloadedError(f"Assets could not be retrived from {url}")
 
-	click.echo(click.style("✔", fg="green") + f" Downloaded Frappe assets from {url}")
+	print(f"\n{green('✔')} Downloaded Frappe assets from {url}")
 
 	return assets_archive
 
@@ -130,7 +127,7 @@ def setup_assets(assets_archive):
 					directories_created.add(asset_directory)
 
 				tar.makefile(file, dest)
-				click.echo(click.style("✔", fg="green") + f" Restored {show}")
+				print("{0} Restored {1}".format(green('✔'), show))
 
 	return directories_created
 
@@ -238,8 +235,9 @@ def bundle(mode, apps=None, hard_link=False, make_copy=False, restore=False, ver
 	if skip_frappe:
 		command += " --skip_frappe"
 
-	if files:
-		command += " --files {files}".format(files=','.join(files))
+	frappe_app_path = os.path.abspath(os.path.join(app_paths[0], ".."))
+	check_yarn()
+	frappe.commands.popen(command, cwd=frappe_app_path, env=get_node_env(), raise_err=True)
 
 	command += " --run-build-command"
 
