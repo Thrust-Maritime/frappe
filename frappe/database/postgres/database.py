@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 
 import psycopg2
 import psycopg2.extensions
+from six import string_types
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from psycopg2.errorcodes import STRING_DATA_RIGHT_TRUNCATION
 
@@ -13,9 +14,9 @@ from frappe.utils import cstr, get_table_name
 
 # cast decimals as floats
 DEC2FLOAT = psycopg2.extensions.new_type(
-	psycopg2.extensions.DECIMAL.values,
-	'DEC2FLOAT',
-	lambda value, curs: float(value) if value is not None else None)
+    psycopg2.extensions.DECIMAL.values,
+    'DEC2FLOAT',
+    lambda value, curs: float(value) if value is not None else None)
 
 psycopg2.extensions.register_type(DEC2FLOAT)
 
@@ -113,7 +114,7 @@ class PostgresDatabase(Database):
 		if not date:
 			return '0001-01-01'
 
-		if not isinstance(date, str):
+		if not isinstance(date, frappe.string_types):
 			date = date.strftime('%Y-%m-%d')
 
 		return date
@@ -258,17 +259,17 @@ class PostgresDatabase(Database):
 		return self.sql("""SELECT 1 FROM pg_indexes WHERE tablename='{table_name}'
 			and indexname='{index_name}' limit 1""".format(table_name=table_name, index_name=index_name))
 
-	def add_index(self, doctype: str, fields: List, index_name: str = None):
+	def add_index(self, doctype, fields, index_name=None):
 		"""Creates an index with given fields if not already created.
 		Index name will be `fieldname1_fieldname2_index`"""
-		table_name = get_table_name(doctype)
 		index_name = index_name or self.get_index_name(fields)
-		fields_str = '", "'.join(re.sub(r"\(.*\)", "", field) for field in fields)
+		table_name = 'tab' + doctype
 
-		self.sql_ddl(f'CREATE INDEX IF NOT EXISTS "{index_name}" ON `{table_name}` ("{fields_str}")')
+		self.commit()
+		self.sql("""CREATE INDEX IF NOT EXISTS "{}" ON `{}`("{}")""".format(index_name, table_name, '", "'.join(fields)))
 
 	def add_unique(self, doctype, fields, constraint_name=None):
-		if isinstance(fields, str):
+		if isinstance(fields, string_types):
 			fields = [fields]
 		if not constraint_name:
 			constraint_name = "unique_" + "_".join(fields)

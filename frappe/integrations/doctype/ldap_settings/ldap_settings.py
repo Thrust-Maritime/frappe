@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
+from __future__ import unicode_literals
 import frappe
 from frappe import _, safe_encode
 from frappe.model.document import Document
@@ -113,7 +114,7 @@ class LDAPSettings(Document):
 
 	def sync_roles(self, user, additional_groups=None):
 
-		current_roles = set(d.role for d in user.get("roles"))
+		current_roles = set([d.role for d in user.get("roles")])
 
 		needed_roles = set()
 		needed_roles.add(self.default_role)

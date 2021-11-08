@@ -1,7 +1,7 @@
-frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.ControlData {
-	static html_element = 'select';
-	make_input() {
-		super.make_input();
+frappe.ui.form.ControlSelect = frappe.ui.form.ControlData.extend({
+	html_element: 'select',
+	make_input: function() {
+		this._super();
 
 		const is_xs_input = this.df.input_class
 			&& this.df.input_class.includes('input-xs');
@@ -10,8 +10,8 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 
 		this.$input.addClass('ellipsis');
 		this.set_options();
-	}
-	set_icon(is_xs_input) {
+	},
+	set_icon: function(is_xs_input) {
 		const select_icon_html =
 			`<div class="select-icon ${is_xs_input ? 'xs' : ''}">
 				${frappe.utils.icon('select', is_xs_input ? 'xs' : 'sm')}
@@ -23,8 +23,8 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 				.addClass('flex align-center')
 				.append(select_icon_html);
 		}
-	}
-	set_placeholder(is_xs_input) {
+	},
+	set_placeholder: function(is_xs_input) {
 		const placeholder_html =
 			`<div class="placeholder ellipsis text-extra-muted ${is_xs_input ? 'xs' : ''}">
 				<span>${this.df.placeholder}</span>
@@ -36,14 +36,14 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 		}
 		this.toggle_placeholder();
 		this.$input && this.$input.on('select-change', () => this.toggle_placeholder());
-	}
-	set_formatted_input(value) {
+	},
+	set_formatted_input: function(value) {
 		// refresh options first - (new ones??)
 		if(value==null) value = '';
 		this.set_options(value);
 
 		// set in the input element
-		super.set_formatted_input(value);
+		this._super(value);
 
 		// check if the value to be set is selected
 		var input_value = '';
@@ -56,8 +56,8 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 			// model value must be same as whatever the input is
 			this.set_model_value(input_value);
 		}
-	}
-	set_options(value) {
+	},
+	set_options: function(value) {
 		// reset options, if something new is set
 		var options = this.df.options || [];
 
@@ -79,8 +79,8 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 				this.$input.val(selected);
 			}
 		}
-	}
-	get_file_attachment_list() {
+	},
+	get_file_attachment_list: function() {
 		if(!this.frm) return;
 		var fl = frappe.model.docinfo[this.frm.doctype][this.frm.docname];
 		if(fl && fl.attachments) {
@@ -94,12 +94,12 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 			this.set_description(__("Please attach a file first."));
 			return [""];
 		}
-	}
-	toggle_placeholder() {
+	},
+	toggle_placeholder: function() {
 		const input_set = Boolean(this.$input.find('option:selected').text());
 		this.$wrapper.find('.placeholder').toggle(!input_set);
 	}
-};
+});
 
 // add <option> list to <select>
 (function($) {
@@ -113,7 +113,6 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 				var is_value_null = is_null(v.value);
 				var is_label_null = is_null(v.label);
 				var is_disabled = Boolean(v.disabled);
-				var is_selected = Boolean(v.selected);
 
 				if (is_value_null && is_label_null) {
 					value = v;
@@ -127,7 +126,6 @@ frappe.ui.form.ControlSelect = class ControlSelect extends frappe.ui.form.Contro
 			$('<option>').html(cstr(label))
 				.attr('value', value)
 				.prop('disabled', is_disabled)
-				.prop('selected', is_selected)
 				.appendTo(this);
 		}
 		// select the first option

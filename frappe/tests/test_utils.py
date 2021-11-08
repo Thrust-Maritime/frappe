@@ -1,5 +1,7 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# MIT License. See LICENSE
+from __future__ import unicode_literals
+
 import unittest
 import frappe
 
@@ -9,9 +11,8 @@ from frappe.utils import ceil, floor
 from frappe.utils.data import cast, validate_python_code
 
 from PIL import Image
-from frappe.utils.image import strip_exif_data, optimize_image
+from frappe.utils.image import strip_exif_data
 import io
-from mimetypes import guess_type
 from datetime import datetime, timedelta, date
 
 class TestFilters(unittest.TestCase):
@@ -230,19 +231,6 @@ class TestImage(unittest.TestCase):
 
 		self.assertEqual(new_image._getexif(), None)
 		self.assertNotEqual(original_image._getexif(), new_image._getexif())
-
-	def test_optimize_image(self):
-		image_file_path = "../apps/frappe/frappe/tests/data/sample_image_for_optimization.jpg"
-		content_type = guess_type(image_file_path)[0]
-		original_content = io.open(image_file_path, mode='rb').read()
-
-		optimized_content = optimize_image(original_content, content_type, max_width=500, max_height=500)
-		optimized_image = Image.open(io.BytesIO(optimized_content))
-		width, height = optimized_image.size
-
-		self.assertLessEqual(width, 500)
-		self.assertLessEqual(height, 500)
-		self.assertLess(len(optimized_content), len(original_content))
 
 class TestPythonExpressions(unittest.TestCase):
 	def test_validation_for_good_python_expression(self):

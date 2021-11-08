@@ -8,9 +8,7 @@
  "field_order": [
   "title",
   "reference_doctype",
-  "module",
-  "is_standard",
-  "save_on_complete",
+  "completed",
   "section_break_3",
   "steps"
  ],
@@ -21,15 +19,22 @@
    "in_list_view": 1,
    "label": "Reference Document",
    "options": "DocType",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
-   "depends_on": "reference_doctype",
    "fieldname": "steps",
    "fieldtype": "Table",
    "label": "Steps",
    "options": "Form Tour Step",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.__islocal != 1",
+   "fieldname": "completed",
+   "fieldtype": "Check",
+   "label": "Mark as Completed"
   },
   {
    "fieldname": "section_break_3",
@@ -41,32 +46,11 @@
    "label": "Title",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "save_on_complete",
-   "fieldtype": "Check",
-   "label": "Save on Completion"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_standard",
-   "fieldtype": "Check",
-   "label": "Is Standard"
-  },
-  {
-   "fetch_from": "reference_doctype.module",
-   "fieldname": "module",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Module",
-   "options": "Module Def",
-   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-06-06 20:32:54.068774",
+ "modified": "2021-05-26 19:36:59.093753",
  "modified_by": "Administrator",
  "module": "Desk",
  "name": "Form Tour",

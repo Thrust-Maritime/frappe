@@ -1,6 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import string
 import frappe
 from frappe import _
@@ -60,16 +61,6 @@ def get_decrypted_password(doctype, name, fieldname="password", raise_exception=
 	elif raise_exception:
 		frappe.throw(_("Password not found"), frappe.AuthenticationError)
 
-<<<<<<< HEAD
-	# TODO: Simplify this via aliasing methods in `frappe.qb`
-	if frappe.db.db_type == "mariadb":
-		query = query.on_duplicate_key_update(Auth.password, Values(Auth.password))
-	elif frappe.db.db_type == "postgres":
-		query = (
-			query.on_conflict(Auth.doctype, Auth.name, Auth.fieldname).do_update(Auth.password)
-		)
-=======
->>>>>>> version13.13
 
 def set_encrypted_password(doctype, name, pwd, fieldname="password"):
 	query = (
@@ -96,11 +87,11 @@ def set_encrypted_password(doctype, name, pwd, fieldname="password"):
 
 
 def remove_encrypted_password(doctype, name, fieldname='password'):
-	frappe.db.delete("__Auth", {
-		"doctype": doctype,
-		"name": name,
-		"fieldname": fieldname
-	})
+	frappe.db.sql(
+		'DELETE FROM `__Auth` WHERE doctype = %s and name = %s and fieldname = %s',
+		values=[doctype, name, fieldname]
+	)
+
 
 def check_password(user, pwd, doctype="User", fieldname="password", delete_tracker_cache=True):
 	"""Checks if user and password are correct, else raises frappe.AuthenticationError"""
@@ -118,26 +109,6 @@ def check_password(user, pwd, doctype="User", fieldname="password", delete_track
 		.run(as_dict=True)
 	)
 
-<<<<<<< HEAD
-
-def check_password(user, pwd, doctype="User", fieldname="password", delete_tracker_cache=True):
-	"""Checks if user and password are correct, else raises frappe.AuthenticationError"""
-
-	result = (
-		frappe.qb.from_(Auth)
-		.select(Auth.name, Auth.password)
-		.where(
-			(Auth.doctype == doctype)
-			& (Auth.name == user)
-			& (Auth.fieldname == fieldname)
-			& (Auth.encrypted == 0)
-		)
-		.limit(1)
-		.run(as_dict=True)
-	)
-
-=======
->>>>>>> version13.13
 	if not result or not passlibctx.verify(pwd, result[0].password):
 		raise frappe.AuthenticationError(_("Incorrect User or Password"))
 
@@ -202,10 +173,8 @@ def update_password(user, pwd, doctype='User', fieldname='password', logout_all_
 
 def delete_all_passwords_for(doctype, name):
 	try:
-		frappe.db.delete("__Auth", {
-			"doctype": doctype,
-			"name": name
-		})
+		frappe.db.sql("""delete from `__Auth` where `doctype`=%(doctype)s and `name`=%(name)s""",
+			{ 'doctype': doctype, 'name': name })
 	except Exception as e:
 		if not frappe.db.is_missing_column(e):
 			raise
@@ -231,33 +200,20 @@ def create_auth_table():
 	frappe.db.create_auth_table()
 
 
-def encrypt(txt, encryption_key=None):
-	# Only use Fernet.generate_key().decode() to enter encyption_key value
-
-	try:
-		cipher_suite = Fernet(encode(encryption_key or get_encryption_key()))
-	except Exception:
-		# encryption_key is not in 32 url-safe base64-encoded format
-		frappe.throw(_('Encryption key is in invalid format!'))
-
-	cipher_text = cstr(cipher_suite.encrypt(encode(txt)))
+def encrypt(pwd):
+	cipher_suite = Fernet(encode(get_encryption_key()))
+	cipher_text = cstr(cipher_suite.encrypt(encode(pwd)))
 	return cipher_text
 
 
-def decrypt(txt, encryption_key=None):
-	# Only use encryption_key value generated with Fernet.generate_key().decode()
-
+def decrypt(pwd):
 	try:
-		cipher_suite = Fernet(encode(encryption_key or get_encryption_key()))
-		plain_text = cstr(cipher_suite.decrypt(encode(txt)))
+		cipher_suite = Fernet(encode(get_encryption_key()))
+		plain_text = cstr(cipher_suite.decrypt(encode(pwd)))
 		return plain_text
 	except InvalidToken:
 		# encryption_key in site_config is changed and not valid
-		frappe.throw(
-			_("Encryption key is invalid") + "!"
-			if encryption_key
-			else _(", please check site_config.json.")
-		)
+		frappe.throw(_('Encryption key is invalid, Please check site_config.json'))
 
 
 def get_encryption_key():

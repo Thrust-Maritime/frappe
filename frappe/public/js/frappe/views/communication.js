@@ -1,8 +1,6 @@
 // Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
 // MIT License. See license.txt
 
-import localforage from "localforage";
-
 frappe.last_edited_communication = {};
 const separator_element = '<div>---</div>';
 
@@ -36,7 +34,7 @@ frappe.views.CommunicationComposer = class {
 			minimizable: true
 		});
 
-		$(this.dialog.$wrapper.find(".form-section").get(0)).addClass('to_section');
+		this.dialog.sections[0].wrapper.addClass('to_section');
 
 		this.prepare();
 		this.dialog.show();
@@ -760,7 +758,7 @@ frappe.views.CommunicationComposer = class {
 			signature = signature.replace(/\n/g, "<br>");
 		}
 
-		return "<br>" + signature;
+		return "<br><!-- signature-included -->" + signature;
 	}
 
 	get_earlier_reply() {

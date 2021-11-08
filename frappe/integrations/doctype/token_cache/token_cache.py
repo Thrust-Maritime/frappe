@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
-from datetime import datetime, timedelta
+from __future__ import unicode_literals
+from datetime import timedelta
 
 import frappe
 from frappe import _

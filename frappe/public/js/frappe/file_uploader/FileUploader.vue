@@ -46,7 +46,7 @@
 						</svg>
 						<div class="mt-1">{{ __('Library') }}</div>
 					</button>
-					<button class="btn btn-file-upload" v-if="allow_web_link" @click="show_web_link = true">
+					<button class="btn btn-file-upload" @click="show_web_link = true">
 						<svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<circle cx="15" cy="15" r="15" fill="#ECAC4B"/>
 							<path d="M12.0469 17.9543L17.9558 12.0454" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
@@ -63,12 +63,6 @@
 						</svg>
 						<div class="mt-1">{{ __('Camera') }}</div>
 					</button>
-					<button v-if="google_drive_settings.enabled" class="btn btn-file-upload" @click="show_google_drive_picker">
-						<svg width="30" height="30">
-							<image xlink:href="/assets/frappe/icons/social/google_drive.svg" width="30" height="30"/>
-						</svg>
-						<div class="mt-1">{{ __('Google Drive') }}</div>
-					</button>
 				</div>
 				<div class="text-muted text-medium">
 					{{ upload_notes }}
@@ -79,15 +73,13 @@
 			</div>
 		</div>
 		<div class="file-preview-area" v-show="files.length && !show_file_browser && !show_web_link">
-			<div class="file-preview-container" v-if="!show_image_cropper">
+			<div class="file-preview-container">
 				<FilePreview
 					v-for="(file, i) in files"
 					:key="file.name"
 					:file="file"
 					@remove="remove_file(file)"
 					@toggle_private="file.private = !file.private"
-					@toggle_optimize="file.optimize = !file.optimize"
-					@toggle_image_cropper="toggle_image_cropper(i)"
 				/>
 			</div>
 			<div class="flex align-center" v-if="show_upload_button && currently_uploading === -1">
@@ -107,13 +99,6 @@
 				</div>
 			</div>
 		</div>
-		<ImageCropper
-			v-if="show_image_cropper"
-			:file="files[crop_image_with_index]"
-			:attach_doc_image="attach_doc_image"
-			@toggle_image_cropper="toggle_image_cropper(-1)"
-			@upload_after_crop="trigger_upload=true"
-		/>
 		<FileBrowser
 			ref="file_browser"
 			v-if="show_file_browser && !disable_file_browser"
@@ -131,8 +116,6 @@
 import FilePreview from './FilePreview.vue';
 import FileBrowser from './FileBrowser.vue';
 import WebLink from './WebLink.vue';
-import GoogleDrivePicker from '../../integrations/google_drive_picker';
-import ImageCropper from './ImageCropper.vue';
 
 export default {
 	name: 'FileUploader',
@@ -174,9 +157,6 @@ export default {
 				allowed_file_types: [] // ['image/*', 'video/*', '.jpg', '.gif', '.pdf']
 			})
 		},
-		attach_doc_image: {
-			default: false
-		},
 		upload_notes: {
 			default: null // "Images or video, upto 2MB"
 		}
@@ -184,8 +164,7 @@ export default {
 	components: {
 		FilePreview,
 		FileBrowser,
-		WebLink,
-		ImageCropper
+		WebLink
 	},
 	data() {
 		return {
@@ -194,29 +173,6 @@ export default {
 			currently_uploading: -1,
 			show_file_browser: false,
 			show_web_link: false,
-			show_image_cropper: false,
-			crop_image_with_index: -1,
-			trigger_upload: false,
-			hide_dialog_footer: false,
-			allow_take_photo: false,
-			allow_web_link: true,
-			google_drive_settings: {
-				enabled: false
-			}
-		}
-	},
-	created() {
-		this.allow_take_photo = window.navigator.mediaDevices;
-		if (frappe.user_id !== "Guest") {
-			frappe.call({
-				// method only available after login
-				method: "frappe.integrations.doctype.google_settings.google_settings.get_file_picker_settings",
-				callback: (resp) => {
-					if (!resp.exc) {
-						this.google_drive_settings = resp.message;
-					}
-				}
-			});
 		}
 	},
 	watch: {
@@ -231,6 +187,9 @@ export default {
 			return this.files.length > 0
 				&& this.files.every(
 					file => file.total !== 0 && file.progress === file.total);
+		},
+		allow_take_photo() {
+			return window.navigator.mediaDevices;
 		}
 	},
 	methods: {
@@ -252,11 +211,6 @@ export default {
 		},
 		remove_file(file) {
 			this.files = this.files.filter(f => f !== file);
-		},
-		toggle_image_cropper(index) {
-			this.crop_image_with_index = this.show_image_cropper ? -1 : index;
-			this.hide_dialog_footer = !this.show_image_cropper;
-			this.show_image_cropper = !this.show_image_cropper;
 		},
 		toggle_all_private() {
 			let flag;
@@ -281,9 +235,6 @@ export default {
 					let is_image = file.type.startsWith('image');
 					return {
 						file_obj: file,
-						cropper_file: file,
-						crop_box_data: null,
-						optimize: this.attach_doc_image ? true : false,
 						name: file.name,
 						doc: null,
 						progress: 0,
@@ -294,9 +245,6 @@ export default {
 					}
 				});
 			this.files = this.files.concat(files);
-			if(this.files.length != 0 && this.attach_doc_image) {
-				this.toggle_image_cropper(0);
-			}
 		},
 		check_restrictions(file) {
 			let { max_file_size, allowed_file_types } = this.restrictions;
@@ -460,10 +408,6 @@ export default {
 					form_data.append('file_url', file.file_url);
 				}
 
-				if (file.file_name) {
-					form_data.append('file_name', file.file_name);
-				}
-
 				if (this.doctype && this.docname) {
 					form_data.append('doctype', this.doctype);
 					form_data.append('docname', this.docname);
@@ -475,15 +419,6 @@ export default {
 
 				if (this.method) {
 					form_data.append('method', this.method);
-				}
-
-				if (file.optimize) {
-					form_data.append('optimize', true);
-				}
-
-				if (this.attach_doc_image) {
-					form_data.append('max_width', 200);
-					form_data.append('max_height', 200);
 				}
 
 				xhr.send(form_data);
@@ -501,25 +436,6 @@ export default {
 					this.add_files([file])
 				);
 			});
-		},
-		show_google_drive_picker() {
-			let dialog = cur_dialog;
-			dialog.hide();
-			let google_drive = new GoogleDrivePicker({
-				pickerCallback: data => this.google_drive_callback(data, dialog),
-				...this.google_drive_settings
-			});
-			google_drive.loadPicker();
-		},
-		google_drive_callback(data, dialog) {
-			if (data.action == google.picker.Action.PICKED) {
-				this.upload_file({
-					file_url: data.docs[0].url,
-					file_name: data.docs[0].name
-				});
-			} else if (data.action == google.picker.Action.CANCEL) {
-				dialog.show();
-			}
 		},
 		url_to_file(url, filename, mime_type) {
 			return fetch(url)

@@ -1,12 +1,13 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import frappe
 from frappe.utils import escape_html, get_request_site_address, now, cstr
-from urllib.parse import quote, urljoin
+from six.moves.urllib.parse import quote, urljoin
 
 no_cache = 1
-base_template_path = "www/rss.xml"
+base_template_path = "templates/www/rss.xml"
 
 def get_context(context):
 	"""generate rss feed"""

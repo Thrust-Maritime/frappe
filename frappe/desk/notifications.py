@@ -1,8 +1,11 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+
+from __future__ import unicode_literals
 
 import frappe
 from frappe.desk.doctype.notification_settings.notification_settings import get_subscribed_documents
+from six import string_types
 import json
 
 @frappe.whitelist()
@@ -146,7 +149,7 @@ def clear_doctype_notifications(doc, method=None, *args, **kwargs):
 	config = get_notification_config()
 	if not config:
 		return
-	if isinstance(doc, str):
+	if isinstance(doc, string_types):
 		doctype = doc # assuming doctype name was passed directly
 	else:
 		doctype = doc.doctype
@@ -210,13 +213,13 @@ def get_filters_for(doctype):
 	'''get open filters for doctype'''
 	config = get_notification_config()
 	doctype_config = config.get("for_doctype").get(doctype, {})
-	filters = doctype_config if not isinstance(doctype_config, str) else None
+	filters = doctype_config if not isinstance(doctype_config, string_types) else None
 
 	return filters
 
 @frappe.whitelist()
 @frappe.read_only()
-def get_open_count(doctype, name, items=None):
+def get_open_count(doctype, name, items=[]):
 	'''Get open count for given transactions and filters
 
 	:param doctype: Reference DocType
@@ -235,8 +238,7 @@ def get_open_count(doctype, name, items=None):
 	links = meta.get_dashboard_data()
 
 	# compile all items in a list
-	if items is None:
-		items = []
+	if not items:
 		for group in links.transactions:
 			items.extend(group.get("items"))
 

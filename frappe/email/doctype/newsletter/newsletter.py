@@ -1,6 +1,7 @@
 # Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See LICENSE
 
+from __future__ import unicode_literals
 from typing import Dict, List
 
 import frappe

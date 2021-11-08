@@ -10,8 +10,7 @@
   "incoming_port": "993",
   "attachment_limit": "1",
   "smtp_server": "smtp.test.com",
-  "smtp_port": "587",
-  "password": "password"
+  "smtp_port": "587"
  },
  {
   "doctype": "Email Account",
@@ -26,7 +25,6 @@
   "incoming_port": "143",
   "attachment_limit": "1",
   "smtp_server": "smtp.test.com",
-  "smtp_port": "587",
-  "password": "password"
+  "smtp_port": "587"
  }
 ]

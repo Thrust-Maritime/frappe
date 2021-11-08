@@ -202,8 +202,7 @@
    "fieldname": "role_profile_name",
    "fieldtype": "Link",
    "label": "Role Profile",
-   "options": "Role Profile",
-   "permlevel": 1
+   "options": "Role Profile"
   },
   {
    "fieldname": "roles_html",
@@ -555,22 +554,20 @@
    "collapsible": 1,
    "fieldname": "api_access",
    "fieldtype": "Section Break",
-   "label": "API Access"
+   "label": "Api Access"
   },
   {
-   "description": "API Key cannot be regenerated",
+   "description": "API Key cannot be  regenerated",
    "fieldname": "api_key",
    "fieldtype": "Data",
    "label": "API Key",
-   "permlevel": 1,
    "read_only": 1,
    "unique": 1
   },
   {
    "fieldname": "generate_keys",
    "fieldtype": "Button",
-   "label": "Generate Keys",
-   "permlevel": 1
+   "label": "Generate Keys"
   },
   {
    "fieldname": "column_break_65",
@@ -580,7 +577,6 @@
    "fieldname": "api_secret",
    "fieldtype": "Password",
    "label": "API Secret",
-   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -674,7 +670,7 @@
   }
  ],
  "max_attachments": 5,
- "modified": "2021-10-27 17:17:16.098457",
+ "modified": "2021-02-02 16:11:06.037543",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "User",

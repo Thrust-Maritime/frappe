@@ -61,7 +61,6 @@ CREATE TABLE "tabDocField" (
   "in_preview" smallint NOT NULL DEFAULT 0,
   "read_only" smallint NOT NULL DEFAULT 0,
   "precision" varchar(255) DEFAULT NULL,
-  "max_height" varchar(10) DEFAULT NULL,
   "length" bigint NOT NULL DEFAULT 0,
   "translatable" smallint NOT NULL DEFAULT 0,
   "hide_border" smallint NOT NULL DEFAULT 0,
@@ -189,7 +188,6 @@ CREATE TABLE "tabDocType" (
   "restrict_to_domain" varchar(255) DEFAULT NULL,
   "app" varchar(255) DEFAULT NULL,
   "autoname" varchar(255) DEFAULT NULL,
-  "naming_rule" varchar(40) DEFAULT NULL,
   "name_case" varchar(255) DEFAULT NULL,
   "title_field" varchar(255) DEFAULT NULL,
   "image_field" varchar(255) DEFAULT NULL,
@@ -227,11 +225,9 @@ CREATE TABLE "tabDocType" (
   "allow_guest_to_view" smallint NOT NULL DEFAULT 0,
   "route" varchar(255) DEFAULT NULL,
   "is_published_field" varchar(255) DEFAULT NULL,
-  "website_search_field" varchar(255) DEFAULT NULL,
   "email_append_to" smallint NOT NULL DEFAULT 0,
   "subject_field" varchar(255) DEFAULT NULL,
   "sender_field" varchar(255) DEFAULT NULL,
-  "migration_hash" varchar(255) DEFAULT NULL,
   PRIMARY KEY ("name")
 ) ;
 

@@ -1,10 +1,12 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+from __future__ import unicode_literals
+
 import frappe, unittest
 
 class TestDynamicLinks(unittest.TestCase):
 	def setUp(self):
-		frappe.db.delete("Email Unsubscribe")
+		frappe.db.sql('delete from `tabEmail Unsubscribe`')
 
 	def test_delete_normal(self):
 		event = frappe.get_doc({

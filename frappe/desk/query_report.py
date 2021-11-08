@@ -1,5 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+
+from __future__ import unicode_literals
 
 import frappe
 import os
@@ -20,6 +22,7 @@ from frappe.model.utils import render_include
 from frappe.translate import send_translations
 import frappe.desk.reportview
 from frappe.permissions import get_role_permissions
+from six import string_types, iteritems
 from datetime import timedelta
 from frappe.core.utils import ljust_list
 
@@ -59,27 +62,20 @@ def get_report_doc(report_name):
 	return doc
 
 
-def get_report_result(report, filters):
+def generate_report_result(report, filters=None, user=None, custom_columns=None):
+	user = user or frappe.session.user
+	filters = filters or []
+
+	if filters and isinstance(filters, string_types):
+		filters = json.loads(filters)
+
+	res = []
+
 	if report.report_type == "Query Report":
 		res = report.execute_query_report(filters)
 
 	elif report.report_type == "Script Report":
 		res = report.execute_script_report(filters)
-
-	elif report.report_type == "Custom Report":
-		ref_report = get_report_doc(report.report_name)
-		res = get_report_result(ref_report, filters)
-
-	return res
-
-def generate_report_result(report, filters=None, user=None, custom_columns=None):
-	user = user or frappe.session.user
-	filters = filters or []
-
-	if filters and isinstance(filters, str):
-		filters = json.loads(filters)
-
-	res = get_report_result(report, filters) or []
 
 	columns, result, message, chart, report_summary, skip_total_row = ljust_list(res, 6)
 	columns = [get_column_as_dict(col) for col in columns]
@@ -228,7 +224,7 @@ def run(report_name, filters=None, user=None, ignore_prepared_report=False, cust
 		and not custom_columns
 	):
 		if filters:
-			if isinstance(filters, str):
+			if isinstance(filters, string_types):
 				filters = json.loads(filters)
 
 			dn = filters.get("prepared_report_name")
@@ -323,7 +319,7 @@ def export_query():
 	data.pop("cmd", None)
 	data.pop("csrf_token", None)
 
-	if isinstance(data.get("filters"), str):
+	if isinstance(data.get("filters"), string_types):
 		filters = json.loads(data["filters"])
 
 	if data.get("report_name"):
@@ -338,7 +334,7 @@ def export_query():
 	include_indentation = data.get("include_indentation")
 	visible_idx = data.get("visible_idx")
 
-	if isinstance(visible_idx, str):
+	if isinstance(visible_idx, string_types):
 		visible_idx = json.loads(visible_idx)
 
 	if file_format_type == "Excel":
@@ -369,7 +365,7 @@ def export_query():
 def handle_duration_fieldtype_values(result, columns):
 	for i, col in enumerate(columns):
 		fieldtype = None
-		if isinstance(col, str):
+		if isinstance(col, string_types):
 			col = col.split(":")
 			if len(col) > 1:
 				if col[1]:
@@ -439,7 +435,7 @@ def add_total_row(result, columns, meta=None):
 	has_percent = []
 	for i, col in enumerate(columns):
 		fieldtype, options, fieldname = None, None, None
-		if isinstance(col, str):
+		if isinstance(col, string_types):
 			if meta:
 				# get fieldtype from the meta
 				field = meta.get_field(col)
@@ -489,7 +485,7 @@ def add_total_row(result, columns, meta=None):
 		total_row[i] = flt(total_row[i]) / len(result)
 
 	first_col_fieldtype = None
-	if isinstance(columns[0], str):
+	if isinstance(columns[0], string_types):
 		first_col = columns[0].split(":")
 		if len(first_col) > 1:
 			first_col_fieldtype = first_col[1].split("/")[0]
@@ -713,7 +709,7 @@ def get_linked_doctypes(columns, data):
 					if val and col not in columns_with_value:
 						columns_with_value.append(col)
 
-	items = list(linked_doctypes.items())
+	items = list(iteritems(linked_doctypes))
 
 	for doctype, key in items:
 		if key not in columns_with_value:
@@ -740,7 +736,7 @@ def get_column_as_dict(col):
 	col_dict = frappe._dict()
 
 	# string
-	if isinstance(col, str):
+	if isinstance(col, string_types):
 		col = col.split(":")
 		if len(col) > 1:
 			if "/" in col[1]:

@@ -1,5 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+from __future__ import unicode_literals
+
 """Use blog post test to test user permissions logic"""
 
 import frappe
@@ -14,7 +16,7 @@ test_records = frappe.get_test_records('Event')
 
 class TestEvent(unittest.TestCase):
 	def setUp(self):
-		frappe.db.delete("Event")
+		frappe.db.sql('delete from tabEvent')
 		make_test_objects('Event', reset=True)
 
 		self.test_records = frappe.get_test_records('Event')

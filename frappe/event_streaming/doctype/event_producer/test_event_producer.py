@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and Contributors
-# License: MIT. See LICENSE
+# See license.txt
+from __future__ import unicode_literals
+
 import frappe
 import unittest
 import json
@@ -152,7 +154,7 @@ class TestEventProducer(unittest.TestCase):
 
 	def test_conditional_events(self):
 		producer = get_remote_site()
-
+		
 		# Add Condition
 		event_producer = frappe.get_doc('Event Producer', producer_url)
 		note_producer_entry = [
@@ -190,7 +192,7 @@ class TestEventProducer(unittest.TestCase):
 
 	def test_conditional_events_with_cmd(self):
 		producer = get_remote_site()
-
+		
 		# Add Condition
 		event_producer = frappe.get_doc('Event Producer', producer_url)
 		note_producer_entry = [

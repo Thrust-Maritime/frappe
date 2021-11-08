@@ -143,12 +143,12 @@ export default class WebForm extends frappe.ui.FieldGroup {
 					frappe.web_form.events.trigger('after_save');
 					this.after_save && this.after_save();
 					// args doctype and docname added to link doctype in file manager
-					if (is_new && (response.message.attachment || response.message.file)) {
+					if (is_new) {
 						frappe.call({
 							type: 'POST',
 							method: "frappe.handler.upload_file",
 							args: {
-								file_url: response.message.attachment || response.message.file,
+								file_url: response.message.attachment,
 								doctype: response.message.doctype,
 								docname: response.message.name
 							}

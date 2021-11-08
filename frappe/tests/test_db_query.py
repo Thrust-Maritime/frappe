@@ -1,10 +1,11 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+from __future__ import unicode_literals
+
 import frappe, unittest
 
 from frappe.model.db_query import DatabaseQuery
 from frappe.desk.reportview import get_filters_cond
-from frappe.query_builder import Column
 
 from frappe.core.page.permission_manager.permission_manager import update, reset, add
 from frappe.permissions import add_user_permission, clear_user_permissions_for_doctype
@@ -21,18 +22,6 @@ class TestReportview(unittest.TestCase):
 
 	def test_basic(self):
 		self.assertTrue({"name":"DocType"} in DatabaseQuery("DocType").execute(limit_page_length=None))
-
-	def test_extract_tables(self):
-		db_query = DatabaseQuery("DocType")
-		add_custom_field("DocType", 'test_tab_field', 'Data')
-
-		db_query.fields = ["tabNote.creation", "test_tab_field", "tabDocType.test_tab_field"]
-		db_query.extract_tables()
-		self.assertIn("`tabNote`", db_query.tables)
-		self.assertIn("`tabDocType`", db_query.tables)
-		self.assertNotIn("test_tab_field", db_query.tables)
-
-		clear_custom_fields("DocType")
 
 	def test_build_match_conditions(self):
 		clear_user_permissions_for_doctype('Blog Post', 'test2@example.com')
@@ -106,7 +95,7 @@ class TestReportview(unittest.TestCase):
 
 	def test_between_filters(self):
 		""" test case to check between filter for date fields """
-		frappe.db.delete("Event")
+		frappe.db.sql("delete from tabEvent")
 
 		# create events to test the between operator filter
 		todays_event = create_event()
@@ -141,12 +130,6 @@ class TestReportview(unittest.TestCase):
 		self.assertTrue({ "name": todays_event.name } in data)
 		self.assertTrue({ "name": event1.name } not in data)
 		self.assertTrue({ "name": event2.name } not in data)
-
-		# test between is formatted for creation column
-		data = DatabaseQuery("Event").execute(
-			filters={"creation": ["between", ["2016-07-06", "2016-07-07"]]},
-			fields=["name"])
-
 
 	def test_ignore_permissions_for_get_filters_cond(self):
 		frappe.set_user('test2@example.com')
@@ -379,25 +362,6 @@ class TestReportview(unittest.TestCase):
 	def test_pluck_any_field(self):
 		owners = DatabaseQuery("DocType").execute(filters={"name": "DocType"}, pluck="owner")
 		self.assertEqual(owners, ["Administrator"])
-
-	def test_column_comparison(self):
-		"""Test DatabaseQuery.execute to test column comparison
-		"""
-		users_unedited = frappe.get_all(
-			"User",
-			filters={"creation": Column("modified")},
-			fields=["name", "creation", "modified"],
-			limit=1,
-		)
-		users_edited = frappe.get_all(
-			"User",
-			filters={"creation": ("!=", Column("modified"))},
-			fields=["name", "creation", "modified"],
-			limit=1,
-		)
-
-		self.assertEqual(users_unedited[0].modified, users_unedited[0].creation)
-		self.assertNotEqual(users_edited[0].modified, users_edited[0].creation)
 
 	def test_reportview_get(self):
 		user = frappe.get_doc("User", "test@example.com")

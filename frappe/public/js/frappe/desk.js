@@ -24,12 +24,12 @@ $(document).ready(function() {
 	frappe.start_app();
 });
 
-frappe.Application = class Application {
-	constructor() {
+frappe.Application = Class.extend({
+	init: function() {
 		this.startup();
-	}
+	},
 
-	startup() {
+	startup: function() {
 		frappe.socketio.init();
 		frappe.model.init();
 
@@ -113,7 +113,7 @@ frappe.Application = class Application {
 		});
 
 		// listen to build errors
-		this.setup_build_events();
+		this.setup_build_error_listener();
 
 		if (frappe.sys_defaults.email_user_password) {
 			var email_list =  frappe.sys_defaults.email_user_password.split(',');
@@ -158,7 +158,7 @@ frappe.Application = class Application {
 				}, 600000); // check every 10 minutes
 			}
 		}
-	}
+	},
 
 	set_route() {
 		frappe.flags.setting_original_route = true;
@@ -173,14 +173,14 @@ frappe.Application = class Application {
 		frappe.router.on('change', () => {
 			$(".tooltip").hide();
 		});
-	}
+	},
 
 	setup_frappe_vue() {
 		Vue.prototype.__ = window.__;
 		Vue.prototype.frappe = window.frappe;
-	}
+	},
 
-	set_password(user) {
+	set_password: function(user) {
 		var me=this;
 		frappe.call({
 			method: 'frappe.core.doctype.user.user.get_email_awaiting',
@@ -197,9 +197,9 @@ frappe.Application = class Application {
 				}
 			}
 		});
-	}
+	},
 
-	email_password_prompt(email_account,user,i) {
+	email_password_prompt: function(email_account,user,i) {
 		var me = this;
 		let d = new frappe.ui.Dialog({
 			title: __('Password missing in Email Account'),
@@ -253,8 +253,8 @@ frappe.Application = class Application {
 			});
 		});
 		d.show();
-	}
-	load_bootinfo() {
+	},
+	load_bootinfo: function() {
 		if(frappe.boot) {
 			this.setup_workspaces();
 			frappe.model.sync(frappe.boot.docs);
@@ -276,7 +276,7 @@ frappe.Application = class Application {
 		} else {
 			this.set_as_guest();
 		}
-	}
+	},
 
 	setup_workspaces() {
 		frappe.modules = {};
@@ -285,24 +285,28 @@ frappe.Application = class Application {
 			frappe.modules[page.module]=page;
 			frappe.workspaces[frappe.router.slug(page.name)] = page;
 		}
-	}
+		if (!frappe.workspaces['home']) {
+			// default workspace is settings for Frappe
+			frappe.workspaces['home'] = frappe.workspaces[Object.keys(frappe.workspaces)[0]];
+		}
+	},
 
-	load_user_permissions() {
+	load_user_permissions: function() {
 		frappe.defaults.update_user_permissions();
 
 		frappe.realtime.on('update_user_permissions', frappe.utils.debounce(() => {
 			frappe.defaults.update_user_permissions();
 		}, 500));
-	}
+	},
 
-	check_metadata_cache_status() {
+	check_metadata_cache_status: function() {
 		if(frappe.boot.metadata_version != localStorage.metadata_version) {
 			frappe.assets.clear_local_storage();
 			frappe.assets.init_local_storage();
 		}
-	}
+	},
 
-	set_globals() {
+	set_globals: function() {
 		frappe.session.user = frappe.boot.user.name;
 		frappe.session.logged_in_user = frappe.boot.user.name;
 		frappe.session.user_email = frappe.boot.user.email;
@@ -354,8 +358,8 @@ frappe.Application = class Application {
 				}
 			}
 		});
-	}
-	sync_pages() {
+	},
+	sync_pages: function() {
 		// clear cached pages if timestamp is not found
 		if(localStorage["page_info"]) {
 			frappe.boot.allowed_pages = [];
@@ -370,8 +374,8 @@ frappe.Application = class Application {
 			frappe.boot.allowed_pages = Object.keys(frappe.boot.page_info);
 		}
 		localStorage["page_info"] = JSON.stringify(frappe.boot.page_info);
-	}
-	set_as_guest() {
+	},
+	set_as_guest: function() {
 		frappe.session.user = 'Guest';
 		frappe.session.user_email = '';
 		frappe.session.user_fullname = 'Guest';
@@ -379,23 +383,23 @@ frappe.Application = class Application {
 		frappe.user_defaults = {};
 		frappe.user_roles = ['Guest'];
 		frappe.sys_defaults = {};
-	}
-	make_page_container() {
+	},
+	make_page_container: function() {
 		if ($("#body").length) {
 			$(".splash").remove();
 			frappe.temp_container = $("<div id='temp-container' style='display: none;'>")
 				.appendTo("body");
 			frappe.container = new frappe.views.Container();
 		}
-	}
-	make_nav_bar() {
+	},
+	make_nav_bar: function() {
 		// toolbar
 		if(frappe.boot && frappe.boot.home_page!=='setup-wizard') {
 			frappe.frappe_toolbar = new frappe.ui.toolbar.Toolbar();
 		}
 
-	}
-	logout() {
+	},
+	logout: function() {
 		var me = this;
 		me.logged_out = true;
 		return frappe.call({
@@ -407,8 +411,8 @@ frappe.Application = class Application {
 				me.redirect_to_login();
 			}
 		});
-	}
-	handle_session_expired() {
+	},
+	handle_session_expired: function() {
 		if(!frappe.app.session_expired_dialog) {
 			var dialog = new frappe.ui.Dialog({
 				title: __('Session Expired'),
@@ -458,16 +462,16 @@ frappe.Application = class Application {
 				'background-color': '#4B4C9D'
 			});
 		}
-	}
-	redirect_to_login() {
+	},
+	redirect_to_login: function() {
 		window.location.href = '/';
-	}
-	set_favicon() {
+	},
+	set_favicon: function() {
 		var link = $('link[type="image/x-icon"]').remove().attr("href");
 		$('<link rel="shortcut icon" href="' + link + '" type="image/x-icon">').appendTo("head");
 		$('<link rel="icon" href="' + link + '" type="image/x-icon">').appendTo("head");
-	}
-	trigger_primary_action() {
+	},
+	trigger_primary_action: function() {
 		// to trigger change event on active input before triggering primary action
 		$(document.activeElement).blur();
 		// wait for possible JS validations triggered after blur (it might change primary button)
@@ -481,10 +485,9 @@ frappe.Application = class Application {
 				frappe.container.page.save_action();
 			}
 		}, 100);
-	}
+	},
 
-
-	show_change_log() {
+	show_change_log: function() {
 		var me = this;
 		let change_log = frappe.boot.change_log;
 
@@ -515,15 +518,15 @@ frappe.Application = class Application {
 			});
 			me.show_notes();
 		};
-	}
+	},
 
-	show_update_available() {
+	show_update_available: () => {
 		frappe.call({
 			"method": "frappe.utils.change_log.show_update_popup"
 		});
-	}
+	},
 
-	setup_analytics() {
+	setup_analytics: function() {
 		if(window.mixpanel) {
 			window.mixpanel.identify(frappe.session.user);
 			window.mixpanel.people.set({
@@ -533,17 +536,17 @@ frappe.Application = class Application {
 				"$email": frappe.session.user
 			});
 		}
-	}
+	},
 
 	add_browser_class() {
 		$('html').addClass(frappe.utils.get_browser().name.toLowerCase());
-	}
+	},
 
 	set_fullwidth_if_enabled() {
 		frappe.ui.toolbar.set_fullwidth_if_enabled();
-	}
+	},
 
-	show_notes() {
+	show_notes: function() {
 		var me = this;
 		if(frappe.boot.notes.length) {
 			frappe.boot.notes.forEach(function(note) {
@@ -570,19 +573,21 @@ frappe.Application = class Application {
 				}
 			});
 		}
-	}
+	},
 
-	setup_build_events() {
+	setup_build_error_listener() {
 		if (frappe.boot.developer_mode) {
-			frappe.require("build_events.bundle.js");
+			frappe.realtime.on('build_error', (data) => {
+				console.log(data);
+			});
 		}
-	}
+	},
 
 	setup_energy_point_listeners() {
 		frappe.realtime.on('energy_point_alert', (message) => {
 			frappe.show_alert(message);
 		});
-	}
+	},
 
 	setup_copy_doc_listener() {
 		$('body').on('paste', (e) => {
@@ -591,7 +596,9 @@ frappe.Application = class Application {
 				let doc = JSON.parse(pasted_data);
 				if (doc.doctype) {
 					e.preventDefault();
-					const sleep = frappe.utils.sleep;
+					let sleep = (time) => {
+						return new Promise((resolve) => setTimeout(resolve, time));
+					};
 
 					frappe.dom.freeze(__('Creating {0}', [doc.doctype]) + '...');
 					// to avoid abrupt UX
@@ -614,7 +621,7 @@ frappe.Application = class Application {
 			}
 		});
 	}
-}
+});
 
 frappe.get_module = function(m, default_module) {
 	var module = frappe.modules[m] || default_module;

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
+from __future__ import unicode_literals
 import frappe
 import json,datetime
-from urllib.parse import parse_qs
+from six.moves.urllib.parse import parse_qs
+from six import string_types, text_type
 from frappe.utils import get_request_session
 from frappe import _
 
@@ -36,10 +38,10 @@ def make_put_request(url, **kwargs):
 	return make_request('PUT', url, **kwargs)
 
 def create_request_log(data, integration_type, service_name, name=None, error=None):
-	if isinstance(data, str):
+	if isinstance(data, string_types):
 		data = json.loads(data)
 
-	if isinstance(error, str):
+	if isinstance(error, string_types):
 		error = json.loads(error)
 
 	integration_request = frappe.get_doc({
@@ -102,4 +104,4 @@ def create_payment_gateway(gateway, settings=None, controller=None):
 
 def json_handler(obj):
 	if isinstance(obj, (datetime.date, datetime.timedelta, datetime.datetime)):
-		return str(obj)
+		return text_type(obj)

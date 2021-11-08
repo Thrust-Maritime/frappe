@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
+from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils import unique
-from frappe.query_builder import DocType
 
 class Tag(Document):
 	pass
@@ -43,12 +44,10 @@ def remove_tag(tag, dt, dn):
 @frappe.whitelist()
 def get_tagged_docs(doctype, tag):
 	frappe.has_permission(doctype, throw=True)
-	doctype = DocType(doctype)
-	return (
-		frappe.qb.from_(doctype)
-		.where(doctype._user_tags.like(tag))
-		.select(doctype.name)
-	).run()
+
+	return frappe.db.sql("""SELECT name
+		FROM `tab{0}`
+		WHERE _user_tags LIKE '%{1}%'""".format(doctype, tag))
 
 @frappe.whitelist()
 def get_tags(doctype, txt):
@@ -125,10 +124,7 @@ def delete_tags_for_document(doc):
 	if not frappe.db.table_exists("Tag Link"):
 		return
 
-	frappe.db.delete("Tag Link", {
-		"document_type": doc.doctype,
-		"document_name": doc.name
-	})
+	frappe.db.sql("""DELETE FROM `tabTag Link` WHERE `document_type`=%s AND `document_name`=%s""", (doc.doctype, doc.name))
 
 def update_tags(doc, tags):
 	"""Adds tags for documents
@@ -153,6 +149,7 @@ def update_tags(doc, tags):
 			"title": doc.get_title() or '',
 			"tag": tag
 		}).insert(ignore_permissions=True)
+
 
 	deleted_tags = list(set(existing_tags) - set(new_tags))
 	for tag in deleted_tags:

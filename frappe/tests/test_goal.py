@@ -1,6 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import unittest
 import frappe
 
@@ -13,7 +14,7 @@ class TestGoal(unittest.TestCase):
 		make_test_objects('Event', reset=True)
 
 	def tearDown(self):
-		frappe.db.delete("Event")
+		frappe.db.sql('delete from `tabEvent`')
 		# make_test_objects('Event', reset=True)
 		frappe.db.commit()
 

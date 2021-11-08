@@ -1,7 +1,9 @@
 # Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
-
+from __future__ import unicode_literals
+from six.moves import range
+from six import string_types
 import frappe
 import json
 
@@ -104,7 +106,7 @@ class Event(Document):
 @frappe.whitelist()
 def delete_communication(event, reference_doctype, reference_docname):
 	deleted_participant = frappe.get_doc(reference_doctype, reference_docname)
-	if isinstance(event, str):
+	if isinstance(event, string_types):
 		event = json.loads(event)
 
 	filters = [
@@ -166,7 +168,7 @@ def get_events(start, end, user=None, for_reminder=False, filters=None):
 	if not user:
 		user = frappe.session.user
 
-	if isinstance(filters, str):
+	if isinstance(filters, string_types):
 		filters = json.loads(filters)
 
 	filter_condition = get_filters_cond('Event', filters, [])
@@ -338,8 +340,9 @@ def delete_events(ref_type, ref_name, delete_event=False):
 				total_participants = frappe.get_all("Event Participants", filters={"parenttype": "Event", "parent": participation.parent})
 
 				if len(total_participants) <= 1:
-					frappe.db.delete("Event", {"name": participation.parent})
-					frappe.db.delete("Event Participants", {"name": participation.name})
+					frappe.db.sql("DELETE FROM `tabEvent` WHERE `name` = %(name)s", {'name': participation.parent})
+
+				frappe.db.sql("DELETE FROM `tabEvent Participants ` WHERE `name` = %(name)s", {'name': participation.name})
 
 # Close events if ends_on or repeat_till is less than now_datetime
 def set_status_of_events():

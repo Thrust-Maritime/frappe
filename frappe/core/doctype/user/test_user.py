@@ -1,9 +1,11 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+
+from __future__ import unicode_literals
+
 import json
 import unittest
 from unittest.mock import patch
-
 import frappe
 import frappe.exceptions
 from frappe.core.doctype.user.user import (extract_mentions, reset_password,
@@ -54,7 +56,7 @@ class TestUser(unittest.TestCase):
 	def test_delete(self):
 		frappe.get_doc("User", "test@example.com").add_roles("_Test Role 2")
 		self.assertRaises(frappe.LinkExistsError, delete_doc, "Role", "_Test Role 2")
-		frappe.db.delete("Has Role", {"role": "_Test Role 2"})
+		frappe.db.sql("""delete from `tabHas Role` where role='_Test Role 2'""")
 		delete_doc("Role","_Test Role 2")
 
 		if frappe.db.exists("User", "_test@example.com"):
@@ -374,5 +376,5 @@ class TestUser(unittest.TestCase):
 
 
 def delete_contact(user):
-	frappe.db.delete("Contact", {"email_id": user})
-	frappe.db.delete("Contact Email", {"email_id": user})
+	frappe.db.sql("DELETE FROM `tabContact` WHERE `email_id`= %s", user)
+	frappe.db.sql("DELETE FROM `tabContact Email` WHERE `email_id`= %s", user)

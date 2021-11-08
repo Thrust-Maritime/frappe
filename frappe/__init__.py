@@ -1,5 +1,5 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 """
 Frappe - Low Code Open Source Framework in Python and JS
 
@@ -18,9 +18,11 @@ if _dev_server:
 	warnings.simplefilter('always', DeprecationWarning)
 	warnings.simplefilter('always', PendingDeprecationWarning)
 
+from six import iteritems, binary_type, text_type, string_types
 from werkzeug.local import Local, release_local
 import sys, importlib, inspect, json
 import typing
+from past.builtins import cmp
 import click
 
 # Local application imports
@@ -96,14 +98,14 @@ def _(msg, lang=None, context=None):
 
 def as_unicode(text, encoding='utf-8'):
 	'''Convert to unicode if required'''
-	if isinstance(text, str):
+	if isinstance(text, text_type):
 		return text
 	elif text==None:
 		return ''
-	elif isinstance(text, bytes):
-		return str(text, encoding)
+	elif isinstance(text, binary_type):
+		return text_type(text, encoding)
 	else:
-		return str(text)
+		return text_type(text)
 
 def get_lang_dict(fortype, name=None):
 	"""Returns the translated language dict for the given type and name.
@@ -140,11 +142,7 @@ lang = local("lang")
 if typing.TYPE_CHECKING:
 	from frappe.database.mariadb.database import MariaDBDatabase
 	from frappe.database.postgres.database import PostgresDatabase
-	from frappe.query_builder.builder import MariaDB, Postgres
-
 	db: typing.Union[MariaDBDatabase, PostgresDatabase]
-	qb: typing.Union[MariaDB, Postgres]
-
 # end: static analysis hack
 
 def init(site, sites_path=None, new_site=False):
@@ -490,11 +488,11 @@ def get_request_header(key, default=None):
 	:param default: Default value."""
 	return request.headers.get(key, default)
 
-def sendmail(recipients=None, sender="", subject="No Subject", message="No Message",
+def sendmail(recipients=[], sender="", subject="No Subject", message="No Message",
 		as_markdown=False, delayed=True, reference_doctype=None, reference_name=None,
 		unsubscribe_method=None, unsubscribe_params=None, unsubscribe_message=None, add_unsubscribe_link=1,
 		attachments=None, content=None, doctype=None, name=None, reply_to=None, queue_separately=False,
-		cc=None, bcc=None, message_id=None, in_reply_to=None, send_after=None, expose_recipients=None,
+		cc=[], bcc=[], message_id=None, in_reply_to=None, send_after=None, expose_recipients=None,
 		send_priority=1, communication=None, retry=1, now=None, read_receipt=None, is_notification=False,
 		inline_images=None, template=None, args=None, header=None, print_letterhead=False, with_container=False):
 	"""Send email using user's default **Email Account** or global default **Email Account**.
@@ -524,14 +522,6 @@ def sendmail(recipients=None, sender="", subject="No Subject", message="No Messa
 	:param header: Append header in email
 	:param with_container: Wraps email inside a styled container
 	"""
-
-	if recipients is None:
-		recipients = []
-	if cc is None:
-		cc = []
-	if bcc is None:
-		bcc = []
-
 	text_content = None
 	if template:
 		message, text_content = get_email_from_template(template, args)
@@ -545,19 +535,15 @@ def sendmail(recipients=None, sender="", subject="No Subject", message="No Messa
 	if not delayed:
 		now = True
 
-	from frappe.email.doctype.email_queue.email_queue import QueueBuilder
-	builder = QueueBuilder(recipients=recipients, sender=sender,
+	from frappe.email import queue
+	queue.send(recipients=recipients, sender=sender,
 		subject=subject, message=message, text_content=text_content,
 		reference_doctype = doctype or reference_doctype, reference_name = name or reference_name, add_unsubscribe_link=add_unsubscribe_link,
 		unsubscribe_method=unsubscribe_method, unsubscribe_params=unsubscribe_params, unsubscribe_message=unsubscribe_message,
 		attachments=attachments, reply_to=reply_to, cc=cc, bcc=bcc, message_id=message_id, in_reply_to=in_reply_to,
 		send_after=send_after, expose_recipients=expose_recipients, send_priority=send_priority, queue_separately=queue_separately,
-		communication=communication, read_receipt=read_receipt, is_notification=is_notification,
+		communication=communication, now=now, read_receipt=read_receipt, is_notification=is_notification,
 		inline_images=inline_images, header=header, print_letterhead=print_letterhead, with_container=with_container)
-
-	# build email queue and send the email if send_now is True.
-	builder.process(send_now=now)
-
 
 whitelisted = []
 guest_methods = []
@@ -616,7 +602,7 @@ def is_whitelisted(method):
 		# strictly sanitize form_dict
 		# escapes html characters like <> except for predefined tags like a, b, ul etc.
 		for key, value in form_dict.items():
-			if isinstance(value, str):
+			if isinstance(value, string_types):
 				form_dict[key] = sanitize_html(value)
 
 def read_only():
@@ -729,20 +715,18 @@ def only_has_select_perm(doctype, user=None, ignore_permissions=False):
 	else:
 		return False
 
-def has_permission(doctype=None, ptype="read", doc=None, user=None, verbose=False, throw=False, parent_doctype=None):
+def has_permission(doctype=None, ptype="read", doc=None, user=None, verbose=False, throw=False):
 	"""Raises `frappe.PermissionError` if not permitted.
 
 	:param doctype: DocType for which permission is to be check.
 	:param ptype: Permission type (`read`, `write`, `create`, `submit`, `cancel`, `amend`). Default: `read`.
 	:param doc: [optional] Checks User permissions for given doc.
-	:param user: [optional] Check for given user. Default: current user.
-	:param parent_doctype: Required when checking permission for a child DocType (unless doc is specified)."""
+	:param user: [optional] Check for given user. Default: current user."""
 	if not doctype and doc:
 		doctype = doc.doctype
 
 	import frappe.permissions
-	out = frappe.permissions.has_permission(doctype, ptype, doc=doc, verbose=verbose, user=user,
-		raise_exception=throw, parent_doctype=parent_doctype)
+	out = frappe.permissions.has_permission(doctype, ptype, doc=doc, verbose=verbose, user=user, raise_exception=throw)
 	if throw and not out:
 		if doc:
 			frappe.throw(_("No permission for {0}").format(doc.doctype + " " + doc.name))
@@ -763,7 +747,7 @@ def has_website_permission(doc=None, ptype='read', user=None, verbose=False, doc
 		user = session.user
 
 	if doc:
-		if isinstance(doc, str):
+		if isinstance(doc, string_types):
 			doc = get_doc(doctype, doc)
 
 		doctype = doc.doctype
@@ -832,7 +816,7 @@ def set_value(doctype, docname, fieldname, value=None):
 	return frappe.client.set_value(doctype, docname, fieldname, value)
 
 def get_cached_doc(*args, **kwargs):
-	if args and len(args) > 1 and isinstance(args[1], str):
+	if args and len(args) > 1 and isinstance(args[1], text_type):
 		key = get_document_cache_key(args[0], args[1])
 		# local cache
 		doc = local.document_cache.get(key)
@@ -863,7 +847,7 @@ def clear_document_cache(doctype, name):
 
 def get_cached_value(doctype, name, fieldname, as_dict=False):
 	doc = get_cached_doc(doctype, name)
-	if isinstance(fieldname, str):
+	if isinstance(fieldname, string_types):
 		if as_dict:
 			throw('Cannot make dict for single fieldname')
 		return doc.get(fieldname)
@@ -1069,7 +1053,7 @@ def get_doc_hooks():
 	if not hasattr(local, 'doc_events_hooks'):
 		hooks = get_hooks('doc_events', {})
 		out = {}
-		for key, value in hooks.items():
+		for key, value in iteritems(hooks):
 			if isinstance(key, tuple):
 				for doctype in key:
 					append_hook(out, doctype, value)
@@ -1184,7 +1168,7 @@ def get_file_json(path):
 
 def read_file(path, raise_not_found=False):
 	"""Open a file and return its content as Unicode."""
-	if isinstance(path, str):
+	if isinstance(path, text_type):
 		path = path.encode("utf-8")
 
 	if os.path.exists(path):
@@ -1207,7 +1191,7 @@ def get_attr(method_string):
 
 def call(fn, *args, **kwargs):
 	"""Call a function and match arguments."""
-	if isinstance(fn, str):
+	if isinstance(fn, string_types):
 		fn = get_attr(fn)
 
 	newargs = get_newargs(fn, kwargs)
@@ -1219,8 +1203,9 @@ def get_newargs(fn, kwargs):
 		fnargs = fn.fnargs
 	else:
 		fnargs = inspect.getfullargspec(fn).args
-		fnargs.extend(inspect.getfullargspec(fn).kwonlyargs)
+		varargs = inspect.getfullargspec(fn).varargs
 		varkw = inspect.getfullargspec(fn).varkw
+		defaults = inspect.getfullargspec(fn).defaults
 
 	newargs = {}
 	for a in kwargs:
@@ -1490,10 +1475,7 @@ def get_value(*args, **kwargs):
 
 def as_json(obj, indent=1):
 	from frappe.utils.response import json_handler
-	try:
-		return json.dumps(obj, indent=indent, sort_keys=True, default=json_handler, separators=(',', ': '))
-	except TypeError:
-		return json.dumps(obj, indent=indent, default=json_handler, separators=(',', ': '))
+	return json.dumps(obj, indent=indent, sort_keys=True, default=json_handler, separators=(',', ': '))
 
 def are_emails_muted():
 	from frappe.utils import cint
@@ -1535,7 +1517,7 @@ def get_print(doctype=None, name=None, print_format=None, style=None,
 	:param style: Print Format style.
 	:param as_pdf: Return as PDF. Default False.
 	:param password: Password to encrypt the pdf with. Default None"""
-	from frappe.website.serve import get_response_content
+	from frappe.website.render import build_page
 	from frappe.utils.pdf import get_pdf
 
 	local.form_dict.doctype = doctype
@@ -1550,7 +1532,7 @@ def get_print(doctype=None, name=None, print_format=None, style=None,
 		options = {'password': password}
 
 	if not html:
-		html = get_response_content("printview")
+		html = build_page("printview")
 
 	if as_pdf:
 		return get_pdf(html, output = output, options = options)
@@ -1665,12 +1647,6 @@ def enqueue(*args, **kwargs):
 	import frappe.utils.background_jobs
 	return frappe.utils.background_jobs.enqueue(*args, **kwargs)
 
-def task(**task_kwargs):
-	def decorator_task(f):
-		f.enqueue = lambda **fun_kwargs: enqueue(f, **task_kwargs, **fun_kwargs)
-		return f
-	return decorator_task
-
 def enqueue_doc(*args, **kwargs):
 	'''
 		Enqueue method to be executed using a background worker
@@ -1727,7 +1703,7 @@ def get_desk_link(doctype, name):
 	)
 
 def bold(text):
-	return '<strong>{0}</strong>'.format(text)
+	return '<b>{0}</b>'.format(text)
 
 def safe_eval(code, eval_globals=None, eval_locals=None):
 	'''A safer `eval`'''
@@ -1857,7 +1833,6 @@ def parse_json(val):
 	return parse_json(val)
 
 def mock(type, size=1, locale='en'):
-	import faker
 	results = []
 	fake = faker.Faker(locale)
 	if type not in dir(fake):

@@ -67,8 +67,8 @@ frappe.pages['activity'].on_page_show = function () {
 }
 
 frappe.activity.last_feed_date = false;
-frappe.activity.Feed = class Feed {
-	constructor(row, data) {
+frappe.activity.Feed = Class.extend({
+	init: function (row, data) {
 		this.scrub_data(data);
 		this.add_date_separator(row, data);
 		if (!data.add_class)
@@ -97,9 +97,8 @@ frappe.activity.Feed = class Feed {
 		$(row)
 			.append(frappe.render_template("activity_row", data))
 			.find("a").addClass("grey");
-	}
-
-	scrub_data(data) {
+	},
+	scrub_data: function (data) {
 		data.by = frappe.user.full_name(data.owner);
 		data.avatar = frappe.avatar(data.owner);
 
@@ -114,9 +113,9 @@ frappe.activity.Feed = class Feed {
 
 		data.when = comment_when(data.creation);
 		data.feed_type = data.comment_type || data.communication_medium;
-	}
+	},
 
-	add_date_separator(row, data) {
+	add_date_separator: function (row, data) {
 		var date = frappe.datetime.str_to_obj(data.creation);
 		var last = frappe.activity.last_feed_date;
 
@@ -138,7 +137,7 @@ frappe.activity.Feed = class Feed {
 		}
 		frappe.activity.last_feed_date = date;
 	}
-};
+});
 
 frappe.activity.render_heatmap = function (page) {
 	$('<div class="heatmap-container" style="text-align:center">\

@@ -1,10 +1,7 @@
 import Quill from 'quill';
 import ImageResize from 'quill-image-resize';
-import MagicUrl from 'quill-magic-url';
-
 
 Quill.register('modules/imageResize', ImageResize);
-Quill.register('modules/magicUrl', MagicUrl);
 const CodeBlockContainer = Quill.import('formats/code-block-container');
 CodeBlockContainer.tagName = 'PRE';
 Quill.register(CodeBlockContainer, true);
@@ -55,10 +52,6 @@ Quill.register(FontStyle, true);
 Quill.register(AlignStyle, true);
 Quill.register(DirectionStyle, true);
 
-// direction class
-const DirectionClass = Quill.import('attributors/class/direction');
-Quill.register(DirectionClass, true);
-
 // replace font tag with span
 const Inline = Quill.import('blots/inline');
 
@@ -75,22 +68,22 @@ CustomColor.tagName = "font";
 
 Quill.register(CustomColor, true);
 
-frappe.ui.form.ControlTextEditor = class ControlTextEditor extends frappe.ui.form.ControlCode {
+frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 	make_wrapper() {
-		super.make_wrapper();
-	}
+		this._super();
+	},
 
 	make_input() {
 		this.has_input = true;
 		this.make_quill_editor();
-	}
+	},
 
 	make_quill_editor() {
 		if (this.quill) return;
 		this.quill_container = $('<div>').appendTo(this.input_area);
 		this.quill = new Quill(this.quill_container[0], this.get_quill_options());
 		this.bind_events();
-	}
+	},
 
 	bind_events() {
 		this.quill.on('text-change', frappe.utils.debounce((delta, oldDelta, source) => {
@@ -101,7 +94,7 @@ frappe.ui.form.ControlTextEditor = class ControlTextEditor extends frappe.ui.for
 		}, 300));
 
 		$(this.quill.root).on('keydown', (e) => {
-			const key = frappe.ui.keys && frappe.ui.keys.get_key(e);
+			const key = frappe.ui.keys.get_key(e);
 			if (['ctrl+b', 'meta+b'].includes(key)) {
 				e.stopPropagation();
 			}
@@ -142,25 +135,24 @@ frappe.ui.form.ControlTextEditor = class ControlTextEditor extends frappe.ui.for
 
 			e.preventDefault();
 		});
-	}
+	},
 
 	is_quill_dirty(source) {
 		if (source === 'api') return false;
 		let input_value = this.get_input_value();
 		return this.value !== input_value;
-	}
+	},
 
 	get_quill_options() {
 		return {
 			modules: {
 				toolbar: this.get_toolbar_options(),
 				table: true,
-				imageResize: {},
-				magicUrl: true
+				imageResize: {}
 			},
 			theme: 'snow'
 		};
-	}
+	},
 
 	get_toolbar_options() {
 		return [
@@ -185,14 +177,14 @@ frappe.ui.form.ControlTextEditor = class ControlTextEditor extends frappe.ui.for
 				'delete-table',
 			]}],
 		];
-	}
+	},
 
 	parse(value) {
 		if (value == null) {
 			value = "";
 		}
 		return frappe.dom.remove_script_and_style(value);
-	}
+	},
 
 	set_formatted_input(value) {
 		if (!this.quill) return;
@@ -206,7 +198,7 @@ frappe.ui.form.ControlTextEditor = class ControlTextEditor extends frappe.ui.for
 		// set html without triggering a focus
 		const delta = this.quill.clipboard.convert({ html: value, text: '' });
 		this.quill.setContents(delta);
-	}
+	},
 
 	get_input_value() {
 		let value = this.quill ? this.quill.root.innerHTML : '';
@@ -222,9 +214,9 @@ frappe.ui.form.ControlTextEditor = class ControlTextEditor extends frappe.ui.for
 		}
 
 		return value;
-	}
+	},
 
 	set_focus() {
 		this.quill.focus();
 	}
-};
+});

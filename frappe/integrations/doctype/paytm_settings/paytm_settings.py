@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
+from __future__ import unicode_literals
 import json
 import requests
-from urllib.parse import urlencode
+from six.moves.urllib.parse import urlencode
 
 import frappe
 from frappe.model.document import Document
@@ -58,7 +59,7 @@ def get_paytm_params(payment_details, order_id, paytm_config):
 
 	# initialize a dictionary
 	paytm_params = dict()
-
+	
 	redirect_uri = get_request_site_address(True) + "/api/method/frappe.integrations.doctype.paytm_settings.paytm_settings.verify_transaction"
 
 

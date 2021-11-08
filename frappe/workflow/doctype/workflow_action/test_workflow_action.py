@@ -1,5 +1,5 @@
 # Copyright (c) 2021, Frappe Technologies and Contributors
-# License: MIT. See LICENSE
+# See license.txt
 
 # import frappe
 import unittest

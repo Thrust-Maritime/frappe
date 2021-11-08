@@ -1,5 +1,10 @@
 # Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+
+from __future__ import unicode_literals, print_function
+
+from six.moves import input
+
 import frappe, os, re, git
 from frappe.utils import touch_file, cstr
 
@@ -186,15 +191,6 @@ app_license = "{app_license}"
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
 
-# Jinja
-# ----------
-
-# add methods and filters to jinja environment
-# jinja = {{
-# 	"methods": "{app_name}.utils.jinja_methods",
-# 	"filters": "{app_name}.utils.jinja_filters"
-# }}
-
 # Installation
 # ------------
 
@@ -254,10 +250,10 @@ app_license = "{app_license}"
 # 	],
 # 	"weekly": [
 # 		"{app_name}.tasks.weekly"
-# 	],
+# 	]
 # 	"monthly": [
 # 		"{app_name}.tasks.monthly"
-# 	],
+# 	]
 # }}
 
 # Testing
@@ -287,26 +283,26 @@ app_license = "{app_license}"
 # User Data Protection
 # --------------------
 
-# user_data_fields = [
-# 	{{
-# 		"doctype": "{{doctype_1}}",
-# 		"filter_by": "{{filter_by}}",
-# 		"redact_fields": ["{{field_1}}", "{{field_2}}"],
-# 		"partial": 1,
-# 	}},
-# 	{{
-# 		"doctype": "{{doctype_2}}",
-# 		"filter_by": "{{filter_by}}",
-# 		"partial": 1,
-# 	}},
-# 	{{
-# 		"doctype": "{{doctype_3}}",
-# 		"strict": False,
-# 	}},
-# 	{{
-# 		"doctype": "{{doctype_4}}"
-# 	}}
-# ]
+user_data_fields = [
+	{{
+		"doctype": "{{doctype_1}}",
+		"filter_by": "{{filter_by}}",
+		"redact_fields": ["{{field_1}}", "{{field_2}}"],
+		"partial": 1,
+	}},
+	{{
+		"doctype": "{{doctype_2}}",
+		"filter_by": "{{filter_by}}",
+		"partial": 1,
+	}},
+	{{
+		"doctype": "{{doctype_3}}",
+		"strict": False,
+	}},
+	{{
+		"doctype": "{{doctype_4}}"
+	}}
+]
 
 # Authentication and authorization
 # --------------------------------
@@ -364,6 +360,7 @@ Configuration for docs
 """
 
 # source_link = "https://github.com/[org_name]/{app_name}"
+# docs_base_url = "https://[org_name].github.io/{app_name}"
 # headline = "App that does everything"
 # sub_heading = "Yes, you got that right the first time, everything"
 

@@ -1,17 +1,17 @@
-frappe.ui.form.ControlTime = class ControlTime extends frappe.ui.form.ControlDate {
-	set_formatted_input(value) {
-		super.set_formatted_input(value);
-	}
-	make_input() {
+frappe.ui.form.ControlTime = frappe.ui.form.ControlDate.extend({
+	set_formatted_input: function(value) {
+		this._super(value);
+	},
+	make_input: function() {
 		this.timepicker_only = true;
-		super.make_input();
-	}
-	make_picker() {
+		this._super();
+	},
+	make_picker: function() {
 		this.set_time_options();
 		this.set_datepicker();
 		this.refresh();
-	}
-	set_time_options() {
+	},
+	set_time_options: function() {
 		let sysdefaults = frappe.boot.sysdefaults;
 
 		let time_format = sysdefaults && sysdefaults.time_format
@@ -38,9 +38,9 @@ frappe.ui.form.ControlTime = class ControlTime extends frappe.ui.form.ControlDat
 			keyboardNav: false,
 			todayButton: true
 		};
-	}
-	set_input(value) {
-		super.set_input(value);
+	},
+	set_input: function(value) {
+		this._super(value);
 		if (value
 			&& ((this.last_value && this.last_value !== this.value)
 				|| (!this.datepicker.selectedDates.length))) {
@@ -49,8 +49,8 @@ frappe.ui.form.ControlTime = class ControlTime extends frappe.ui.form.ControlDat
 			var date_obj = frappe.datetime.moment_to_date_obj(moment(value, time_format));
 			this.datepicker.selectDate(date_obj);
 		}
-	}
-	set_datepicker() {
+	},
+	set_datepicker: function() {
 		this.$input.datepicker(this.datepicker_options);
 		this.datepicker = this.$input.data('datepicker');
 
@@ -67,8 +67,8 @@ frappe.ui.form.ControlTime = class ControlTime extends frappe.ui.form.ControlDat
 			$tp.$secondsText.css('display', 'none');
 			$tp.$secondsText.prev().css('display', 'none');
 		}
-	}
-	set_description() {
+	},
+	set_description: function() {
 		const { description } = this.df;
 		const { time_zone } = frappe.sys_defaults;
 		if (!frappe.datetime.is_timezone_same()) {
@@ -78,20 +78,20 @@ frappe.ui.form.ControlTime = class ControlTime extends frappe.ui.form.ControlDat
 				this.df.description += '<br>' + time_zone;
 			}
 		}
-		super.set_description();
-	}
-	parse(value) {
+		this._super();
+	},
+	parse: function(value) {
 		if (value) {
 			return frappe.datetime.user_to_str(value, true);
 		}
-	}
-	format_for_input(value) {
+	},
+	format_for_input: function(value) {
 		if (value) {
 			return frappe.datetime.str_to_user(value, true);
 		}
 		return "";
-	}
-	validate(value) {
+	},
+	validate: function(value) {
 		if (value && !frappe.datetime.validate(value)) {
 			let sysdefaults = frappe.sys_defaults;
 			let time_format = sysdefaults && sysdefaults.time_format
@@ -101,4 +101,4 @@ frappe.ui.form.ControlTime = class ControlTime extends frappe.ui.form.ControlDat
 		}
 		return value;
 	}
-};
+});

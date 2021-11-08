@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020, Frappe Technologies and Contributors
-# License: MIT. See LICENSE
+# See license.txt
+from __future__ import unicode_literals
+
 import frappe
 import unittest
 from bs4 import BeautifulSoup
 from frappe.utils import set_request
-from frappe.website.serve import get_response
+from frappe.website.render import render
+
 
 class TestWebTemplate(unittest.TestCase):
 	def test_render_web_template_with_values(self):
@@ -33,7 +36,7 @@ class TestWebTemplate(unittest.TestCase):
 		self.create_web_page()
 
 		set_request(method="GET", path="test-web-template")
-		response = get_response()
+		response = render()
 
 		self.assertEqual(response.status_code, 200)
 
@@ -55,7 +58,7 @@ class TestWebTemplate(unittest.TestCase):
 		frappe.conf.developer_mode = 1
 
 		set_request(method="GET", path="test-web-template")
-		response = get_response()
+		response = render()
 		self.assertEqual(response.status_code, 200)
 		html = frappe.safe_decode(response.get_data())
 

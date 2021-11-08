@@ -1,6 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import frappe
 import os
 from frappe.model.document import Document
@@ -10,6 +11,7 @@ from frappe import conf, _, safe_decode
 from frappe.desk.form.meta import get_code_files_via_hooks, get_js
 from frappe.desk.utils import validate_route_conflict
 from frappe.core.doctype.custom_role.custom_role import get_custom_allowed_roles
+from six import text_type
 
 class Page(Document):
 	def autoname(self):

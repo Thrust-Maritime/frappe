@@ -7,14 +7,10 @@
 templates/				@surajshetty3416
 www/							@surajshetty3416
 integrations/			@leela
-patches/					@surajshetty3416 @gavindsouza
+patches/					@surajshetty3416
 email/						@leela
 event_streaming/	@ruchamahabal
 data_import*			@netchampfaris
 core/							@surajshetty3416
-database          @gavindsouza
-model             @gavindsouza
 requirements.txt	@gavindsouza
-query_builder/	@gavindsouza
 commands/					@gavindsouza
-workspace         @shariquerik

@@ -1,9 +1,9 @@
-
+from __future__ import unicode_literals
 from PIL import Image, ImageDraw
 from hashlib import md5
 import base64
 import random
-from io import StringIO
+from six import StringIO
 
 GRID_SIZE = 5
 BORDER_SIZE = 20

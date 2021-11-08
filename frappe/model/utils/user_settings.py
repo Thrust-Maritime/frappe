@@ -1,8 +1,9 @@
-
+from __future__ import unicode_literals
 # Settings saved per user basis
 # such as page_limit, filters, last_view
 
 import frappe, json
+from six import iteritems, string_types
 from frappe import safe_decode
 
 # dict for mapping the index and index type for the filters of different views
@@ -35,7 +36,7 @@ def update_user_settings(doctype, user_settings, for_update=False):
 	else:
 		current = json.loads(get_user_settings(doctype, for_update = True))
 
-		if isinstance(current, str):
+		if isinstance(current, string_types):
 			# corrupt due to old code, remove this in a future release
 			current = {}
 
@@ -46,7 +47,7 @@ def update_user_settings(doctype, user_settings, for_update=False):
 
 def sync_user_settings():
 	'''Sync from cache to database (called asynchronously via the browser)'''
-	for key, data in frappe.cache().hgetall('_user_settings').items():
+	for key, data in iteritems(frappe.cache().hgetall('_user_settings')):
 		key = safe_decode(key)
 		doctype, user = key.split('::') # WTF?
 		frappe.db.multisql({

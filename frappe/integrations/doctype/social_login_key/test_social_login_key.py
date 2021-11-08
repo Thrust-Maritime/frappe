@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2017, Frappe Technologies and Contributors
-# License: MIT. See LICENSE
+# See license.txt
+from __future__ import unicode_literals
+
 import frappe
 from frappe.integrations.doctype.social_login_key.social_login_key import BaseUrlNotSetError
 import unittest

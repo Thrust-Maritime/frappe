@@ -1,7 +1,9 @@
 #  -*- coding: utf-8 -*-
 
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+
+from __future__ import unicode_literals
 
 import unittest
 from random import choice
@@ -11,9 +13,6 @@ import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
 from frappe.utils import random_string
 from frappe.utils.testutils import clear_custom_fields
-from frappe.query_builder import Field
-
-from .test_query_builder import run_only_if, db_type_is
 
 from .test_query_builder import run_only_if, db_type_is
 
@@ -22,12 +21,9 @@ class TestDB(unittest.TestCase):
 	def test_get_value(self):
 		self.assertEqual(frappe.db.get_value("User", {"name": ["=", "Administrator"]}), "Administrator")
 		self.assertEqual(frappe.db.get_value("User", {"name": ["like", "Admin%"]}), "Administrator")
-		self.assertNotEqual(frappe.db.get_value("User", {"name": ["!=", "Guest"]}), "Guest")
+		self.assertNotEquals(frappe.db.get_value("User", {"name": ["!=", "Guest"]}), "Guest")
 		self.assertEqual(frappe.db.get_value("User", {"name": ["<", "Adn"]}), "Administrator")
 		self.assertEqual(frappe.db.get_value("User", {"name": ["<=", "Administrator"]}), "Administrator")
-		self.assertEqual(frappe.db.get_value("User", {}, ["Max(name)"]), frappe.db.sql("SELECT Max(name) FROM tabUser")[0][0])
-		self.assertEqual(frappe.db.get_value("User", {}, "Min(name)"), frappe.db.sql("SELECT Min(name) FROM tabUser")[0][0])
-		self.assertIn("for update", frappe.db.get_value("User", Field("name") == "Administrator", for_update=True, run=False).lower())
 
 		self.assertEqual(frappe.db.sql("""SELECT name FROM `tabUser` WHERE name > 's' ORDER BY MODIFIED DESC""")[0][0],
 			frappe.db.get_value("User", {"name": [">", "s"]}))
@@ -48,6 +44,7 @@ class TestDB(unittest.TestCase):
 
 		self.assertEqual(frappe.db.get_value('ToDo', todo1.name, 'description'), 'change 2')
 		self.assertEqual(frappe.db.get_value('ToDo', todo2.name, 'description'), 'change 2')
+
 
 	def test_escape(self):
 		frappe.db.escape("香港濟生堂製藥有限公司 - IT".encode("utf-8"))
@@ -80,7 +77,7 @@ class TestDB(unittest.TestCase):
 			frappe.db.set_value("Print Settings", "Print Settings", fieldname, inp["value"])
 			self.assertEqual(frappe.db.get_single_value("Print Settings", fieldname), inp["value"])
 
-		#teardown
+		#teardown 
 		clear_custom_fields("Print Settings")
 
 	def test_log_touched_tables(self):
@@ -205,7 +202,7 @@ class TestDDLCommandsMaria(unittest.TestCase):
 		frappe.db.commit()
 		frappe.db.sql(
 			f"""
-			CREATE TABLE `tab{self.test_table_name}` (`id` INT NULL, content TEXT, PRIMARY KEY (`id`));
+			CREATE TABLE `tab{self.test_table_name}` (`id` INT NULL,PRIMARY KEY (`id`));
 			"""
 		)
 
@@ -230,10 +227,7 @@ class TestDDLCommandsMaria(unittest.TestCase):
 
 	def test_describe(self) -> None:
 		self.assertEqual(
-			(
-				("id", "int(11)", "NO", "PRI", None, ""),
-				("content", "text", "YES", "", None, ""),
-			),
+			(("id", "int(11)", "NO", "PRI", None, ""),),
 			frappe.db.describe(self.test_table_name),
 		)
 
@@ -243,17 +237,6 @@ class TestDDLCommandsMaria(unittest.TestCase):
 		self.assertGreater(len(test_table_description), 0)
 		self.assertIn("varchar(255)", test_table_description[0])
 
-	def test_add_index(self) -> None:
-		index_name = "test_index"
-		frappe.db.add_index(self.test_table_name, ["id", "content(50)"], index_name)
-		indexs_in_table = frappe.db.sql(
-			f"""
-			SHOW INDEX FROM tab{self.test_table_name}
-			WHERE Key_name = '{index_name}';
-			"""
-		)
-		self.assertEquals(len(indexs_in_table), 2)
-
 
 @run_only_if(db_type_is.POSTGRES)
 class TestDDLCommandsPost(unittest.TestCase):
@@ -262,7 +245,7 @@ class TestDDLCommandsPost(unittest.TestCase):
 	def setUp(self) -> None:
 		frappe.db.sql(
 			f"""
-			CREATE TABLE "tab{self.test_table_name}" ("id" INT NULL, content text, PRIMARY KEY ("id"))
+			CREATE TABLE "tab{self.test_table_name}" ("id" INT NULL,PRIMARY KEY ("id"))
 			"""
 		)
 
@@ -287,9 +270,7 @@ class TestDDLCommandsPost(unittest.TestCase):
 		self.test_table_name = new_table_name
 
 	def test_describe(self) -> None:
-		self.assertEqual(
-			[("id",), ("content",)], frappe.db.describe(self.test_table_name)
-		)
+		self.assertEqual([("id",)], frappe.db.describe(self.test_table_name))
 
 	def test_change_type(self) -> None:
 		frappe.db.change_column_type(self.test_table_name, "id", "varchar(255)")
@@ -307,16 +288,3 @@ class TestDDLCommandsPost(unittest.TestCase):
 		)
 		self.assertGreater(len(check_change), 0)
 		self.assertIn("character varying", check_change[0])
-
-	def test_add_index(self) -> None:
-		index_name = "test_index"
-		frappe.db.add_index(self.test_table_name, ["id", "content(50)"], index_name)
-		indexs_in_table = frappe.db.sql(
-			f"""
-			SELECT indexname
-			FROM pg_indexes
-			WHERE tablename = 'tab{self.test_table_name}'
-			AND indexname = '{index_name}' ;
-			""",
-		)
-		self.assertEquals(len(indexs_in_table), 1)

@@ -1,6 +1,6 @@
-frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends frappe.ui.form.ControlLink {
+frappe.ui.form.ControlTableMultiSelect = frappe.ui.form.ControlLink.extend({
 	make_input() {
-		super.make_input();
+		this._super();
 
 		this.$input_area.addClass('form-control table-multiselect');
 		this.$input.removeClass('form-control');
@@ -45,10 +45,10 @@ frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends f
 				this.parse_validate_and_set_in_model('');
 			}
 		});
-	}
+	},
 	setup_buttons() {
 		this.$input_area.find('.link-btn').remove();
-	}
+	},
 	parse(value) {
 		const link_field = this.get_link_field();
 
@@ -65,11 +65,11 @@ frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends f
 		}
 		this._rows_list = this.rows.map(row => row[link_field.fieldname]);
 		return this.rows;
-	}
+	},
 	get_model_value() {
-		let value = super.get_model_value();
+		let value = this._super();
 		return value ? value.filter(d => !d.__islocal) : value;
-	}
+	},
 	validate(value) {
 		const rows = (value || []).slice();
 
@@ -110,13 +110,13 @@ frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends f
 				return rows;
 			}
 		});
-	}
+	},
 	set_formatted_input(value) {
 		this.rows = value || [];
 		const link_field = this.get_link_field();
 		const values = this.rows.map(row => row[link_field.fieldname]);
 		this.set_pill_html(values);
-	}
+	},
 	set_pill_html(values) {
 		const html = values
 			.map(value => this.get_pill_html(value))
@@ -124,7 +124,7 @@ frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends f
 
 		this.$input_area.find('.tb-selected-value').remove();
 		this.$input_area.prepend(html);
-	}
+	},
 	get_pill_html(value) {
 		const encoded_value = encodeURIComponent(value);
 		return `
@@ -133,10 +133,10 @@ frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends f
 				<span class="btn-remove">${frappe.utils.icon('close')}</span>
 			</button>
 		`;
-	}
+	},
 	get_options() {
 		return (this.get_link_field() || {}).options;
-	}
+	},
 	get_link_field() {
 		if (!this._link_field) {
 			const meta = frappe.get_meta(this.df.options);
@@ -146,8 +146,8 @@ frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends f
 			}
 		}
 		return this._link_field;
-	}
-	custom_awesomplete_filter(awesomplete) {
+	},
+	custom_awesomplete_filter: function(awesomplete) {
 		let me = this;
 
 		awesomplete.filter = function(item) {
@@ -158,4 +158,4 @@ frappe.ui.form.ControlTableMultiSelect = class ControlTableMultiSelect extends f
 			return true;
 		};
 	}
-};
+});

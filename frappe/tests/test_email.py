@@ -1,15 +1,18 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+
+from __future__ import unicode_literals
 
 import unittest, frappe, re, email
+from six import PY3
 
 test_dependencies = ['Email Account']
 
 class TestEmail(unittest.TestCase):
 	def setUp(self):
-		frappe.db.delete("Email Unsubscribe")
-		frappe.db.delete("Email Queue")
-		frappe.db.delete("Email Queue Recipient")
+		frappe.db.sql("""delete from `tabEmail Unsubscribe`""")
+		frappe.db.sql("""delete from `tabEmail Queue`""")
+		frappe.db.sql("""delete from `tabEmail Queue Recipient`""")
 
 	def test_email_queue(self, send_after=None):
 		frappe.sendmail(recipients=['test@example.com', 'test1@example.com'],
@@ -68,7 +71,6 @@ class TestEmail(unittest.TestCase):
 		self.assertTrue('CC: test1@example.com' in message)
 
 	def test_cc_footer(self):
-		frappe.conf.use_ssl = True
 		# test if sending with cc's makes it into header
 		frappe.sendmail(recipients=['test@example.com'],
 						cc=['test1@example.com'],
@@ -86,12 +88,7 @@ class TestEmail(unittest.TestCase):
 		self.assertTrue('This email was sent to test@example.com and copied to test1@example.com' in frappe.safe_decode(
 			frappe.flags.sent_mail))
 
-		# check for email tracker
-		self.assertTrue('mark_email_as_seen' in frappe.safe_decode(frappe.flags.sent_mail))
-		frappe.conf.use_ssl = False
-
 	def test_expose(self):
-
 		from frappe.utils.verified_command import verify_request
 		frappe.sendmail(recipients=['test@example.com'],
 						cc=['test1@example.com'],
@@ -115,7 +112,10 @@ class TestEmail(unittest.TestCase):
 			content = part.get_payload(decode=True)
 
 			if content:
-				eol = "\r\n"
+				if PY3:
+					eol = "\r\n"
+				else:
+					eol = "\n"
 
 				frappe.local.flags.signed_query_string = \
 					re.search(r'(?<=/api/method/frappe.email.queue.unsubscribe\?).*(?=' + eol + ')',
@@ -139,8 +139,7 @@ class TestEmail(unittest.TestCase):
 		self.assertEqual(len(queue_recipients), 2)
 
 	def test_unsubscribe(self):
-		from frappe.email.queue import unsubscribe
-		from frappe.email.doctype.email_queue.email_queue import QueueBuilder
+		from frappe.email.queue import unsubscribe, send
 		unsubscribe(doctype="User", name="Administrator", email="test@example.com")
 
 		self.assertTrue(frappe.db.get_value("Email Unsubscribe",
@@ -149,11 +148,11 @@ class TestEmail(unittest.TestCase):
 
 		before = frappe.db.sql("""select count(name) from `tabEmail Queue` where status='Not Sent'""")[0][0]
 
-		builder = QueueBuilder(recipients=['test@example.com', 'test1@example.com'],
-			sender="admin@example.com",
-			reference_doctype='User', reference_name="Administrator",
-			subject='Testing Email Queue', message='This is mail is queued!', unsubscribe_message="Unsubscribe")
-		builder.process()
+		send(recipients=['test@example.com', 'test1@example.com'],
+			 sender="admin@example.com",
+			 reference_doctype='User', reference_name="Administrator",
+			 subject='Testing Email Queue', message='This is mail is queued!', unsubscribe_message="Unsubscribe")
+
 		# this is sent async (?)
 
 		email_queue = frappe.db.sql("""select name from `tabEmail Queue` where status='Not Sent'""",
@@ -170,11 +169,10 @@ class TestEmail(unittest.TestCase):
 		import re
 		email_account = frappe.get_doc('Email Account', '_Test Email Account 1')
 
-		frappe.db.delete("Communication", {"sender": "sukh@yyy.com"})
+		frappe.db.sql('''delete from `tabCommunication` where sender = 'sukh@yyy.com' ''')
 
 		with open(frappe.get_app_path('frappe', 'tests', 'data', 'email_with_image.txt'), 'r') as raw:
-			mails = email_account.get_inbound_mails(test_mails=[raw.read()])
-			communication = mails[0].process()
+			communication = email_account.insert_communication(raw.read())
 
 		self.assertTrue(re.search('''<img[^>]*src=["']/private/files/rtco1.png[^>]*>''', communication.content))
 		self.assertTrue(re.search('''<img[^>]*src=["']/private/files/rtco2.png[^>]*>''', communication.content))

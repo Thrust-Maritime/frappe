@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2018, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
+from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 import braintree
 from frappe import _
-from urllib.parse import urlencode
+from six.moves.urllib.parse import urlencode
 from frappe.utils import get_url, call_hook_method
 from frappe.integrations.utils import create_request_log, create_payment_gateway
 

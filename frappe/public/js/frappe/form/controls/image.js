@@ -1,12 +1,12 @@
-frappe.ui.form.ControlImage = class ControlImage extends frappe.ui.form.Control {
-	make() {
-		super.make();
+frappe.ui.form.ControlImage = frappe.ui.form.Control.extend({
+	make: function() {
+		this._super();
 		this.$wrapper.css({"margin": "0px"});
 		this.$body = $("<div></div>").appendTo(this.$wrapper)
 			.css({"margin-bottom": "10px"});
 		$('<div class="clearfix"></div>').appendTo(this.$wrapper);
-	}
-	refresh_input() {
+	},
+	refresh_input: function() {
 		this.$body.empty();
 
 		var doc = this.get_doc();
@@ -19,4 +19,4 @@ frappe.ui.form.ControlImage = class ControlImage extends frappe.ui.form.Control 
 		}
 		return false;
 	}
-};
+});

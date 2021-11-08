@@ -3,23 +3,23 @@
 
 
 
-frappe.ui.form.AssignTo = class AssignTo {
-	constructor(opts) {
+frappe.ui.form.AssignTo = Class.extend({
+	init: function(opts) {
 		$.extend(this, opts);
 		this.btn = this.parent.find(".add-assignment-btn").on("click", () => this.add());
 		this.btn_wrapper = this.btn.parent();
 
 		this.refresh();
-	}
-	refresh() {
+	},
+	refresh: function() {
 		if(this.frm.doc.__islocal) {
 			this.parent.toggle(false);
 			return;
 		}
 		this.parent.toggle(true);
 		this.render(this.frm.get_docinfo().assignments);
-	}
-	render(assignments) {
+	},
+	render: function(assignments) {
 		this.frm.get_docinfo().assignments = assignments;
 
 		let assignments_wrapper = this.parent.find('.assignments');
@@ -42,8 +42,8 @@ frappe.ui.form.AssignTo = class AssignTo {
 				frm: this.frm
 			});
 		});
-	}
-	add() {
+	},
+	add: function() {
 		var me = this;
 
 		if (this.frm.is_new()) {
@@ -64,8 +64,8 @@ frappe.ui.form.AssignTo = class AssignTo {
 		}
 		me.assign_to.dialog.clear();
 		me.assign_to.dialog.show();
-	}
-	remove(owner) {
+	},
+	remove: function(owner) {
 		if (this.frm.is_new()) {
 			frappe.throw(__("Please save the document before removing assignment"));
 			return;
@@ -79,17 +79,17 @@ frappe.ui.form.AssignTo = class AssignTo {
 			this.render(assignments);
 		});
 	}
-};
+});
 
 
-frappe.ui.form.AssignToDialog = class AssignToDialog {
-	constructor(opts) {
+frappe.ui.form.AssignToDialog = Class.extend({
+	init: function(opts) {
 		$.extend(this, opts);
 
 		this.make();
 		this.set_description_from_doc();
-	}
-	make() {
+	},
+	make: function() {
 		let me = this;
 
 		me.dialog = new frappe.ui.Dialog({
@@ -126,8 +126,8 @@ frappe.ui.form.AssignToDialog = class AssignToDialog {
 				}
 			},
 		});
-	}
-	assign_to_me() {
+	},
+	assign_to_me: function() {
 		let me = this;
 		let assign_to = [];
 
@@ -136,15 +136,15 @@ frappe.ui.form.AssignToDialog = class AssignToDialog {
 		}
 
 		me.dialog.set_value("assign_to", assign_to);
-	}
-	set_description_from_doc() {
+	},
+	set_description_from_doc: function() {
 		let me = this;
 
 		if (me.frm && me.frm.meta.title_field) {
 			me.dialog.set_value("description", me.frm.doc[me.frm.meta.title_field]);
 		}
-	}
-	get_fields() {
+	},
+	get_fields: function() {
 		let me = this;
 
 		return [
@@ -206,7 +206,7 @@ frappe.ui.form.AssignToDialog = class AssignToDialog {
 			}
 		];
 	}
-};
+});
 
 
 frappe.ui.form.AssignmentDialog = class {

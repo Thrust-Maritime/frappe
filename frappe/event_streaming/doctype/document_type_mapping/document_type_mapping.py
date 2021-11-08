@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
 import frappe
 import json
 from frappe import _
+from six import iteritems
 from frappe.model.document import Document
 from frappe.model import default_fields
 
@@ -97,7 +100,7 @@ class DocumentTypeMapping(Document):
 	def get_mapped_dependency(self, mapping, producer_site, doc):
 		inner_mapping = frappe.get_doc('Document Type Mapping', mapping.mapping)
 		filters = json.loads(mapping.remote_value_filters)
-		for key, value in filters.items():
+		for key, value in iteritems(filters):
 			if value.startswith('eval:'):
 				val = frappe.safe_eval(value[5:], None, dict(doc=doc))
 				filters[key] = val
@@ -114,7 +117,7 @@ class DocumentTypeMapping(Document):
 	def map_rows_removed(self, update_diff, mapping):
 		removed = []
 		mapping['removed'] = update_diff.removed
-		for key, value in update_diff.removed.copy().items():
+		for key, value in iteritems(update_diff.removed.copy()):
 			local_table_name = frappe.db.get_value('Document Type Field Mapping', {
 				'remote_fieldname': key,
 				'parent': self.name
@@ -130,7 +133,7 @@ class DocumentTypeMapping(Document):
 
 	def map_rows(self, update_diff, mapping, producer_site, operation):
 		remote_fields = []
-		for tablename, entries in update_diff.get(operation).copy().items():
+		for tablename, entries in iteritems(update_diff.get(operation).copy()):
 			local_table_name = frappe.db.get_value('Document Type Field Mapping', {'remote_fieldname': tablename}, 'local_fieldname')
 			table_map = frappe.db.get_value('Document Type Field Mapping', {'local_fieldname': local_table_name, 'parent': self.name}, 'mapping')
 			table_map = frappe.get_doc('Document Type Mapping', table_map)

@@ -1,5 +1,7 @@
 # Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
+
+from __future__ import unicode_literals, print_function
 import imaplib, poplib
 
 from frappe.utils import cint

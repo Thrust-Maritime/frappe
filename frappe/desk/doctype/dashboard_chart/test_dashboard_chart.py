@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and Contributors
-# License: MIT. See LICENSE
+# See license.txt
+from __future__ import unicode_literals
+
 import unittest, frappe
 from frappe.utils import getdate, formatdate, get_last_day
 from frappe.utils.dateutils import get_period_ending, get_period
@@ -64,7 +66,7 @@ class TestDashboardChart(unittest.TestCase):
 		if frappe.db.exists('Dashboard Chart', 'Test Empty Dashboard Chart'):
 			frappe.delete_doc('Dashboard Chart', 'Test Empty Dashboard Chart')
 
-		frappe.db.delete("Error Log")
+		frappe.db.sql('delete from `tabError Log`')
 
 		frappe.get_doc(dict(
 			doctype = 'Dashboard Chart',
@@ -94,7 +96,7 @@ class TestDashboardChart(unittest.TestCase):
 		if frappe.db.exists('Dashboard Chart', 'Test Empty Dashboard Chart 2'):
 			frappe.delete_doc('Dashboard Chart', 'Test Empty Dashboard Chart 2')
 
-		frappe.db.delete("Error Log")
+		frappe.db.sql('delete from `tabError Log`')
 
 		# create one data point
 		frappe.get_doc(dict(doctype = 'Error Log', creation = '2018-06-01 00:00:00')).insert()

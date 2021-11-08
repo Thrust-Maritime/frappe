@@ -1,6 +1,6 @@
-frappe.ui.form.ControlDatetime = class ControlDatetime extends frappe.ui.form.ControlDate {
-	set_date_options() {
-		super.set_date_options();
+frappe.ui.form.ControlDatetime = frappe.ui.form.ControlDate.extend({
+	set_date_options: function() {
+		this._super();
 		this.today_text = __("Now");
 		let sysdefaults = frappe.boot.sysdefaults;
 		this.date_format = frappe.defaultDatetimeFormat;
@@ -10,11 +10,11 @@ frappe.ui.form.ControlDatetime = class ControlDatetime extends frappe.ui.form.Co
 			timepicker: true,
 			timeFormat: time_format.toLowerCase().replace("mm", "ii")
 		});
-	}
-	get_now_date() {
+	},
+	get_now_date: function() {
 		return frappe.datetime.now_datetime(true);
-	}
-	set_description() {
+	},
+	set_description: function() {
 		const { description } = this.df;
 		const { time_zone } = frappe.sys_defaults;
 		if (!this.df.hide_timezone && !frappe.datetime.is_timezone_same()) {
@@ -24,10 +24,10 @@ frappe.ui.form.ControlDatetime = class ControlDatetime extends frappe.ui.form.Co
 				this.df.description += '<br>' + time_zone;
 			}
 		}
-		super.set_description();
-	}
-	set_datepicker() {
-		super.set_datepicker();
+		this._super();
+	},
+	set_datepicker: function() {
+		this._super();
 		if (this.datepicker.opts.timeFormat.indexOf('s') == -1) {
 			// No seconds in time format
 			const $tp = this.datepicker.timepicker;
@@ -40,9 +40,4 @@ frappe.ui.form.ControlDatetime = class ControlDatetime extends frappe.ui.form.Co
 		let value = this._super();
 		return frappe.datetime.get_datetime_as_string(value);
 	}
-
-	get_model_value() {
-		let value = super.get_model_value();
-		return frappe.datetime.get_datetime_as_string(value);
-	}
-};
+});

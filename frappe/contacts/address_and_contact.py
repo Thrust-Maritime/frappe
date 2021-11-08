@@ -1,6 +1,7 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# License: GNU General Public License v3. See license.txt
 
+from __future__ import unicode_literals
 import frappe
 
 from frappe import _
@@ -16,7 +17,7 @@ def load_address_and_contact(doc, key=None):
 		["Dynamic Link", "link_name", "=", doc.name],
 		["Dynamic Link", "parenttype", "=", "Address"],
 	]
-	address_list = frappe.get_list("Address", filters=filters, fields=["*"])
+	address_list = frappe.get_all("Address", filters=filters, fields=["*"])
 
 	address_list = [a.update({"display": get_address_display(a)})
 		for a in address_list]
@@ -34,16 +35,16 @@ def load_address_and_contact(doc, key=None):
 		["Dynamic Link", "link_name", "=", doc.name],
 		["Dynamic Link", "parenttype", "=", "Contact"],
 	]
-	contact_list = frappe.get_list("Contact", filters=filters, fields=["*"])
+	contact_list = frappe.get_all("Contact", filters=filters, fields=["*"])
 
 	for contact in contact_list:
-		contact["email_ids"] = frappe.get_all("Contact Email", filters={
+		contact["email_ids"] = frappe.get_list("Contact Email", filters={
 				"parenttype": "Contact",
 				"parent": contact.name,
 				"is_primary": 0
 			}, fields=["email_id"])
 
-		contact["phone_nos"] = frappe.get_all("Contact Phone", filters={
+		contact["phone_nos"] = frappe.get_list("Contact Phone", filters={
 				"parenttype": "Contact",
 				"parent": contact.name,
 				"is_primary_phone": 0,
@@ -153,7 +154,7 @@ def filter_dynamic_link_doctypes(doctype, txt, searchfield, start, page_len, fil
 	doctypes = frappe.db.get_all("DocField", filters=filters, fields=["parent"],
 		distinct=True, as_list=True)
 
-	doctypes = tuple(d for d in doctypes if re.search(txt+".*", _(d[0]), re.IGNORECASE))
+	doctypes = tuple([d for d in doctypes if re.search(txt+".*", _(d[0]), re.IGNORECASE)])
 
 	filters.update({
 		"dt": ("not in", [d[0] for d in doctypes])

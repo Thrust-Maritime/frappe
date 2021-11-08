@@ -1,5 +1,5 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 """
 Events:
 	always
@@ -7,6 +7,8 @@ Events:
 	monthly
 	weekly
 """
+# imports - compatibility imports
+from __future__ import print_function, unicode_literals
 
 # imports - standard imports
 import os

@@ -1,5 +1,5 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
 import json
 import os
@@ -7,6 +7,7 @@ import subprocess  # nosec
 
 import requests
 from semantic_version import Version
+from six.moves import range
 
 import frappe
 from frappe import _, safe_decode
@@ -118,9 +119,9 @@ def get_versions():
 def get_app_branch(app):
 	'''Returns branch of an app'''
 	try:
-		with open(os.devnull, 'wb') as null_stream:
-			result = subprocess.check_output(f'cd ../apps/{app} && git rev-parse --abbrev-ref HEAD',
-				shell=True, stdin=null_stream, stderr=null_stream)
+		null_stream = open(os.devnull, 'wb')
+		result = subprocess.check_output('cd ../apps/{0} && git rev-parse --abbrev-ref HEAD'.format(app),
+			shell=True, stdin=null_stream, stderr=null_stream)
 		result = safe_decode(result)
 		result = result.strip()
 		return result
@@ -129,9 +130,9 @@ def get_app_branch(app):
 
 def get_app_last_commit_ref(app):
 	try:
-		with open(os.devnull, 'wb') as null_stream:
-			result = subprocess.check_output(f'cd ../apps/{app} && git rev-parse HEAD --short 7',
-				shell=True, stdin=null_stream, stderr=null_stream)
+		null_stream = open(os.devnull, 'wb')
+		result = subprocess.check_output('cd ../apps/{0} && git rev-parse HEAD --short 7'.format(app),
+			shell=True, stdin=null_stream, stderr=null_stream)
 		result = safe_decode(result)
 		result = result.strip()
 		return result

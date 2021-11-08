@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2018, Frappe Technologies and Contributors
-# License: MIT. See LICENSE
+# See license.txt
+from __future__ import unicode_literals
+
 import unittest
 
 import frappe
@@ -171,7 +173,7 @@ class TestAutoRepeat(unittest.TestCase):
 			fields=['docstatus'],
 			limit=1
 		)
-		self.assertEqual(docnames[0].docstatus, 1)
+		self.assertEquals(docnames[0].docstatus, 1)
 
 
 def make_auto_repeat(**args):

@@ -1,8 +1,10 @@
 # Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+from __future__ import unicode_literals
+
 import frappe
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_list_settings(doctype):
 	try:
 		return frappe.get_cached_doc("List View Settings", doctype)
@@ -26,7 +28,7 @@ def get_group_by_count(doctype, current_filters, field):
 	current_filters = frappe.parse_json(current_filters)
 	subquery_condition = ''
 
-	subquery = frappe.get_all(doctype, filters=current_filters, run=False)
+	subquery = frappe.get_all(doctype, filters=current_filters, return_query = True)
 	if field == 'assigned_to':
 		subquery_condition = ' and `tabToDo`.reference_name in ({subquery})'.format(subquery = subquery)
 		return frappe.db.sql("""select `tabToDo`.owner as name, count(*) as count

@@ -1,12 +1,14 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import frappe
 import frappe.utils
 import json, jwt
 import base64
 from frappe import _
 from frappe.utils.password import get_decrypted_password
+from six import string_types
 
 class SignupDisabledError(frappe.PermissionError): pass
 
@@ -134,7 +136,7 @@ def get_info_via_oauth(provider, code, decoder=None, id_token=False):
 
 		token = parsed_access['id_token']
 
-		info = jwt.decode(token, flow.client_secret, options={"verify_signature": False})
+		info = jwt.decode(token, flow.client_secret, verify=False)
 	else:
 		api_endpoint = oauth2_providers[provider].get("api_endpoint")
 		api_endpoint_args = oauth2_providers[provider].get("api_endpoint_args")
@@ -161,10 +163,10 @@ def login_oauth_user(data=None, provider=None, state=None, email_id=None, key=No
 	# 	return
 
 	# json.loads data and state
-	if isinstance(data, str):
+	if isinstance(data, string_types):
 		data = json.loads(data)
 
-	if isinstance(state, str):
+	if isinstance(state, string_types):
 		state = base64.b64decode(state)
 		state = json.loads(state.decode("utf-8"))
 

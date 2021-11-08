@@ -1,6 +1,7 @@
 # Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import os
 import io
 import frappe
@@ -232,7 +233,7 @@ class Importer:
 			return updated_doc
 		else:
 			# throw if no changes
-			frappe.throw(_("No changes to update"))
+			frappe.throw("No changes to update")
 
 	def get_eta(self, current, total, processing_time):
 		self.last_eta = getattr(self, "last_eta", 0)
@@ -318,7 +319,7 @@ class ImportFile:
 		self.warnings = []
 
 		self.file_doc = self.file_path = self.google_sheets_url = None
-		if isinstance(file, str):
+		if isinstance(file, frappe.string_types):
 			if frappe.db.exists("File", {"file_url": file}):
 				self.file_doc = frappe.get_doc("File", {"file_url": file})
 			elif "docs.google.com/spreadsheets" in file:
@@ -449,7 +450,7 @@ class ImportFile:
 			for row in data_without_first_row:
 				row_values = row.get_values(parent_column_indexes)
 				# if the row is blank, it's a child row doc
-				if all(v in INVALID_VALUES for v in row_values):
+				if all([v in INVALID_VALUES for v in row_values]):
 					rows.append(row)
 					continue
 				# if we encounter a row which has values in parent columns,
@@ -606,7 +607,7 @@ class Row:
 		if df.fieldtype == "Select":
 			select_options = get_select_options(df)
 			if select_options and value not in select_options:
-				options_string = ", ".join(frappe.bold(d) for d in select_options)
+				options_string = ", ".join([frappe.bold(d) for d in select_options])
 				msg = _("Value must be one of {0}").format(options_string)
 				self.warnings.append(
 					{"row": self.row_number, "field": df_as_json(df), "message": msg,}
@@ -625,7 +626,7 @@ class Row:
 				return
 		elif df.fieldtype in ["Date", "Datetime"]:
 			value = self.get_date(value, col)
-			if isinstance(value, str):
+			if isinstance(value, frappe.string_types):
 				# value was not parsed as datetime object
 				self.warnings.append(
 					{
@@ -763,9 +764,7 @@ class Column:
 	seen = []
 	fields_column_map = {}
 
-	def __init__(self, index, header, doctype, column_values, map_to_field=None, seen=None):
-		if seen is None:
-			seen = []
+	def __init__(self, index, header, doctype, column_values, map_to_field=None, seen=[]):
 		self.index = index
 		self.column_number = index + 1
 		self.doctype = doctype
@@ -904,7 +903,7 @@ class Column:
 
 		if self.df.fieldtype == "Link":
 			# find all values that dont exist
-			values = list({cstr(v) for v in self.column_values[1:] if v})
+			values = list(set([cstr(v) for v in self.column_values[1:] if v]))
 			exists = [
 				d.name for d in frappe.db.get_all(self.df.options, filters={"name": ("in", values)})
 			]
@@ -937,11 +936,11 @@ class Column:
 		elif self.df.fieldtype == "Select":
 			options = get_select_options(self.df)
 			if options:
-				values = {cstr(v) for v in self.column_values[1:] if v}
-				invalid = values - set(options)
+				values = list(set([cstr(v) for v in self.column_values[1:] if v]))
+				invalid = list(set(values) - set(options))
 				if invalid:
-					valid_values = ", ".join(frappe.bold(o) for o in options)
-					invalid_values = ", ".join(frappe.bold(i) for i in invalid)
+					valid_values = ", ".join([frappe.bold(o) for o in options])
+					invalid_values = ", ".join([frappe.bold(i) for i in invalid])
 					self.warnings.append(
 						{
 							"col": self.column_number,

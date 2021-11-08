@@ -1,6 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import frappe
 from frappe import _
 
@@ -34,7 +35,7 @@ class PropertySetter(Document):
 			fields=['fieldname', 'label', 'fieldtype'],
 			filters={
 				'parent': dt,
-				'fieldtype': ['not in', ('Section Break', 'Column Break', 'Tab Break', 'HTML', 'Read Only', 'Fold') + frappe.model.table_fields],
+				'fieldtype': ['not in', ('Section Break', 'Column Break', 'HTML', 'Read Only', 'Fold') + frappe.model.table_fields],
 				'fieldname': ['!=', '']
 			},
 			order_by='label asc',

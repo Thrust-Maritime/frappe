@@ -1,5 +1,4 @@
 @import "../common/form.scss";
-@import '~cropperjs/dist/cropper.min';
 
 .form-section, .form-dashboard-section {
 	margin: 0px;
@@ -51,11 +50,11 @@
 	@extend .frappe-card;
 }
 
-.form-dashboard-section {
+.form-dashboard {
 	.section-body:first-child {
 		margin-top: 0;
 	}
-	.section-body {
+	.form-dashboard-section .section-body {
 		display: block;
 		padding-left: var(--padding-md);
 		padding-right: var(--padding-md);
@@ -115,7 +114,7 @@
 		margin-bottom: var(--margin-sm);
 		font-weight: var(--text-bold);
 	}
-	.form-documents:first-of-type .row:first-child {
+	.row:first-child {
 		.form-link-title {
 			margin-top: 0;
 		}
@@ -290,28 +289,6 @@
 	}
 }
 
-.form-tabs-list {
-	margin-bottom: var(--margin-lg);
-
-	.form-tabs {
-		.nav-item {
-			.nav-link {
-				padding-bottom: var(--padding-md);
-				color: var(--gray-700);
-				padding-left: 0;
-				padding-right: 0;
-				margin-right: var(--margin-xl);
-
-				&.active {
-					font-weight: 500;
-					border-bottom: 1px solid var(--primary);
-					color: var(--text-color);
-				}
-			}
-		}
-	}
-}
-
 .progress-area {
 	padding-top: var(--padding-md);
 	padding-bottom: var(--padding-md);
@@ -365,4 +342,7 @@
 	.form-column:not(:first-child) {
 		padding-top: var(--padding-md);
 	}
+
+
+
 }

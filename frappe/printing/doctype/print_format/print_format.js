@@ -30,11 +30,7 @@ frappe.ui.form.on("Print Format", {
 						frappe.msgprint(__("Please select DocType first"));
 						return;
 					}
-					if (frm.doc.print_format_builder_beta) {
-						frappe.set_route("print-format-builder-beta", frm.doc.name);
-					} else {
-						frappe.set_route("print-format-builder", frm.doc.name);
-					}
+					frappe.set_route("print-format-builder", frm.doc.name);
 				});
 			}
 			else if (frm.doc.custom_format && !frm.doc.raw_printing) {

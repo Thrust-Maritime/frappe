@@ -1,14 +1,14 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
 from typing import Optional
 import frappe
 import operator
 import json
-import base64
 import re, datetime, math, time
+from six.moves.urllib.parse import quote, urljoin
+from six import iteritems, text_type, string_types, integer_types
 from code import compile_command
-from urllib.parse import quote, urljoin
 from frappe.desk.utils import slug
 from click import secho
 
@@ -98,7 +98,7 @@ def get_timedelta(time: Optional[str] = None) -> Optional[datetime.timedelta]:
 def to_timedelta(time_str):
 	from dateutil import parser
 
-	if isinstance(time_str, str):
+	if isinstance(time_str, string_types):
 		t = parser.parse(time_str)
 		return datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second, microseconds=t.microsecond)
 
@@ -117,7 +117,7 @@ def add_to_date(date, years=0, months=0, weeks=0, days=0, hours=0, minutes=0, se
 	if hours:
 		as_datetime = True
 
-	if isinstance(date, str):
+	if isinstance(date, string_types):
 		as_string = True
 		if " " in date:
 			as_datetime = True
@@ -300,17 +300,17 @@ def get_time(time_str):
 		return parser.parse(time_str).time()
 
 def get_datetime_str(datetime_obj):
-	if isinstance(datetime_obj, str):
+	if isinstance(datetime_obj, string_types):
 		datetime_obj = get_datetime(datetime_obj)
 	return datetime_obj.strftime(DATETIME_FORMAT)
 
 def get_date_str(date_obj):
-	if isinstance(date_obj, str):
+	if isinstance(date_obj, string_types):
 		date_obj = get_datetime(date_obj)
 	return date_obj.strftime(DATE_FORMAT)
 
 def get_time_str(timedelta_obj):
-	if isinstance(timedelta_obj, str):
+	if isinstance(timedelta_obj, string_types):
 		timedelta_obj = to_timedelta(timedelta_obj)
 
 	hours, remainder = divmod(timedelta_obj.seconds, 3600)
@@ -483,7 +483,7 @@ def duration_to_seconds(duration):
 
 def validate_duration_format(duration):
 	import re
-	is_valid_duration = re.match(r"^(?:(\d+d)?((^|\s)\d+h)?((^|\s)\d+m)?((^|\s)\d+s)?)$", duration)
+	is_valid_duration = re.match("^(?:(\d+d)?((^|\s)\d+h)?((^|\s)\d+m)?((^|\s)\d+s)?)$", duration)
 	if not is_valid_duration:
 		frappe.throw(frappe._("Value {0} must be in the valid duration format: d h m s").format(frappe.bold(duration)))
 
@@ -622,7 +622,7 @@ def flt(s, precision=None):
 		>>> flt("a")
 		0.0
 	"""
-	if isinstance(s, str):
+	if isinstance(s, string_types):
 		s = s.replace(',','')
 
 	try:
@@ -779,12 +779,12 @@ def encode(obj, encoding="utf-8"):
 	if isinstance(obj, list):
 		out = []
 		for o in obj:
-			if isinstance(o, str):
+			if isinstance(o, text_type):
 				out.append(o.encode(encoding))
 			else:
 				out.append(o)
 		return out
-	elif isinstance(obj, str):
+	elif isinstance(obj, text_type):
 		return obj.encode(encoding)
 	else:
 		return obj
@@ -792,10 +792,10 @@ def encode(obj, encoding="utf-8"):
 def parse_val(v):
 	"""Converts to simple datatypes from SQL query results"""
 	if isinstance(v, (datetime.date, datetime.datetime)):
-		v = str(v)
+		v = text_type(v)
 	elif isinstance(v, datetime.timedelta):
-		v = ":".join(str(v).split(":")[:2])
-	elif isinstance(v, int):
+		v = ":".join(text_type(v).split(":")[:2])
+	elif isinstance(v, integer_types):
 		v = int(v)
 	return v
 
@@ -816,7 +816,7 @@ def fmt_money(amount, precision=None, currency=None, format=None):
 	# 40,000.00000 -> 40,000.00
 	# 40,000.23000 -> 40,000.23
 
-	if isinstance(amount, str):
+	if isinstance(amount, string_types):
 		amount = flt(amount, precision)
 
 	if decimal_str:
@@ -964,7 +964,7 @@ def in_words(integer, in_million=True):
 	return ret.replace('-', ' ')
 
 def is_html(text):
-	if not isinstance(text, str):
+	if not isinstance(text, frappe.string_types):
 		return False
 	return re.search('<[^>]+>', text)
 
@@ -1014,6 +1014,7 @@ def get_thumbnail_base64_for_image(src):
 	return cache().hget('thumbnail_base64', src, generator=_get_base64)
 
 def image_to_base64(image, extn):
+	import base64
 	from io import BytesIO
 
 	buffered = BytesIO()
@@ -1023,20 +1024,6 @@ def image_to_base64(image, extn):
 	img_str = base64.b64encode(buffered.getvalue())
 	return img_str
 
-def pdf_to_base64(filename):
-	from frappe.utils.file_manager import get_file_path
-
-	if '../' in filename or filename.rsplit('.')[-1] not in ['pdf', 'PDF']:
-		return
-
-	file_path = get_file_path(filename)
-	if not file_path:
-		return
-
-	with open(file_path, 'rb') as pdf_file:
-		base64_string = base64.b64encode(pdf_file.read())
-
-	return base64_string
 
 # from Jinja2 code
 _striptags_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
@@ -1045,7 +1032,7 @@ def strip_html(text):
 	return _striptags_re.sub("", text)
 
 def escape_html(text):
-	if not isinstance(text, str):
+	if not isinstance(text, string_types):
 		return text
 
 	html_escape_table = {
@@ -1068,7 +1055,7 @@ def pretty_date(iso_datetime):
 	if not iso_datetime: return ''
 	import math
 
-	if isinstance(iso_datetime, str):
+	if isinstance(iso_datetime, string_types):
 		iso_datetime = datetime.datetime.strptime(iso_datetime, DATETIME_FORMAT)
 	now_dt = datetime.datetime.strptime(now(), DATETIME_FORMAT)
 	dt_diff = now_dt - iso_datetime
@@ -1117,7 +1104,7 @@ def comma_and(some_list ,add_quotes=True):
 def comma_sep(some_list, pattern, add_quotes=True):
 	if isinstance(some_list, (list, tuple)):
 		# list(some_list) is done to preserve the existing list
-		some_list = [str(s) for s in list(some_list)]
+		some_list = [text_type(s) for s in list(some_list)]
 		if not some_list:
 			return ""
 		elif len(some_list) == 1:
@@ -1131,7 +1118,7 @@ def comma_sep(some_list, pattern, add_quotes=True):
 def new_line_sep(some_list):
 	if isinstance(some_list, (list, tuple)):
 		# list(some_list) is done to preserve the existing list
-		some_list = [str(s) for s in list(some_list)]
+		some_list = [text_type(s) for s in list(some_list)]
 		if not some_list:
 			return ""
 		elif len(some_list) == 1:
@@ -1217,7 +1204,7 @@ def get_link_to_report(name, label=None, report_type=None, doctype=None, filters
 
 	if filters:
 		conditions = []
-		for k,v in filters.items():
+		for k,v in iteritems(filters):
 			if isinstance(v, list):
 				for value in v:
 					conditions.append(str(k)+'='+'["'+str(value[0]+'"'+','+'"'+str(value[1])+'"]'))
@@ -1273,7 +1260,7 @@ operator_map = {
 def evaluate_filters(doc, filters):
 	'''Returns true if doc matches filters'''
 	if isinstance(filters, dict):
-		for key, value in filters.items():
+		for key, value in iteritems(filters):
 			f = get_filter(None, {key:value})
 			if not compare(doc.get(f.fieldname), f.operator, f.value, f.fieldtype):
 				return False
@@ -1430,10 +1417,10 @@ def expand_relative_urls(html):
 
 		return "".join(to_expand)
 
-	html = re.sub(r'(href|src){1}([\s]*=[\s]*[\'"]?)((?!http)[^\'" >]+)([\'"]?)', _expand_relative_urls, html)
+	html = re.sub('(href|src){1}([\s]*=[\s]*[\'"]?)((?!http)[^\'" >]+)([\'"]?)', _expand_relative_urls, html)
 
 	# background-image: url('/assets/...')
-	html = re.sub(r'(:[\s]?url)(\([\'"]?)((?!http)[^\'" >]+)([\'"]?\))', _expand_relative_urls, html)
+	html = re.sub('(:[\s]?url)(\([\'"]?)((?!http)[^\'" >]+)([\'"]?\))', _expand_relative_urls, html)
 	return html
 
 def quoted(url):
@@ -1444,7 +1431,7 @@ def quote_urls(html):
 		groups = list(match.groups())
 		groups[2] = quoted(groups[2])
 		return "".join(groups)
-	return re.sub(r'(href|src){1}([\s]*=[\s]*[\'"]?)((?:http)[^\'">]+)([\'"]?)',
+	return re.sub('(href|src){1}([\s]*=[\s]*[\'"]?)((?:http)[^\'">]+)([\'"]?)',
 		_quote_url, html)
 
 def unique(seq):
@@ -1461,7 +1448,7 @@ def strip(val, chars=None):
 
 def to_markdown(html):
 	from html2text import html2text
-	from html.parser import HTMLParser
+	from six.moves import html_parser as HTMLParser
 
 	text = None
 	try:
@@ -1593,7 +1580,7 @@ def get_user_info_for_avatar(user_id):
 	}
 	try:
 		user_info["email"] = frappe.get_cached_value("User", user_id, "email")
-		user_info["name"] = frappe.get_cached_value("User", user_id, "full_name")
+		user_info["name"] = frappe.get_cached_value("User", user_id, "fullname")
 		user_info["image"] = frappe.get_cached_value("User", user_id, "user_image")
 	except Exception:
 		frappe.local.message_log = []
@@ -1628,7 +1615,7 @@ def validate_python_code(string: str, fieldname=None, is_expression: bool = True
 				.format(fieldname + ": " or "", str(e)), indicator="orange")
 
 
-class UnicodeWithAttrs(str):
+class UnicodeWithAttrs(text_type):
 	def __init__(self, text):
 		self.toc_html = text.toc_html
 		self.metadata = text.metadata

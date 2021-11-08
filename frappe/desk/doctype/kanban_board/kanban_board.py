@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
+from __future__ import unicode_literals
 import frappe
 import json
 from frappe import _
 from frappe.model.document import Document
+from six import iteritems
 
 
 class KanbanBoard(Document):
@@ -105,7 +107,7 @@ def update_order(board_name, order):
 	order_dict = json.loads(order)
 
 	updated_cards = []
-	for col_name, cards in order_dict.items():
+	for col_name, cards in iteritems(order_dict):
 		order_list = []
 		for card in cards:
 			column = frappe.get_value(

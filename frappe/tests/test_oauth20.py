@@ -1,16 +1,16 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+from __future__ import unicode_literals
 
 import unittest
-from urllib.parse import parse_qs, urljoin, urlparse
-
-import jwt
 import requests
+import jwt
+from six.moves.urllib.parse import urlparse, parse_qs, urljoin
+from urllib.parse import urlencode, quote
 
 import frappe
-from frappe.integrations.oauth2 import encode_params
 from frappe.test_runner import make_test_records
-
+from frappe.integrations.oauth2 import encode_params
 
 class TestOAuth20(unittest.TestCase):
 
@@ -302,7 +302,7 @@ class TestOAuth20(unittest.TestCase):
 			id_token,
 			audience=client.client_id,
 			key=client.client_secret,
-			algorithms=["HS256"],
+			algorithm="HS256",
 		)
 
 		self.assertTrue(payload.get("nonce") == nonce)

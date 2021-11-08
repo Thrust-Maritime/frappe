@@ -23,14 +23,6 @@ if (!Array.prototype.uniqBy) {
 	});
 }
 
-// Python's dict.setdefault ported for JS objects
-Object.defineProperty(Object.prototype, "setDefault", {
-	value: function(key, default_value) {
-		if (!(key in this)) this[key] = default_value;
-		return this[key];
-	}
-});
-
 // Pluralize
 String.prototype.plural = function(revert) {
 	const plural = {
@@ -276,10 +268,7 @@ Object.assign(frappe.utils, {
 				</a></p>');
 		return content.html();
 	},
-	scroll_to: function(element, animate=true, additional_offset,
-		element_to_be_scrolled, callback, highlight_element=false) {
-		if (frappe.flags.disable_auto_scroll) return;
-
+	scroll_to: function(element, animate=true, additional_offset, element_to_be_scrolled) {
 		element_to_be_scrolled = element_to_be_scrolled || $("html, body");
 		let scroll_top = 0;
 		if (element) {
@@ -300,20 +289,11 @@ Object.assign(frappe.utils, {
 		}
 
 		if (animate) {
-			element_to_be_scrolled.animate({
-				scrollTop: scroll_top
-			}).promise().then(() => {
-				if (highlight_element) {
-					$(element).addClass('highlight');
-					document.addEventListener("click", function() {
-						$(element).removeClass('highlight');
-					}, {once: true});
-				}
-				callback && callback();
-			});
+			element_to_be_scrolled.animate({ scrollTop: scroll_top });
 		} else {
 			element_to_be_scrolled.scrollTop(scroll_top);
 		}
+
 	},
 	get_scroll_position: function(element, additional_offset) {
 		let header_offset = $(".navbar").height() + $(".page-head:visible").height();
@@ -1000,20 +980,6 @@ Object.assign(frappe.utils, {
 		}
 	},
 
-	eval(code, context={}) {
-		let variable_names = Object.keys(context);
-		let variables = Object.values(context);
-		code = `let out = ${code}; return out`;
-		try {
-			let expression_function = new Function(...variable_names, code);
-			return expression_function(...variables);
-		} catch (error) {
-			console.log('Error evaluating the following expression:'); // eslint-disable-line no-console
-			console.error(code); // eslint-disable-line no-console
-			throw error;
-		}
-	},
-
 	get_browser() {
 		let ua = navigator.userAgent;
 		let tem;
@@ -1071,20 +1037,18 @@ Object.assign(frappe.utils, {
 		return duration;
 	},
 
-	seconds_to_duration(seconds, duration_options) {
-		const round = seconds > 0 ? Math.floor : Math.ceil;
-		const total_duration = {
-			days: round(seconds / 86400), // 60 * 60 * 24
-			hours: round(seconds % 86400 / 3600),
-			minutes: round(seconds % 3600 / 60),
-			seconds: round(seconds % 60)
+	seconds_to_duration(value, duration_options) {
+		let secs = value;
+		let total_duration = {
+			days: Math.floor(secs / (3600 * 24)),
+			hours: Math.floor(secs % (3600 * 24) / 3600),
+			minutes: Math.floor(secs % 3600 / 60),
+			seconds: Math.floor(secs % 60)
 		};
-
 		if (duration_options.hide_days) {
-			total_duration.hours = round(seconds / 3600);
+			total_duration.hours = Math.floor(secs / 3600);
 			total_duration.days = 0;
 		}
-
 		return total_duration;
 	},
 
@@ -1165,7 +1129,7 @@ Object.assign(frappe.utils, {
 		} else {
 			size_class = `icon-${size}`;
 		}
-		return `<svg class="icon ${svg_class} ${size_class}" style="${icon_style}">
+		return `<svg class="icon ${size_class}" style="${icon_style}">
 			<use class="${icon_class}" href="#icon-${icon_name}"></use>
 		</svg>`;
 	},
@@ -1366,22 +1330,5 @@ Object.assign(frappe.utils, {
 		let e = clipboard_paste_event;
 		let clipboard_data = e.clipboardData || window.clipboardData || e.originalEvent.clipboardData;
 		return clipboard_data.getData('Text');
-	},
-
-	add_custom_button(html, action, class_name = "", title="", btn_type, wrapper, prepend) {
-		if (!btn_type) btn_type = 'btn-secondary';
-		let button = $(
-			`<button class="btn ${btn_type} btn-xs ${class_name}" title="${title}">${html}</button>`
-		);
-		button.click(event => {
-			event.stopPropagation();
-			action && action(event);
-		});
-		!prepend && button.appendTo(wrapper);
-		prepend && wrapper.prepend(button);
-	},
-
-	sleep(time) {
-		return new Promise((resolve) => setTimeout(resolve, time));
 	}
 });

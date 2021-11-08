@@ -1,8 +1,10 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+from __future__ import unicode_literals
+
 import frappe
 import re
-from frappe.website.utils import clear_cache
+from frappe.website.render import clear_cache
 from frappe.utils import add_to_date, now
 
 from frappe import _

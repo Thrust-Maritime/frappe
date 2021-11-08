@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
 """
 # Integrating PayPal
@@ -63,11 +63,12 @@ More Details:
 
 """
 
+from __future__ import unicode_literals
 import frappe
 import json
 import pytz
 from frappe import _
-from urllib.parse import urlencode
+from six.moves.urllib.parse import urlencode
 from frappe.model.document import Document
 from frappe.integrations.utils import create_request_log, make_post_request, create_payment_gateway
 from frappe.utils import get_url, call_hook_method, cint, get_datetime

@@ -1,15 +1,14 @@
+from __future__ import unicode_literals
+import frappe
 import json
 import re
-
-from bleach_allowlist import bleach_allowlist
-
-import frappe
-
+import bleach_whitelist.bleach_whitelist as bleach_whitelist
+from six import string_types
 
 def clean_html(html):
 	import bleach
 
-	if not isinstance(html, str):
+	if not isinstance(html, string_types):
 		return html
 
 	return bleach.clean(clean_script_and_style(html),
@@ -22,7 +21,7 @@ def clean_html(html):
 def clean_email_html(html):
 	import bleach
 
-	if not isinstance(html, str):
+	if not isinstance(html, string_types):
 		return html
 
 	return bleach.clean(clean_script_and_style(html),
@@ -61,7 +60,7 @@ def sanitize_html(html, linkify=False):
 	import bleach
 	from bs4 import BeautifulSoup
 
-	if not isinstance(html, str):
+	if not isinstance(html, string_types):
 		return html
 
 	elif is_json(html):
@@ -73,7 +72,7 @@ def sanitize_html(html, linkify=False):
 	tags = (acceptable_elements + svg_elements + mathml_elements
 		+ ["html", "head", "meta", "link", "body", "style", "o:p"])
 	attributes = {"*": acceptable_attributes, 'svg': svg_attributes}
-	styles = bleach_allowlist.all_styles
+	styles = bleach_whitelist.all_styles
 	strip_comments = False
 
 	# returns html with escaped tags, escaped orphan >, <, etc.

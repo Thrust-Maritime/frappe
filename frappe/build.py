@@ -44,36 +44,36 @@ def download_file(url, prefix):
 
 
 def build_missing_files():
-	'''Check which files dont exist yet from the assets.json and run build for those files'''
-
+	# check which files dont exist yet from the build.json and tell build.js to build only those!
 	missing_assets = []
 	current_asset_files = []
+	frappe_build = os.path.join("..", "apps", "frappe", "frappe", "public", "build.json")
 
 	for type in ["css", "js"]:
-		folder = os.path.join(sites_path, "assets", "frappe", "dist", type)
-		current_asset_files.extend(os.listdir(folder))
+		current_asset_files.extend(
+			[
+				"{0}/{1}".format(type, name)
+				for name in os.listdir(os.path.join(sites_path, "assets", type))
+			]
+		)
 
-	development = frappe.local.conf.developer_mode or frappe.local.dev_server
-	build_mode = "development" if development else "production"
+	with open(frappe_build) as f:
+		all_asset_files = json.load(f).keys()
 
-	assets_json = frappe.read_file("assets/assets.json")
-	if assets_json:
-		assets_json = frappe.parse_json(assets_json)
+	for asset in all_asset_files:
+		if asset.replace("concat:", "") not in current_asset_files:
+			missing_assets.append(asset)
 
-		for bundle_file, output_file in assets_json.items():
-			if not output_file.startswith('/assets/frappe'):
-				continue
+	if missing_assets:
+		from subprocess import check_call
+		from shlex import split
 
-			if os.path.basename(output_file) not in current_asset_files:
-				missing_assets.append(bundle_file)
+		click.secho("\nBuilding missing assets...\n", fg="yellow")
+		command = split(
+			"node rollup/build.js --files {0} --no-concat".format(",".join(missing_assets))
+		)
+		check_call(command, cwd=os.path.join("..", "apps", "frappe"))
 
-		if missing_assets:
-			click.secho("\nBuilding missing assets...\n", fg="yellow")
-			files_to_build = ["frappe/" + name for name in missing_assets]
-			bundle(build_mode, files=files_to_build)
-	else:
-		# no assets.json, run full build
-		bundle(build_mode, apps="frappe")
 
 def get_assets_link(frappe_head) -> str:
 	tag = getoutput(
@@ -221,16 +221,24 @@ def setup():
 	assets_path = os.path.join(frappe.local.sites_path, "assets")
 
 
-def bundle(mode, apps=None, hard_link=False, make_copy=False, restore=False, verbose=False, skip_frappe=False, files=None):
+def get_node_pacman():
+	exec_ = find_executable("yarn")
+	if exec_:
+		return exec_
+	raise ValueError("Yarn not found")
+
+
+def bundle(no_compress, app=None, hard_link=False, verbose=False, skip_frappe=False):
 	"""concat / minify js files"""
 	setup()
 	make_asset_dirs(hard_link=hard_link)
 
-	mode = "production" if mode == "production" else "build"
-	command = "yarn run {mode}".format(mode=mode)
+	pacman = get_node_pacman()
+	mode = "build" if no_compress else "production"
+	command = "{pacman} run {mode}".format(pacman=pacman, mode=mode)
 
-	if apps:
-		command += " --apps {apps}".format(apps=apps)
+	if app:
+		command += " --app {app}".format(app=app)
 
 	if skip_frappe:
 		command += " --skip_frappe"
@@ -239,41 +247,23 @@ def bundle(mode, apps=None, hard_link=False, make_copy=False, restore=False, ver
 	check_yarn()
 	frappe.commands.popen(command, cwd=frappe_app_path, env=get_node_env(), raise_err=True)
 
-	command += " --run-build-command"
 
-	check_node_executable()
-	frappe_app_path = frappe.get_app_path("frappe", "..")
-	frappe.commands.popen(command, cwd=frappe_app_path, env=get_node_env(), raise_err=True)
-
-
-def watch(apps=None):
+def watch(no_compress):
 	"""watch and rebuild if necessary"""
 	setup()
 
-	command = "yarn run watch"
-	if apps:
-		command += " --apps {apps}".format(apps=apps)
+	pacman = get_node_pacman()
 
-	live_reload = frappe.utils.cint(
-		os.environ.get("LIVE_RELOAD", frappe.conf.live_reload)
-	)
-
-	if live_reload:
-		command += " --live-reload"
-
-	check_node_executable()
+	frappe_app_path = os.path.abspath(os.path.join(app_paths[0], ".."))
+	check_yarn()
 	frappe_app_path = frappe.get_app_path("frappe", "..")
-	frappe.commands.popen(command, cwd=frappe_app_path, env=get_node_env())
+	frappe.commands.popen("{pacman} run watch".format(pacman=pacman),
+		cwd=frappe_app_path, env=get_node_env())
 
 
-def check_node_executable():
-	node_version = Version(subprocess.getoutput('node -v')[1:])
-	warn = '⚠️ '
-	if node_version.major < 14:
-		click.echo(f"{warn} Please update your node version to 14")
+def check_yarn():
 	if not find_executable("yarn"):
-		click.echo(f"{warn} Please install yarn using below command and try again.\nnpm install -g yarn")
-	click.echo()
+		print("Please install yarn using below command and try again.\nnpm install -g yarn")
 
 def get_node_env():
 	node_env = {
@@ -330,11 +320,6 @@ def generate_assets_map():
 	return symlinks
 
 
-def setup_assets_dirs():
-	for dir_path in (os.path.join(assets_path, x) for x in ("js", "css")):
-		os.makedirs(dir_path, exist_ok=True)
-
-
 def clear_broken_symlinks():
 	for path in os.listdir(assets_path):
 		path = os.path.join(assets_path, path)
@@ -375,7 +360,64 @@ def make_asset_dirs(hard_link=False):
 		except Exception:
 			print(fail_message, end="\r")
 
-	click.echo(unstrip(click.style("✔", fg="green") + " Application Assets Linked") + "\n")
+	print(unstrip(f"{green('✔')} Application Assets Linked") + "\n")
+
+
+def link_assets_dir(source, target, hard_link=False):
+	if not os.path.exists(source):
+		return
+
+	if os.path.exists(target):
+		if os.path.islink(target):
+			os.unlink(target)
+		else:
+			shutil.rmtree(target)
+
+	if hard_link:
+		shutil.copytree(source, target, dirs_exist_ok=True)
+	else:
+		symlink(source, target, overwrite=True)
+
+
+def setup_assets_dirs():
+	for dir_path in (os.path.join(assets_path, x) for x in ("js", "css")):
+		os.makedirs(dir_path, exist_ok=True)
+
+
+def clear_broken_symlinks():
+	for path in os.listdir(assets_path):
+		path = os.path.join(assets_path, path)
+		if os.path.islink(path) and not os.path.exists(path):
+			os.remove(path)
+
+
+
+def unstrip(message):
+	try:
+		max_str = os.get_terminal_size().columns
+	except Exception:
+		max_str = 80
+	_len = len(message)
+	_rem = max_str - _len
+	return f"{message}{' ' * _rem}"
+
+
+def make_asset_dirs(hard_link=False):
+	setup_assets_dirs()
+	clear_broken_symlinks()
+	symlinks = generate_assets_map()
+
+	for source, target in symlinks.items():
+		start_message = unstrip(f"{'Copying assets from' if hard_link else 'Linking'} {source} to {target}")
+		fail_message = unstrip(f"Cannot {'copy' if hard_link else 'link'} {source} to {target}")
+
+		try:
+			print(start_message, end="\r")
+			link_assets_dir(source, target, hard_link=hard_link)
+		except Exception:
+			print(fail_message, end="\r")
+
+	print(unstrip(f"{green('✔')} Application Assets Linked") + "\n")
 
 
 def link_assets_dir(source, target, hard_link=False):
@@ -427,6 +469,8 @@ def get_build_maps():
 
 
 def pack(target, sources, no_compress, verbose):
+	from six import StringIO
+
 	outtype, outtxt = target.split(".")[-1], ""
 	jsm = JavascriptMinify()
 

@@ -17,7 +17,6 @@ if [ "$TYPE" == "server" ]; then
 fi
 
 if [ "$DB" == "mariadb" ];then
-      sudo apt install mariadb-client-10.3
       mysql --host 127.0.0.1 --port 3306 -u root -e "SET GLOBAL character_set_server = 'utf8mb4'";
       mysql --host 127.0.0.1 --port 3306 -u root -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'";
 
@@ -50,7 +49,6 @@ if [ "$TYPE" == "server" ]; then sed -i 's/^socketio:/# socketio:/g' Procfile; f
 if [ "$TYPE" == "server" ]; then sed -i 's/^redis_socketio:/# redis_socketio:/g' Procfile; fi
 
 if [ "$TYPE" == "ui" ]; then bench setup requirements --node; fi
-if [ "$TYPE" == "server" ]; then bench setup requirements --dev; fi
 
 # install node-sass which is required for website theme test
 cd ./apps/frappe || exit

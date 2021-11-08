@@ -1,9 +1,10 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import cint, quoted
-from frappe.website.path_resolver import resolve_path
+from frappe.website.render import resolve_path
 from frappe.model.document import get_controller, Document
 from frappe import _
 
@@ -71,9 +72,6 @@ def get(doctype, txt=None, limit_start=0, limit=20, pathname=None, **kwargs):
 def get_list_data(doctype, txt=None, limit_start=0, fields=None, cmd=None, limit=20, web_form_name=None, **kwargs):
 	"""Returns processed HTML page for a standard listing."""
 	limit_start = cint(limit_start)
-
-	if frappe.is_table(doctype):
-		frappe.throw(_("Child DocTypes are not allowed"), title=_("Invalid DocType"))
 
 	if not txt and frappe.form_dict.search:
 		txt = frappe.form_dict.search
@@ -186,7 +184,8 @@ def get_list_context(context, doctype, web_form_name=None):
 
 	return list_context
 
-def get_list(doctype, txt, filters, limit_start, limit_page_length=20, ignore_permissions=False, fields=None, order_by=None):
+def get_list(doctype, txt, filters, limit_start, limit_page_length=20, ignore_permissions=False,
+	fields=None, order_by=None):
 	meta = frappe.get_meta(doctype)
 	if not filters:
 		filters = []

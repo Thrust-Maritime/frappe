@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 # imports - standard imports
 import os, shutil
 from distutils.command.clean import clean as Clean
@@ -57,5 +59,5 @@ setup(
 	{
 		'clean': CleanCommand
 	},
-	python_requires='>=3.7'
+	python_requires='>=3.6'
 )

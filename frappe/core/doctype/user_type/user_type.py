@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2021, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
+from __future__ import unicode_literals
 import frappe
 from frappe import _
+from six import iteritems
 from frappe.utils import get_link_to_form
 from frappe.config import get_modules_from_app
 from frappe.permissions import add_permission, add_user_permission
@@ -36,11 +38,8 @@ class UserType(Document):
 		if not self.user_doctypes:
 			return
 
-		modules = frappe.get_all("DocType",
-			fields=["module"],
-			filters={"name": ("in", [d.document_type for d in self.user_doctypes])},
-			distinct=True,
-		)
+		modules = frappe.get_all('DocType', fields=['distinct module as module'],
+			filters={'name': ('in', [d.document_type for d in self.user_doctypes])})
 
 		self.set('user_type_modules', [])
 		for row in modules:
@@ -115,7 +114,7 @@ class UserType(Document):
 		self.select_doctypes = []
 
 		select_doctypes = []
-		user_doctypes = [row.document_type for row in self.user_doctypes]
+		user_doctypes = tuple([row.document_type for row in self.user_doctypes])
 
 		for doctype in user_doctypes:
 			doc = frappe.get_meta(doctype)
@@ -195,7 +194,7 @@ def get_user_linked_doctypes(doctype, txt, searchfield, start, page_len, filters
 		['DocType', 'read_only', '=', 0], ['DocType', 'name', 'like', '%{0}%'.format(txt)]]
 
 	doctypes = frappe.get_all('DocType', fields = ['`tabDocType`.`name`'], filters=filters,
-		order_by = '`tabDocType`.`idx` desc', limit_start=start, limit_page_length=page_len, as_list=1)
+		order_by = '`tabDocType`.`idx` desc', limit_start=start, limit_page_length=page_len, as_list=1, debug=1)
 
 	custom_dt_filters = [['Custom Field', 'dt', 'like', '%{0}%'.format(txt)],
 		['Custom Field', 'options', '=', 'User'], ['Custom Field', 'fieldtype', '=', 'Link']]
@@ -248,7 +247,7 @@ def apply_permissions_for_non_standard_user_type(doc, method=None):
 	if not user_types:
 		return
 
-	for user_type, data in user_types.items():
+	for user_type, data in iteritems(user_types):
 		if (not doc.get(data[1]) or doc.doctype != data[0]):
 			continue
 

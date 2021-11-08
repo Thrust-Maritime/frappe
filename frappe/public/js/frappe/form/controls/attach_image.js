@@ -1,6 +1,6 @@
-frappe.ui.form.ControlAttachImage = class ControlAttachImage extends frappe.ui.form.ControlAttach {
+frappe.ui.form.ControlAttachImage = frappe.ui.form.ControlAttach.extend({
 	make_input() {
-		super.make_input();
+		this._super();
 
 		let $file_link = this.$value.find('.attached-file-link');
 		$file_link.popover({
@@ -16,10 +16,10 @@ frappe.ui.form.ControlAttachImage = class ControlAttachImage extends frappe.ui.f
 			},
 			html: true
 		});
-	}
+	},
 	set_upload_options() {
-		super.set_upload_options();
+		this._super();
 		this.upload_options.restrictions = {};
 		this.upload_options.restrictions.allowed_file_types = ['image/*'];
 	}
-};
+});

@@ -1,5 +1,5 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
 import os
 
@@ -20,7 +20,7 @@ def sync_fixtures(app=None):
 		if os.path.exists(frappe.get_app_path(app, "fixtures")):
 			fixture_files = sorted(os.listdir(frappe.get_app_path(app, "fixtures")))
 			for fname in fixture_files:
-				if fname.endswith(".json"):
+				if fname.endswith(".json") or fname.endswith(".csv"):
 					import_doc(frappe.get_app_path(app, "fixtures", fname))
 
 		import_custom_scripts(app)

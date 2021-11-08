@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
 
 import ast
 from types import FunctionType, MethodType, ModuleType
@@ -26,11 +28,6 @@ class ServerScript(Document):
 		if self.script_type == "Scheduler Event":
 			for job in self.scheduled_jobs:
 				frappe.delete_doc("Scheduled Job Type", job.name)
-
-	def get_code_fields(self):
-		return {
-			'script': 'py'
-		}
 
 	@property
 	def scheduled_jobs(self) -> List[Dict[str, str]]:

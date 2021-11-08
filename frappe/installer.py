@@ -1,5 +1,5 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
 import json
 import os
@@ -31,10 +31,6 @@ def _new_site(
 ):
 	"""Install a new Frappe site"""
 
-	from frappe.commands.scheduler import _is_scheduler_enabled
-	from frappe.utils import get_site_path, scheduler, touch_file
-
-
 	if not force and os.path.exists(site):
 		print("Site {0} already exists".format(site))
 		sys.exit(1)
@@ -43,11 +39,14 @@ def _new_site(
 		print("--no-mariadb-socket requires db_type to be set to mariadb.")
 		sys.exit(1)
 
-	frappe.init(site=site)
-
 	if not db_name:
 		import hashlib
-		db_name = "_" + hashlib.sha1(os.path.realpath(frappe.get_site_path()).encode()).hexdigest()[:16]
+		db_name = "_" + hashlib.sha1(site.encode()).hexdigest()[:16]
+
+	frappe.init(site=site)
+
+	from frappe.commands.scheduler import _is_scheduler_enabled
+	from frappe.utils import get_site_path, scheduler, touch_file
 
 	try:
 		# enable scheduler post install?
@@ -160,7 +159,7 @@ def install_app(name, verbose=False, set_as_patched=True):
 	if name != "frappe":
 		add_module_defs(name)
 
-	sync_for(name, force=True, reset_permissions=True)
+	sync_for(name, force=True, sync_everything=True, verbose=verbose, reset_permissions=True)
 
 	add_to_installed_apps(name)
 
@@ -327,10 +326,10 @@ def _delete_doctypes(doctypes: List[str], dry_run: bool) -> None:
 
 
 def post_install(rebuild_website=False):
-	from frappe.website.utils import clear_website_cache
+	from frappe.website import render
 
 	if rebuild_website:
-		clear_website_cache()
+		render.clear_cache()
 
 	init_singles()
 	frappe.db.commit()
@@ -490,30 +489,7 @@ def extract_sql_from_archive(sql_file_path):
 	else:
 		decompressed_file_name = sql_file_path
 
-	# convert archive sql to latest compatible
-	convert_archive_content(decompressed_file_name)
-
 	return decompressed_file_name
-
-
-def convert_archive_content(sql_file_path):
-	if frappe.conf.db_type == "mariadb":
-		# ever since mariaDB 10.6, row_format COMPRESSED has been deprecated and removed
-		# this step is added to ease restoring sites depending on older mariaDB servers
-		from frappe.utils import random_string
-		from pathlib import Path
-
-		old_sql_file_path = Path(f"{sql_file_path}_{random_string(10)}")
-		sql_file_path = Path(sql_file_path)
-
-		os.rename(sql_file_path, old_sql_file_path)
-		sql_file_path.touch()
-
-		with open(old_sql_file_path) as r, open(sql_file_path, "a") as w:
-			for line in r:
-				w.write(line.replace("ROW_FORMAT=COMPRESSED", "ROW_FORMAT=DYNAMIC"))
-
-		old_sql_file_path.unlink()
 
 
 def extract_sql_gzip(sql_gz_path):
@@ -525,7 +501,7 @@ def extract_sql_gzip(sql_gz_path):
 		decompressed_file = original_file.rstrip(".gz")
 		cmd = 'gzip -dvf < {0} > {1}'.format(original_file, decompressed_file)
 		subprocess.check_call(cmd, shell=True)
-	except Exception:
+	except:
 		raise
 
 	return decompressed_file
@@ -605,7 +581,7 @@ def is_downgrade(sql_file_path, verbose=False):
 
 def is_partial(sql_file_path):
 	with open(sql_file_path) as f:
-		header = " ".join(f.readline() for _ in range(5))
+		header = " ".join([f.readline() for _ in range(5)])
 		if "Partial Backup" in header:
 			return True
 	return False

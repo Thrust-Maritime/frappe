@@ -1,11 +1,13 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
 # Search
+from __future__ import unicode_literals
 import frappe, json
 from frappe.utils import cstr, unique, cint
 from frappe.permissions import has_permission
 from frappe import _, is_whitelisted
+from six import string_types
 import re
 import wrapt
 
@@ -60,7 +62,7 @@ def search_widget(doctype, txt, query=None, searchfield=None, start=0,
 
 	start = cint(start)
 
-	if isinstance(filters, str):
+	if isinstance(filters, string_types):
 		filters = json.loads(filters)
 
 	if searchfield:

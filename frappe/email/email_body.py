@@ -1,20 +1,22 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
 
+from __future__ import unicode_literals
 import frappe, re, os
 from frappe.utils.pdf import get_pdf
-from frappe.email.doctype.email_account.email_account import EmailAccount
+from frappe.email.smtp import get_outgoing_email_account
 from frappe.utils import (get_url, scrub_urls, strip, expand_relative_urls, cint,
 	split_emails, to_markdown, markdown, random_string, parse_addr)
 import email.utils
+from six import iteritems, text_type, string_types
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import policy
 
 def get_email(recipients, sender='', msg='', subject='[No Subject]',
 	text_content = None, footer=None, print_html=None, formatted=None, attachments=None,
-	content=None, reply_to=None, cc=None, bcc=None, email_account=None, expose_recipients=None,
-	inline_images=None, header=None):
+	content=None, reply_to=None, cc=[], bcc=[], email_account=None, expose_recipients=None,
+	inline_images=[], header=None):
 	""" Prepare an email with the following format:
 		- multipart/mixed
 			- multipart/alternative
@@ -25,14 +27,6 @@ def get_email(recipients, sender='', msg='', subject='[No Subject]',
 				- attachment
 	"""
 	content = content or msg
-
-	if cc is None:
-		cc = []
-	if bcc is None:
-		bcc = []
-	if inline_images is None:
-		inline_images = []
-
 	emailobj = EMail(sender, recipients, subject, reply_to=reply_to, cc=cc, bcc=bcc, email_account=email_account, expose_recipients=expose_recipients)
 
 	if not content.strip().startswith("<"):
@@ -61,7 +55,7 @@ class EMail:
 		from email import charset as Charset
 		Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
 
-		if isinstance(recipients, str):
+		if isinstance(recipients, string_types):
 			recipients = recipients.replace(';', ',').replace('\n', '')
 			recipients = split_emails(recipients)
 
@@ -81,8 +75,7 @@ class EMail:
 		self.bcc = bcc or []
 		self.html_set = False
 
-		self.email_account = email_account or \
-			EmailAccount.find_outgoing(match_by_email=sender, _raise_error=True)
+		self.email_account = email_account or get_outgoing_email_account(sender=sender)
 
 	def set_html(self, message, text_content = None, footer=None, print_html=None,
 		formatted=None, inline_images=None, header=None):
@@ -231,7 +224,7 @@ class EMail:
 		}
 
 		# reset headers as values may be changed.
-		for key, val in headers.items():
+		for key, val in iteritems(headers):
 			if val:
 				self.set_header(key, val)
 
@@ -256,8 +249,8 @@ class EMail:
 
 def get_formatted_html(subject, message, footer=None, print_html=None,
 		email_account=None, header=None, unsubscribe_link=None, sender=None, with_container=False):
-
-	email_account = email_account or EmailAccount.find_outgoing(match_by_email=sender)
+	if not email_account:
+		email_account = get_outgoing_email_account(False, sender=sender)
 
 	signature = None
 	if "<!-- signature-included -->" not in message:
@@ -298,12 +291,18 @@ def inline_style_in_html(html):
 	''' Convert email.css and html to inline-styled html
 	'''
 	from premailer import Premailer
-	from frappe.utils.jinja_globals import bundled_asset
 
-	# get email css files from hooks
-	css_files = frappe.get_hooks('email_css')
-	css_files = [bundled_asset(path) for path in css_files]
-	css_files = [path.lstrip('/') for path in css_files]
+	apps = frappe.get_installed_apps()
+
+	# add frappe email css file
+	css_files = ['assets/css/email.css']
+	if 'frappe' in apps:
+		apps.remove('frappe')
+
+	for app in apps:
+		path = 'assets/{0}/css/email.css'.format(app)
+		css_files.append(path)
+
 	css_files = [css_file for css_file in css_files if os.path.exists(os.path.abspath(css_file))]
 
 	p = Premailer(html=html, external_styles=css_files, strip_important=False)
@@ -334,7 +333,7 @@ def add_attachment(fname, fcontent, content_type=None,
 	maintype, subtype = content_type.split('/', 1)
 	if maintype == 'text':
 		# Note: we should handle calculating the charset
-		if isinstance(fcontent, str):
+		if isinstance(fcontent, text_type):
 			fcontent = fcontent.encode("utf-8")
 		part = MIMEText(fcontent, _subtype=subtype, _charset="utf-8")
 	elif maintype == 'image':
@@ -351,7 +350,7 @@ def add_attachment(fname, fcontent, content_type=None,
 	# Set the filename parameter
 	if fname:
 		attachment_type = 'inline' if inline else 'attachment'
-		part.add_header('Content-Disposition', attachment_type, filename=str(fname))
+		part.add_header('Content-Disposition', attachment_type, filename=text_type(fname))
 	if content_id:
 		part.add_header('Content-ID', '<{0}>'.format(content_id))
 
@@ -359,7 +358,9 @@ def add_attachment(fname, fcontent, content_type=None,
 
 def get_message_id():
 	'''Returns Message ID created from doctype and name'''
-	return email.utils.make_msgid(domain=frappe.local.site)
+	return "<{unique}@{site}>".format(
+			site=frappe.local.site,
+			unique=email.utils.make_msgid(random_string(10)).split('@')[0].split('<')[1])
 
 def get_signature(email_account):
 	if email_account and email_account.add_signature and email_account.signature:
@@ -456,7 +457,7 @@ def get_header(header=None):
 
 	if not header: return None
 
-	if isinstance(header, str):
+	if isinstance(header, string_types):
 		# header = 'My Title'
 		header = [header, None]
 	if len(header) == 1:

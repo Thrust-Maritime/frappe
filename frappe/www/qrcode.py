@@ -1,9 +1,11 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+
+from __future__ import unicode_literals
 
 import frappe
 from frappe import _
-from urllib.parse import parse_qsl
+from six.moves.urllib.parse import parse_qsl
 from frappe.twofactor import get_qr_svg_code
 
 def get_context(context):

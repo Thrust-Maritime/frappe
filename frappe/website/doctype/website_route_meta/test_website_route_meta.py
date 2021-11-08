@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019, Frappe Technologies and Contributors
-# License: MIT. See LICENSE
+# See license.txt
+from __future__ import unicode_literals
+
 import frappe
 import unittest
 from frappe.utils import set_request
-from frappe.website.serve import get_response
+from frappe.website.render import render
 
 test_dependencies = ['Blog Post']
 class TestWebsiteRouteMeta(unittest.TestCase):
@@ -29,7 +31,7 @@ class TestWebsiteRouteMeta(unittest.TestCase):
 
 		# set request on this route
 		set_request(path=blog.route)
-		response = get_response()
+		response = render()
 
 		self.assertTrue(response.status_code, 200)
 

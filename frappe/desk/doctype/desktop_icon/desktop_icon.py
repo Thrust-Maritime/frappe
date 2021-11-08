@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
 
 import frappe
 from frappe import _
 import json
 import random
 from frappe.model.document import Document
+from six import iteritems, string_types
 from frappe.utils.user import UserPermissions
 
 class DesktopIcon(Document):
@@ -170,7 +173,7 @@ def add_user_icon(_doctype, _report=None, label=None, link=None, type='link', st
 @frappe.whitelist()
 def set_order(new_order, user=None):
 	'''set new order by duplicating user icons (if user is set) or set global order'''
-	if isinstance(new_order, str):
+	if isinstance(new_order, string_types):
 		new_order = json.loads(new_order)
 	for i, module_name in enumerate(new_order):
 		if module_name not in ('Explore',):
@@ -197,7 +200,7 @@ def set_desktop_icons(visible_list, ignore_duplicate=True):
 
 	# clear all custom only if setup is not complete
 	if not int(frappe.defaults.get_defaults().setup_complete or 0):
-		frappe.db.delete("Desktop Icon", {"standard": 0})
+		frappe.db.sql('delete from `tabDesktop Icon` where standard=0')
 
 	# set standard as blocked and hidden if setting first active domain
 	if not frappe.flags.keep_desktop_icons:
@@ -229,7 +232,7 @@ def set_hidden_list(hidden_list, user=None):
 	'''Sets property `hidden`=1 in **Desktop Icon** for given user.
 	If user is None then it will set global values.
 	It will also set the rest of the icons as shown (`hidden` = 0)'''
-	if isinstance(hidden_list, str):
+	if isinstance(hidden_list, string_types):
 		hidden_list = json.loads(hidden_list)
 
 	# set as hidden
@@ -326,7 +329,7 @@ def sync_from_app(app):
 
 	if isinstance(modules, dict):
 		modules_list = []
-		for m, desktop_icon in modules.items():
+		for m, desktop_icon in iteritems(modules):
 			desktop_icon['module_name'] = m
 			modules_list.append(desktop_icon)
 	else:

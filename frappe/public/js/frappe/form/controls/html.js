@@ -1,13 +1,13 @@
-frappe.ui.form.ControlHTML = class ControlHTML extends frappe.ui.form.Control {
-	make() {
-		super.make();
+frappe.ui.form.ControlHTML = frappe.ui.form.Control.extend({
+	make: function() {
+		this._super();
 		this.disp_area = this.wrapper;
-	}
-	refresh_input() {
+	},
+	refresh_input: function() {
 		var content = this.get_content();
 		if(content) this.$wrapper.html(content);
-	}
-	get_content() {
+	},
+	get_content: function() {
 		var content = this.df.options || "";
 		content = __(content);
 		try {
@@ -15,11 +15,11 @@ frappe.ui.form.ControlHTML = class ControlHTML extends frappe.ui.form.Control {
 		} catch (e) {
 			return content;
 		}
-	}
-	html(html) {
+	},
+	html: function(html) {
 		this.$wrapper.html(html || this.get_content());
-	}
-	set_value(html) {
+	},
+	set_value: function(html) {
 		if(html.appendTo) {
 			// jquery object
 			html.appendTo(this.$wrapper.empty());
@@ -29,4 +29,4 @@ frappe.ui.form.ControlHTML = class ControlHTML extends frappe.ui.form.Control {
 			this.html(html);
 		}
 	}
-};
+});

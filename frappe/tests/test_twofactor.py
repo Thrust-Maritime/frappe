@@ -1,5 +1,7 @@
 # Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
-# License: MIT. See LICENSE
+# MIT License. See license.txt
+from __future__ import unicode_literals
+
 import unittest, frappe, pyotp
 from frappe.auth import HTTPRequest
 from frappe.utils import cint

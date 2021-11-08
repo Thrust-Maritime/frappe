@@ -12,9 +12,9 @@ frappe.pages['print-format-builder'].on_page_show = function(wrapper) {
 		});
 	} else if(frappe.route_options) {
 		if(frappe.route_options.make_new) {
-			let { doctype, name, based_on, beta } = frappe.route_options;
+			let { doctype, name, based_on } = frappe.route_options;
 			frappe.route_options = null;
-			frappe.print_format_builder.setup_new_print_format(doctype, name, based_on, beta);
+			frappe.print_format_builder.setup_new_print_format(doctype, name, based_on);
 		} else {
 			frappe.print_format_builder.print_format = frappe.route_options.doc;
 			frappe.route_options = null;
@@ -23,13 +23,13 @@ frappe.pages['print-format-builder'].on_page_show = function(wrapper) {
 	}
 }
 
-frappe.PrintFormatBuilder = class PrintFormatBuilder {
-	constructor(parent) {
+frappe.PrintFormatBuilder = Class.extend({
+	init: function(parent) {
 		this.parent = parent;
 		this.make();
 		this.refresh();
-	}
-	refresh() {
+	},
+	refresh: function() {
 		this.custom_html_count = 0;
 		if(!this.print_format) {
 			this.show_start();
@@ -37,8 +37,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			this.page.set_title(this.print_format.name);
 			this.setup_print_format();
 		}
-	}
-	make() {
+	},
+	make: function() {
 		this.page = frappe.ui.make_app_page({
 			parent: this.parent,
 			title: __("Print Format Builder"),
@@ -56,15 +56,15 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 		this.setup_edit_custom_html();
 		// $(this.page.sidebar).css({"position": 'fixed'});
 		// $(this.page.main).parent().css({"margin-left": '16.67%'});
-	}
-	show_start() {
+	},
+	show_start: function() {
 		this.page.main.html(frappe.render_template("print_format_builder_start", {}));
 		this.page.clear_actions();
 		this.page.set_title(__("Print Format Builder"));
 		this.start_edit_print_format();
 		this.start_new_print_format();
-	}
-	start_edit_print_format() {
+	},
+	start_edit_print_format: function() {
 		// print format control
 		var me = this;
 		this.print_format_input = frappe.ui.form.make_control({
@@ -89,8 +89,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 				frappe.set_route('print-format-builder', name);
 			});
 		});
-	}
-	start_new_print_format() {
+	},
+	start_new_print_format: function() {
 		var me = this;
 		this.doctype_input = frappe.ui.form.make_control({
 			parent: this.page.main.find(".doctype-selector"),
@@ -125,30 +125,26 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			me.setup_new_print_format(doctype, name);
 
 		});
-	}
-	setup_new_print_format(doctype, name, based_on, beta) {
+	},
+	setup_new_print_format: function(doctype, name, based_on) {
 		frappe.call({
 			method: 'frappe.printing.page.print_format_builder.print_format_builder.create_custom_format',
 			args: {
 				doctype: doctype,
 				name: name,
-				based_on: based_on,
-				beta: Boolean(beta)
+				based_on: based_on
 			},
 			callback: (r) => {
-				if (r.message) {
-					let print_format = r.message;
-					if (print_format.print_format_builder_beta) {
-						frappe.set_route('print-format-builder-beta', print_format.name);
-					} else {
-						this.print_format = print_format;
+				if(!r.exc) {
+					if(r.message) {
+						this.print_format = r.message;
 						this.refresh();
 					}
 				}
 			},
 		});
-	}
-	setup_print_format() {
+	},
+	setup_print_format: function() {
 		var me = this;
 		frappe.model.with_doctype(this.print_format.doc_type, function(doctype) {
 			me.meta = frappe.get_meta(me.print_format.doc_type);
@@ -167,23 +163,23 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 				frappe.set_route("Form", "Print Format", me.print_format.name);
 			});
 		});
-	}
-	setup_sidebar() {
+	},
+	setup_sidebar: function() {
 		// prepend custom HTML field
 		var fields = [this.get_custom_html_field()].concat(this.meta.fields);
 		this.page.sidebar.html(
 			$(frappe.render_template("print_format_builder_sidebar", {fields: fields}))
 		);
 		this.setup_field_filter();
-	}
-	get_custom_html_field() {
+	},
+	get_custom_html_field: function() {
 		return {
 			fieldtype: "Custom HTML",
 			fieldname: "_custom_html",
 			label: __("Custom HTML")
-		};
-	}
-	render_layout() {
+		}
+	},
+	render_layout: function() {
 		this.page.main.empty();
 		this.prepare_data();
 		$(frappe.render_template("print_format_builder_layout", {
@@ -194,8 +190,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 		this.setup_edit_heading();
 		this.setup_field_settings();
 		this.setup_html_data();
-	}
-	prepare_data() {
+	},
+	prepare_data: function() {
 		this.print_heading_template = null;
 		this.data = JSON.parse(this.print_format.format_data || "[]");
 		if(!this.data.length) {
@@ -265,7 +261,7 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			} else if(f.fieldtype==="Column Break") {
 				set_column();
 
-			} else if (!in_list(["Section Break", "Column Break", "Tab Break", "Fold"], f.fieldtype)
+			} else if(!in_list(["Section Break", "Column Break", "Fold"], f.fieldtype)
 				&& f.label) {
 				if(!column) set_column();
 
@@ -284,25 +280,25 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 		this.layout_data = $.map(this.layout_data, function(s) {
 			return s.has_fields ? s : null
 		});
-	}
-	get_new_section() {
+	},
+	get_new_section: function() {
 		return {columns: [], no_of_columns: 0, label:''};
-	}
-	get_new_column() {
+	},
+	get_new_column: function() {
 		return {fields: []}
-	}
-	add_table_properties(f) {
+	},
+	add_table_properties: function(f) {
 		// build table columns and widths in a dict
 		// visible_columns
 		var me = this;
 		if(!f.visible_columns) {
 			me.init_visible_columns(f);
 		}
-	}
-	init_visible_columns(f) {
+	},
+	init_visible_columns: function(f) {
 		f.visible_columns = []
 		$.each(frappe.get_meta(f.options).fields, function(i, _f) {
-			if (!in_list(["Section Break", "Column Break", "Tab Break"], _f.fieldtype) &&
+			if(!in_list(["Section Break", "Column Break"], _f.fieldtype) &&
 				!_f.print_hide && f.label) {
 
 				// column names set as fieldname|width
@@ -310,8 +306,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 					print_width: (_f.width || ""), print_hide:0});
 			}
 		});
-	}
-	setup_sortable() {
+	},
+	setup_sortable: function() {
 		var me = this;
 
 		// drag from fields library
@@ -336,8 +332,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 		Sortable.create(this.page.main.find(".print-format-builder-layout").get(0),
 			{ handle: ".print-format-builder-section-head" }
 		);
-	}
-	setup_sortable_for_column(col) {
+	},
+	setup_sortable_for_column: function(col) {
 		var me = this;
 		Sortable.create(col, {
 			group: {
@@ -367,8 +363,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			}
 		});
 
-	}
-	setup_field_filter() {
+	},
+	setup_field_filter: function() {
 		var me = this;
 		this.page.sidebar.find(".filter-fields").on("keyup", function() {
 			var text = $(this).val();
@@ -377,8 +373,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 				$(this).parent().toggle(show);
 			})
 		});
-	}
-	setup_section_settings() {
+	},
+	setup_section_settings: function() {
 		var me = this;
 		this.page.main.on("click", ".section-settings", function() {
 			var section = $(this).parent().parent();
@@ -435,8 +431,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 
 			return false;
 		});
-	}
-	setup_field_settings() {
+	},
+	setup_field_settings: function() {
 		this.page.main.find(".field-settings").on("click", e => {
 			const field = $(e.currentTarget).parent();
 			// new dialog
@@ -486,8 +482,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 
 			return false;
 		});
-	}
-	setup_html_data() {
+	},
+	setup_html_data: function() {
 		// set JQuery `data` for Custom HTML fields, since editing the HTML
 		// directly causes problem becuase of HTML reformatting
 		//
@@ -500,8 +496,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			var html = me.custom_html_dict[parseInt(content.attr('data-custom-html-id'))].options;
 			content.data('content', html);
 		})
-	}
-	update_columns_in_section(section, no_of_columns, new_no_of_columns) {
+	},
+	update_columns_in_section: function(section, no_of_columns, new_no_of_columns) {
 		var col_size = 12 / new_no_of_columns,
 			me = this,
 			resize = function() {
@@ -543,8 +539,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			resize();
 		}
 
-	}
-	setup_add_section() {
+	},
+	setup_add_section: function() {
 		var me = this;
 		this.page.main.find(".print-format-builder-add-section").on("click", function() {
 			// boostrap new section info
@@ -558,8 +554,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 
 			me.setup_sortable_for_column($section.find(".print-format-builder-column").get(0));
 		});
-	}
-	setup_edit_heading() {
+	},
+	setup_edit_heading: function() {
 		var me = this;
 		var $heading = this.page.main.find(".print-format-builder-print-heading");
 
@@ -569,8 +565,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 		this.page.main.find(".edit-heading").on("click", function() {
 			var d = me.get_edit_html_dialog(__("Edit Heading"), __("Heading"), $heading);
 		})
-	}
-	setup_column_selector() {
+	},
+	setup_column_selector: function() {
 		var me = this;
 		this.page.main.on("click", ".select-columns", function() {
 			var parent = $(this).parents(".print-format-builder-field:first"),
@@ -610,7 +606,7 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			// add remaining fields
 			$.each(doc_fields, function(j, f) {
 				if (f && !in_list(column_names, f.fieldname)
-					&& !in_list(["Section Break", "Column Break", "Tab Break"], f.fieldtype) && f.label) {
+					&& !in_list(["Section Break", "Column Break"], f.fieldtype) && f.label) {
 					fields.push(f);
 				}
 			})
@@ -661,24 +657,24 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 
 			return false;
 		});
-	}
-	get_visible_columns_string(f) {
+	},
+	get_visible_columns_string: function(f) {
 		if(!f.visible_columns) {
 			this.init_visible_columns(f);
 		}
 		return $.map(f.visible_columns, function(v) { return v.fieldname + "|" + (v.print_width || "") }).join(",");
-	}
-	get_no_content() {
+	},
+	get_no_content: function() {
 		return __("Edit to add content")
-	}
-	setup_edit_custom_html() {
+	},
+	setup_edit_custom_html: function() {
 		var me = this;
 		this.page.main.on("click", ".edit-html", function() {
 			me.get_edit_html_dialog(__("Edit Custom HTML"), __("Custom HTML"),
 				$(this).parents(".print-format-builder-field:first").find(".html-content"));
 		});
-	}
-	get_edit_html_dialog(title, label, $content) {
+	},
+	get_edit_html_dialog: function(title, label, $content) {
 		var me = this;
 		var d = new frappe.ui.Dialog({
 			title: title,
@@ -714,8 +710,8 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 		d.show();
 
 		return d;
-	}
-	save_print_format() {
+	},
+	save_print_format: function() {
 		var data = [],
 			me = this;
 
@@ -793,4 +789,4 @@ frappe.PrintFormatBuilder = class PrintFormatBuilder {
 			}
 		});
 	}
-};
+});

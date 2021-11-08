@@ -818,7 +818,6 @@ export default class Grid {
 				doctype: link_field.options,
 				fieldname: link,
 				qty_fieldname: qty,
-				get_query: link_field.get_query,
 				target: this,
 				txt: ""
 			});

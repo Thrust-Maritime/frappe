@@ -1,4 +1,4 @@
-frappe.ui.SortSelector = class SortSelector {
+frappe.ui.SortSelector = Class.extend({
 	// parent:
 	// change:
 	// args:
@@ -7,18 +7,18 @@ frappe.ui.SortSelector = class SortSelector {
 	//		sort_by_label:
 	//		sort_order:
 	//		doctype: (optional)
-	constructor(opts) {
+	init: function(opts) {
 		$.extend(this, opts);
 		this.labels = {};
 		this.make();
-	}
-	make() {
+	},
+	make: function() {
 		this.prepare_args();
 		this.parent.find('.sort-selector').remove();
 		this.wrapper = $(frappe.render_template('sort_selector', this.args)).appendTo(this.parent);
 		this.bind_events();
-	}
-	bind_events() {
+	},
+	bind_events: function() {
 		var me = this;
 
 		// order
@@ -42,8 +42,8 @@ frappe.ui.SortSelector = class SortSelector {
 			(me.onchange || me.change)(me.sort_by, me.sort_order);
 		});
 
-	}
-	prepare_args() {
+	},
+	prepare_args: function() {
 		var me = this;
 		if(!this.args) {
 			this.args = {};
@@ -87,8 +87,8 @@ frappe.ui.SortSelector = class SortSelector {
 			});
 		}
 
-	}
-	setup_from_doctype() {
+	},
+	setup_from_doctype: function() {
 		var me = this;
 		var meta = frappe.get_meta(this.doctype);
 		if (!meta) return;
@@ -154,8 +154,8 @@ frappe.ui.SortSelector = class SortSelector {
 		// set default
 		this.sort_by = this.args.sort_by;
 		this.sort_order = this.args.sort_order;
-	}
-	get_meta_sort_field() {
+	},
+	get_meta_sort_field: function() {
 		var meta = frappe.get_meta(this.doctype);
 
 		if (!meta) {
@@ -177,17 +177,17 @@ frappe.ui.SortSelector = class SortSelector {
 				meta_sort_order: meta.sort_order ? meta.sort_order.toLowerCase() : ''
 			}
 		}
-	}
-	get_label(fieldname) {
+	},
+	get_label: function(fieldname) {
 		if(fieldname==='idx') {
 			return __("Most Used");
 		} else {
 			return this.labels[fieldname]
 				|| frappe.meta.get_label(this.doctype, fieldname);
 		}
-	}
-	get_sql_string() {
+	},
+	get_sql_string: function() {
 		// build string like `tabTask`.`subject` desc
 		return '`tab' + this.doctype + '`.`' + this.sort_by + '` ' +  this.sort_order;
 	}
-}
+})

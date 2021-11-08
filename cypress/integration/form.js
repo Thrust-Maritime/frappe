@@ -8,10 +8,7 @@ context('Form', () => {
 	});
 	it('create a new form', () => {
 		cy.visit('/app/todo/new');
-		cy.get('[data-fieldname="description"] .ql-editor')
-			.first()
-			.click()
-			.type('this is a test todo');
+		cy.fill_field('description', 'this is a test todo', 'Text Editor');
 		cy.wait(300);
 		cy.get('.page-title').should('contain', 'Not Saved');
 		cy.intercept({
@@ -21,7 +18,6 @@ context('Form', () => {
 		cy.get('.primary-action').click();
 		cy.wait('@form_save').its('response.statusCode').should('eq', 200);
 		cy.visit('/app/todo');
-		cy.wait(300);
 		cy.get('.title-text').should('be.visible').and('contain', 'To Do');
 		cy.get('.list-row').should('contain', 'this is a test todo');
 	});

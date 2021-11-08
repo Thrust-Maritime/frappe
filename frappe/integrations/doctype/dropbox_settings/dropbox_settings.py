@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies and contributors
-# License: MIT. See LICENSE
+# For license information, please see license.txt
 
 import json
 import os
@@ -336,6 +336,7 @@ def dropbox_auth_finish(return_access_token=False):
 		_("Dropbox access is approved!") + close,
 		indicator_color='green')
 
+@frappe.whitelist(allow_guest=True)
 def set_dropbox_access_token(access_token):
 	frappe.db.set_value("Dropbox Settings", None, 'dropbox_access_token', access_token)
 	frappe.db.commit()

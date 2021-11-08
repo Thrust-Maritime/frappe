@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import unittest
 import frappe
 
@@ -6,7 +7,7 @@ from frappe.desk.doctype.tag.tag import add_tag
 
 class TestTag(unittest.TestCase):
 	def setUp(self) -> None:
-		frappe.db.delete("Tag")
+		frappe.db.sql("DELETE from `tabTag`")
 		frappe.db.sql("UPDATE `tabDocType` set _user_tags=''")
 
 	def test_tag_count_query(self):
