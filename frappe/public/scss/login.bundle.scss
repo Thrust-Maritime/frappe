@@ -14,8 +14,12 @@ body {
 .for-forgot,
 .for-signup,
 .for-email-login {
+<<<<<<< HEAD:frappe/public/scss/login.bundle.scss
 	// max with capital M to avoid libsass compatibility issue
 	padding: Max(15vh, 70px) 0;
+=======
+	padding: max(15vh, 70px) 0;
+>>>>>>> version13.13:frappe/public/scss/login.bundle.scss
 
 	@include media-breakpoint-up(sm) {
 		.page-card {

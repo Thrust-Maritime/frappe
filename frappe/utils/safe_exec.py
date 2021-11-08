@@ -156,6 +156,7 @@ def get_safe_globals():
 		out.frappe.date_format = date_format
 		out.frappe.time_format = time_format
 		out.frappe.db = NamespaceDict(
+<<<<<<< HEAD
 			get_list = frappe.get_list,
 			get_all = frappe.get_all,
 			get_value = frappe.db.get_value,
@@ -168,6 +169,24 @@ def get_safe_globals():
 			sql = read_sql,
 			commit = frappe.db.commit,
 			rollback = frappe.db.rollback
+=======
+			get_list=frappe.get_list,
+			get_all=frappe.get_all,
+			get_value=frappe.db.get_value,
+			set_value=frappe.db.set_value,
+			get_single_value=frappe.db.get_single_value,
+			get_default=frappe.db.get_default,
+			exists=frappe.db.exists,
+			count=frappe.db.count,
+			min=frappe.db.min,
+			max=frappe.db.max,
+			avg=frappe.db.avg,
+			sum=frappe.db.sum,
+			escape=frappe.db.escape,
+			sql=read_sql,
+			commit=frappe.db.commit,
+			rollback=frappe.db.rollback,
+>>>>>>> version13.13
 		)
 
 		out.frappe.cache = cache
@@ -189,6 +208,7 @@ def get_safe_globals():
 
 	return out
 
+<<<<<<< HEAD
 def cache():
 	return NamespaceDict(
 		get_value = frappe.cache().get_value,
@@ -196,6 +216,11 @@ def cache():
 		hset = frappe.cache().hset,
 		hget = frappe.cache().hget
 	)
+=======
+def get_hooks(hook=None, default=None, app_name=None):
+	hooks = frappe.get_hooks(hook=hook, default=default, app_name=app_name)
+	return copy.deepcopy(hooks)
+>>>>>>> version13.13
 
 def read_sql(query, *args, **kwargs):
 	'''a wrapper for frappe.db.sql to allow reads'''
