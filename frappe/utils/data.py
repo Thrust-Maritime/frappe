@@ -5,6 +5,7 @@ from typing import Optional
 import frappe
 import operator
 import json
+import base64
 import re, datetime, math, time
 from six.moves.urllib.parse import quote, urljoin
 from six import iteritems, text_type, string_types, integer_types
@@ -507,10 +508,10 @@ def get_timespan_date_range(timespan):
 		"yesterday": lambda: (add_to_date(today, days=-1),) * 2,
 		"today": lambda: (today, today),
 		"tomorrow": lambda: (add_to_date(today, days=1),) * 2,
-		"this week": lambda: (get_first_day_of_week(today), today),
-		"this month": lambda: (get_first_day(today), today),
-		"this quarter": lambda: (get_quarter_start(today), today),
-		"this year": lambda: (get_year_start(today), today),
+		"this week": lambda: (get_first_day_of_week(today), get_last_day_of_week(today)),
+		"this month": lambda: (get_first_day(today), get_last_day(today)),
+		"this quarter": lambda: (get_quarter_start(today), get_quarter_ending(today)),
+		"this year": lambda: (get_year_start(today), get_year_ending(today)),
 		"next week": lambda: (get_first_day_of_week(add_to_date(today, days=7)), get_last_day_of_week(add_to_date(today, days=7))),
 		"next month": lambda: (get_first_day(add_to_date(today, months=1)), get_last_day(add_to_date(today, months=1))),
 		"next quarter": lambda: (get_quarter_start(add_to_date(today, months=3)), get_quarter_ending(add_to_date(today, months=3))),
@@ -1014,7 +1015,6 @@ def get_thumbnail_base64_for_image(src):
 	return cache().hget('thumbnail_base64', src, generator=_get_base64)
 
 def image_to_base64(image, extn):
-	import base64
 	from io import BytesIO
 
 	buffered = BytesIO()
@@ -1024,6 +1024,20 @@ def image_to_base64(image, extn):
 	img_str = base64.b64encode(buffered.getvalue())
 	return img_str
 
+def pdf_to_base64(filename):
+	from frappe.utils.file_manager import get_file_path
+
+	if '../' in filename or filename.rsplit('.')[-1] not in ['pdf', 'PDF']:
+		return
+
+	file_path = get_file_path(filename)
+	if not file_path:
+		return
+
+	with open(file_path, 'rb') as pdf_file:
+		base64_string = base64.b64encode(pdf_file.read())
+
+	return base64_string
 
 # from Jinja2 code
 _striptags_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
@@ -1580,7 +1594,7 @@ def get_user_info_for_avatar(user_id):
 	}
 	try:
 		user_info["email"] = frappe.get_cached_value("User", user_id, "email")
-		user_info["name"] = frappe.get_cached_value("User", user_id, "fullname")
+		user_info["name"] = frappe.get_cached_value("User", user_id, "full_name")
 		user_info["image"] = frappe.get_cached_value("User", user_id, "user_image")
 	except Exception:
 		frappe.local.message_log = []
