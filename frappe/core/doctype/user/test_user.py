@@ -354,6 +354,7 @@ class TestUser(unittest.TestCase):
 	def test_reset_password(self):
 		from frappe.auth import CookieManager, LoginManager
 		from frappe.utils import set_request
+
 		old_password = "Eastern_43A1W"
 		new_password = "easy_password"
 

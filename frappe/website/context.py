@@ -43,6 +43,7 @@ def get_context(path, args=None):
 
 	return context
 
+
 def update_controller_context(context, controller):
 	module = frappe.get_module(controller)
 
@@ -54,6 +55,7 @@ def update_controller_context(context, controller):
 
 		if hasattr(module, "get_context"):
 			import inspect
+
 			try:
 				if inspect.getfullargspec(module.get_context).args:
 					ret = module.get_context(context)

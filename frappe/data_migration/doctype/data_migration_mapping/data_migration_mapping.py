@@ -3,9 +3,11 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+
 import frappe
 from frappe.model.document import Document
 from frappe.utils.safe_exec import get_safe_globals
+
 
 class DataMigrationMapping(Document):
 	def get_filters(self):

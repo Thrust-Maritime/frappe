@@ -17,6 +17,7 @@ def execute():
 
 	frappe.delete_doc("DocType", "Desk Card")
 
+
 def rebuild_links(page):
 	# Empty links table
 

@@ -11,6 +11,7 @@ class Note(Document):
 	def autoname(self):
 		# replace forbidden characters
 		import re
+
 		self.name = re.sub("[%'\"#*?`]", "", self.title.strip())
 
 	def validate(self):

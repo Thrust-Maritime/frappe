@@ -99,6 +99,7 @@ def get_datetime(datetime_str=None):
 	except ValueError:
 		return parser.parse(datetime_str)
 
+
 def get_timedelta(time: Optional[str] = None) -> Optional[datetime.timedelta]:
 	"""Return `datetime.timedelta` object from string value of a
 	valid time format. Returns None if `time` is not a valid format
@@ -257,9 +258,11 @@ def convert_utc_to_timezone(utc_timestamp, time_zone):
 	except UnknownTimeZoneError:
 		return utcnow
 
+
 def get_datetime_in_timezone(time_zone):
 	utc_timestamp = datetime.datetime.utcnow()
 	return convert_utc_to_timezone(utc_timestamp, time_zone)
+
 
 def convert_utc_to_user_timezone(utc_timestamp):
 	time_zone = get_time_zone()
@@ -352,6 +355,7 @@ def get_year_start(dt, as_str=False):
 	date = datetime.date(dt.year, 1, 1)
 	return date.strftime(DATE_FORMAT) if as_str else date
 
+
 def get_last_day_of_week(dt):
 	dt = get_first_day_of_week(dt)
 	return dt + datetime.timedelta(days=6)
@@ -427,6 +431,7 @@ def get_time_str(timedelta_obj):
 	minutes, seconds = divmod(remainder, 60)
 	return "{0}:{1}:{2}".format(hours, minutes, seconds)
 
+
 def get_user_date_format():
 	"""Get the current user date format. The result will be cached."""
 	if getattr(frappe.local, "user_date_format", None) is None:
@@ -444,6 +449,7 @@ def get_user_time_format():
 		frappe.local.user_time_format = frappe.db.get_default("time_format")
 
 	return frappe.local.user_time_format or "HH:mm:ss"
+
 
 def format_date(string_date=None, format_string=None):
 	"""Converts the given string date to :data:`user_date_format`
@@ -503,6 +509,7 @@ def format_time(time_string=None, format_string=None):
 	except UnknownLocaleError:
 		formatted_time = time_.strftime("%H:%M:%S")
 	return formatted_time
+
 
 def format_datetime(datetime_string, format_string=None):
 	"""Converts the given string time to :data:`user_datetime_format`
@@ -676,6 +683,7 @@ def get_timespan_date_range(timespan):
 	if timespan in date_range_map:
 		return date_range_map[timespan]()
 
+
 def global_date_format(date, format="long"):
 	"""returns localized date in the form of January 1, 2012"""
 	import babel.dates
@@ -690,6 +698,7 @@ def global_date_format(date, format="long"):
 def has_common(l1, l2):
 	"""Returns truthy value if there are common elements in lists l1 and l2"""
 	return set(l1) & set(l2)
+
 
 def cast_fieldtype(fieldtype, value, show_warning=True):
 	if show_warning:
@@ -727,6 +736,7 @@ def cast_fieldtype(fieldtype, value, show_warning=True):
 		value = to_timedelta(value)
 
 	return value
+
 
 def cast(fieldtype, value=None):
 	"""Cast the value to the Python native object of the Frappe fieldtype provided.
@@ -829,6 +839,7 @@ def cint(s, default=0):
 		return int(float(s))
 	except Exception:
 		return default
+
 
 def floor(s):
 	"""
@@ -935,6 +946,7 @@ def remainder(numerator, denominator, precision=2):
 
 	return flt(_remainder, precision)
 
+
 def safe_div(numerator, denominator, precision=2):
 	"""
 	SafeMath division that returns zero when divided by zero.
@@ -964,6 +976,7 @@ def round_based_on_smallest_currency_fraction(value, currency, precision=2):
 		value = rounded(value)
 
 	return flt(value, precision)
+
 
 def encode(obj, encoding="utf-8"):
 	if isinstance(obj, list):
@@ -1064,6 +1077,7 @@ def fmt_money(amount, precision=None, currency=None, format=None):
 
 	return amount
 
+
 number_format_info = {
 	"#,###.##": (".", ",", 2),
 	"#.###,##": (",", ".", 2),
@@ -1092,6 +1106,7 @@ def money_in_words(
 	Returns string in words with currency and fraction currency.
 	"""
 	from frappe.utils import get_defaults
+
 	_ = frappe._
 
 	try:
@@ -1375,6 +1390,7 @@ def new_line_sep(some_list):
 def filter_strip_join(some_list, sep):
 	"""given a list, filter None values, strip spaces and join"""
 	return (cstr(sep)).join((cstr(a).strip() for a in filter(None, some_list)))
+
 
 def get_url(uri=None, full_address=False):
 	"""get app url from request"""
@@ -1694,6 +1710,7 @@ def sanitize_column(column_name):
 
 	elif regex.match(column_name):
 		_raise_exception()
+
 
 def scrub_urls(html):
 	html = expand_relative_urls(html)

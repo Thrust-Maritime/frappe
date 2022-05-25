@@ -322,6 +322,7 @@ def _field_autoname(autoname, doc, skip_slicing=None):
 	name = (cstr(doc.get(fieldname)) or "").strip()
 	return name
 
+
 def _prompt_autoname(autoname, doc):
 	"""
 	Generate a name using Prompt option. This simply means the user will have to set the name manually.
@@ -330,6 +331,7 @@ def _prompt_autoname(autoname, doc):
 	# set from __newname in save.py
 	if not doc.name:
 		frappe.throw(_("Name not set via prompt"))
+
 
 def _format_autoname(autoname, doc):
 	"""

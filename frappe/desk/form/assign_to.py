@@ -123,6 +123,7 @@ def add(args=None):
 
 	return get(args)
 
+
 @frappe.whitelist()
 def add_multiple(args=None):
 	if not args:
@@ -148,6 +149,7 @@ def close_all_assignments(doctype, name):
 		set_status(doctype, name, assign_to.owner, status="Closed")
 
 	return True
+
 
 @frappe.whitelist()
 def remove(doctype, name, assign_to):

@@ -147,6 +147,7 @@ def clear_doctype_cache(doctype=None):
 		for name in doctype_cache_keys:
 			cache.delete_value(name)
 
+
 def clear_controller_cache(doctype=None):
 	if not doctype:
 		del frappe.controllers

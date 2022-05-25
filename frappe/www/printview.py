@@ -22,6 +22,7 @@ no_cache = 1
 base_template_path = "templates/www/printview.html"
 standard_format = "templates/print_formats/standard.html"
 
+
 def get_context(context):
 	"""Build context for print"""
 	if not ((frappe.form_dict.doctype and frappe.form_dict.name) or frappe.form_dict.doc):
@@ -280,6 +281,7 @@ def get_rendered_raw_commands(doc, name=None, print_format=None, meta=None, lang
 		"raw_commands": get_rendered_template(doc, name=name, print_format=print_format, meta=meta)
 	}
 
+
 def validate_print_permission(doc):
 	if frappe.form_dict.get("key"):
 		if frappe.form_dict.key == doc.get_signature():
@@ -431,6 +433,7 @@ def is_visible(df, doc):
 
 	return not doc.is_print_hide(df.fieldname, df)
 
+
 def has_value(df, doc):
 	value = doc.get(df.fieldname)
 	if value in (None, ""):
@@ -446,6 +449,7 @@ def has_value(df, doc):
 		return False
 
 	return True
+
 
 def get_print_style(style=None, print_format=None, for_legacy=False):
 	print_settings = frappe.get_doc("Print Settings")
@@ -476,6 +480,7 @@ def get_print_style(style=None, print_format=None, for_legacy=False):
 
 	return css
 
+
 def get_font(print_settings, print_format=None, for_legacy=False):
 	default = 'Inter, "Helvetica Neue", Helvetica, Arial, "Open Sans", sans-serif'
 	if for_legacy:
@@ -494,6 +499,7 @@ def get_font(print_settings, print_format=None, for_legacy=False):
 			font = default
 
 	return font
+
 
 def get_visible_columns(data, table_meta, df):
 	"""Returns list of visible columns based on print_hide and if all columns have value."""
@@ -525,6 +531,7 @@ def get_visible_columns(data, table_meta, df):
 
 	return columns
 
+
 def column_has_value(data, fieldname, col_df):
 	"""Check if at least one cell in column has non-zero and non-blank value"""
 	has_value = False
@@ -544,6 +551,7 @@ def column_has_value(data, fieldname, col_df):
 				break
 
 	return has_value
+
 
 trigger_print_script = """
 <script>

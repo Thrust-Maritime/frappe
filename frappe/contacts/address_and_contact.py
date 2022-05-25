@@ -194,6 +194,7 @@ def filter_dynamic_link_doctypes(doctype, txt, searchfield, start, page_len, fil
 
 	return valid_doctypes
 
+
 def set_link_title(doc):
 	if not doc.links:
 		return

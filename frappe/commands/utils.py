@@ -80,6 +80,7 @@ def clear_cache(context):
 	import frappe.sessions
 	import frappe.website.render
 	from frappe.desk.notifications import clear_notifications
+
 	for site in context.sites:
 		try:
 			frappe.connect(site)
@@ -97,6 +98,7 @@ def clear_cache(context):
 def clear_website_cache(context):
 	"Clear website cache"
 	import frappe.website.render
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -114,6 +116,7 @@ def clear_website_cache(context):
 def destroy_all_sessions(context, reason=None):
 	"Clear sessions of all users (logs them out)"
 	import frappe.sessions
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -182,6 +185,7 @@ def show_config(context, format):
 def reset_perms(context):
 	"Reset permissions for all doctypes"
 	from frappe.permissions import reset_perms
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -227,6 +231,7 @@ def execute(context, method, args=None, kwargs=None, profile=False):
 
 			if profile:
 				import cProfile
+
 				pr = cProfile.Profile()
 				pr.enable()
 
@@ -253,6 +258,7 @@ def execute(context, method, args=None, kwargs=None, profile=False):
 			frappe.destroy()
 		if ret:
 			from frappe.utils.response import json_handler
+
 			print(json.dumps(ret, default=json_handler))
 
 	if not context.sites:
@@ -284,6 +290,7 @@ def add_to_email_queue(context, email_path):
 def export_doc(context, doctype, docname):
 	"Export a single document to csv"
 	import frappe.modules
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -303,6 +310,7 @@ def export_doc(context, doctype, docname):
 def export_json(context, doctype, path, name=None):
 	"Export doclist as json to the given path, use '-' as name for Singles."
 	from frappe.core.doctype.data_import.data_import import export_json
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -321,6 +329,7 @@ def export_json(context, doctype, path, name=None):
 def export_csv(context, doctype, path):
 	"Export data import template with data for DocType"
 	from frappe.core.doctype.data_import.data_import import export_csv
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -338,6 +347,7 @@ def export_csv(context, doctype, path):
 def export_fixtures(context, app=None):
 	"Export fixtures"
 	from frappe.utils.fixtures import export_fixtures
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -589,6 +599,7 @@ def console(context):
 	frappe.local.lang = frappe.db.get_default("lang")
 
 	import IPython
+
 	all_apps = frappe.get_installed_apps()
 	failed_to_import = []
 
@@ -898,6 +909,7 @@ def set_config(context, key, value, global_=False, parse=False, as_dict=False):
 
 	if parse:
 		import ast
+
 		value = ast.literal_eval(value)
 
 	if global_:

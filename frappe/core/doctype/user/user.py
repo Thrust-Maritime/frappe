@@ -436,6 +436,7 @@ class User(Document):
 
 	def validate_email_type(self, email):
 		from frappe.utils import validate_email_address
+
 		validate_email_address(email.strip(), True)
 
 	def after_rename(self, old_name, new_name, merge=False):
@@ -710,6 +711,7 @@ def update_password(new_password, logout_all_sessions=0, key=None, old_password=
 	else:
 		return redirect_url if redirect_url else "/"
 
+
 @frappe.whitelist(allow_guest=True)
 def test_password_strength(new_password, key=None, old_password=None, user_data=None):
 	from frappe.utils.password_strength import test_password_strength as _test_password_strength
@@ -811,6 +813,7 @@ def reset_user_data(user):
 	user_doc.save(ignore_permissions=True)
 
 	return user_doc, redirect_url
+
 
 @frappe.whitelist()
 def verify_password(password):
@@ -1153,6 +1156,7 @@ def create_contact(user, ignore_links=False, ignore_mandatory=False):
 
 		contact.save(ignore_permissions=True)
 
+
 @frappe.whitelist()
 def generate_keys(user):
 	"""
@@ -1177,6 +1181,7 @@ def generate_keys(user):
 def switch_theme(theme):
 	if theme in ["Dark", "Light"]:
 		frappe.db.set_value("User", frappe.session.user, "desk_theme", theme)
+
 
 def get_enabled_users():
 	def _get_enabled_users():

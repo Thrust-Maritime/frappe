@@ -37,6 +37,7 @@ def get_user_default(key, user=None):
 
 	return value
 
+
 def get_user_default_as_list(key, user=None):
 	user_defaults = get_defaults(user or frappe.session.user)
 	d = user_defaults.get(key, None)
@@ -253,6 +254,7 @@ def get_defaults_for(parent="__default"):
 		frappe.cache().hset("defaults", parent, defaults)
 
 	return defaults
+
 
 def _clear_cache(parent):
 	if parent in common_default_keys:

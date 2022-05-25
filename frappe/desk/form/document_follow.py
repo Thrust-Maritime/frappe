@@ -157,6 +157,7 @@ def get_version(doctype, doc_name, frequency, user):
 
 	return timeline
 
+
 def get_comments(doctype, doc_name, frequency, user):
 	from html2text import html2text
 

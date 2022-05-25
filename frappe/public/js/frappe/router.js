@@ -60,6 +60,7 @@ $('body').on('click', 'a', function(e) {
 		// target has "/app, this is a v2 style route.
 		return override(e.currentTarget.pathname + e.currentTarget.hash);
 	}
+
 });
 
 frappe.router = {

@@ -14,6 +14,7 @@ from frappe.utils import cstr
 
 class RedisWrapper(redis.Redis):
 	"""Redis client that will automatically prefix conf.db_name"""
+
 	def connected(self):
 		try:
 			self.ping()

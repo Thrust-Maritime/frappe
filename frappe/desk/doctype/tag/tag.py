@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+
 import frappe
 from frappe.model.document import Document
 from frappe.utils import unique
@@ -20,12 +21,14 @@ def check_user_tags(dt):
 		if frappe.db.is_column_missing(e):
 			DocTags(dt).setup()
 
+
 @frappe.whitelist()
 def add_tag(tag, dt, dn, color=None):
 	"adds a new tag to a record, and creates the Tag master"
 	DocTags(dt).add(dn, tag)
 
 	return tag
+
 
 @frappe.whitelist()
 def add_tags(tags, dt, docs, color=None):
@@ -38,10 +41,12 @@ def add_tags(tags, dt, docs, color=None):
 
 	# return tag
 
+
 @frappe.whitelist()
 def remove_tag(tag, dt, dn):
 	"removes tag from the record"
 	DocTags(dt).remove(dn, tag)
+
 
 @frappe.whitelist()
 def get_tagged_docs(doctype, tag):

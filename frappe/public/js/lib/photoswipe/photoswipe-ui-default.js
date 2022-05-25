@@ -92,6 +92,7 @@ var PhotoSwipeUI_Default =
 			getTextForShare: function( /* shareButtonData */ ) {
 				return pswp.currItem.title || '';
 			},
+
 			indexIndicatorSep: ' / ',
 			fitControlsWidth: 1200
 
@@ -188,6 +189,7 @@ var PhotoSwipeUI_Default =
 					}
 				}, 300);
 			}
+
 			if(!_shareModalHidden) {
 				_updateShareURLs();
 			}
@@ -215,6 +217,7 @@ var PhotoSwipeUI_Default =
 			if(!_shareModalHidden) {
 				_toggleShareModal();
 			}
+
 			return false;
 		},
 		_updateShareURLs = function() {
@@ -294,6 +297,7 @@ var PhotoSwipeUI_Default =
 		_setupLoadingIndicator = function() {
 			// Setup loading indicator
 			if(_options.preloaderEl) {
+
 				_toggleLoadingIndicator(true);
 
 				_listen('beforeChange', function() {
@@ -317,6 +321,7 @@ var PhotoSwipeUI_Default =
 						}
 
 					}, _options.loadingIndicatorDelay);
+
 				});
 				_listen('imageLoadComplete', function(index, item) {
 					if(pswp.currItem === item) {
@@ -355,6 +360,7 @@ var PhotoSwipeUI_Default =
 				} else {
 					gap.bottom = bars.bottom === 'auto' ? 0 : bars.bottom;
 				}
+
 				// height of top bar is static, no need to calculate it
 				gap.top = bars.top;
 			} else {
@@ -365,6 +371,7 @@ var PhotoSwipeUI_Default =
 			// Hide controls when mouse is used
 			if(_options.timeToIdle) {
 				_listen('mouseUsed', function() {
+
 					framework.bind(document, 'mousemove', _onIdleMouseMove);
 					framework.bind(document, 'mouseout', _onMouseLeaveWindow);
 
@@ -507,10 +514,12 @@ var PhotoSwipeUI_Default =
 					if(classAttr.indexOf('pswp__' + uiElement.name) > -1  ) {
 
 						if( _options[uiElement.option] ) { // if element is not disabled from options
+
 							framework.removeClass(item, 'pswp__element--disabled');
 							if(uiElement.onInit) {
 								uiElement.onInit(item);
 							}
+
 							//item.style.display = 'block';
 						} else {
 							framework.addClass(item, 'pswp__element--disabled');
@@ -527,6 +536,7 @@ var PhotoSwipeUI_Default =
 			loopThroughChildElements( topBar.children );
 		}
 	};
+
 
 
 
@@ -625,6 +635,7 @@ var PhotoSwipeUI_Default =
 			ui.setIdle(false);
 		});
 
+
 		if(!_options.showAnimationDuration) {
 			framework.removeClass( _controls, 'pswp__ui--hidden');
 		}
@@ -638,6 +649,7 @@ var PhotoSwipeUI_Default =
 		});
 
 		_listen('parseVerticalMargin', _applyNavBarGaps);
+
 		_setupUIElements();
 
 		if(_options.shareEl && _shareButton && _shareModal) {
@@ -661,6 +673,7 @@ var PhotoSwipeUI_Default =
 	ui.update = function() {
 		// Don't update UI if it's hidden
 		if(_controlsVisible && pswp.currItem) {
+
 			ui.updateIndexIndicator();
 
 			if(_options.captionEl) {
@@ -691,6 +704,7 @@ var PhotoSwipeUI_Default =
 				pswp.setScrollOffset( 0, framework.getScrollY() );
 			}, 50);
 		}
+
 		// toogle pswp--fs class on root element
 		framework[ (_fullscrenAPI.isFullscreen() ? 'add' : 'remove') + 'Class' ](pswp.template, 'pswp--fs');
 	};
@@ -728,6 +742,7 @@ var PhotoSwipeUI_Default =
 					pswp.toggleDesktopZoom(e.detail.releasePoint);
 				}
 			}
+
 		} else {
 
 			// tap anywhere (except buttons) to toggle visibility of controls
@@ -744,6 +759,7 @@ var PhotoSwipeUI_Default =
 				pswp.close();
 				return;
 			}
+
 		}
 	};
 	ui.onMouseOver = function(e) {
@@ -792,6 +808,7 @@ var PhotoSwipeUI_Default =
 				elementK: 'mozFullScreenElement',
 				eventK: 'moz' + tF
 			};
+
 
 
 		} else if(dE.webkitRequestFullscreen) {

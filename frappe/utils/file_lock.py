@@ -38,6 +38,7 @@ def check_lock(path, timeout=600):
 		raise LockTimeoutError(path)
 	return True
 
+
 def delete_lock(name):
 	lock_path = get_lock_path(name)
 	try:

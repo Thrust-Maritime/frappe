@@ -26,6 +26,7 @@ from frappe.utils.global_search import update_global_search
 # once_only validation
 # methods
 
+
 def get_doc(*args, **kwargs):
 	"""returns a frappe.model.Document object.
 
@@ -475,6 +476,7 @@ class Document(BaseDocument):
 
 	def set_title_field(self):
 		"""Set title field based on template"""
+
 		def get_values():
 			values = self.as_dict()
 			# format values
@@ -1226,6 +1228,7 @@ class Document(BaseDocument):
 		Note: If each hooked method returns a value (dict), then all returns are
 		collated in one dict and returned. Ideally, don't return values in hookable
 		methods, set properties in the document."""
+
 		def add_to_return_value(self, new_return_value):
 			if isinstance(new_return_value, dict):
 				if not self.get("_return_value"):
@@ -1480,6 +1483,7 @@ class Document(BaseDocument):
 	def add_tag(self, tag):
 		"""Add a Tag to this document"""
 		from frappe.desk.doctype.tag.tag import DocTags
+
 		DocTags(self.doctype).add(self.name, tag)
 
 	def get_tags(self):

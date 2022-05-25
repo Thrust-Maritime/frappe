@@ -380,6 +380,7 @@ def get_unsubcribed_url(
 
 	return get_url(unsubscribe_method + "?" + get_signed_params(params))
 
+
 @frappe.whitelist(allow_guest=True)
 def unsubscribe(doctype, name, email):
 	# unsubsribe from comments and communications
@@ -706,6 +707,7 @@ def prepare_message(email, recipient, recipients_list):
 
 	if PY3:
 		from email.policy import SMTPUTF8
+
 		message = Parser(policy=SMTPUTF8).parsestr(message)
 	else:
 		message = Parser().parsestr(message)
@@ -734,6 +736,7 @@ def prepare_message(email, recipient, recipients_list):
 				add_attachment(**print_format_file)
 
 	return safe_encode(message.as_string())
+
 
 def clear_outbox(days=None):
 	"""Remove low priority older than 31 days in Outbox or configured in Log Settings.

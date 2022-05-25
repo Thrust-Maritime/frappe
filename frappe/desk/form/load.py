@@ -60,6 +60,7 @@ def getdoc(doctype, name, user=None):
 
 	frappe.response.docs.append(doc)
 
+
 @frappe.whitelist()
 def getdoctype(doctype, with_parent=False, cached_timestamp=None):
 	"""load doctype"""
@@ -84,12 +85,14 @@ def getdoctype(doctype, with_parent=False, cached_timestamp=None):
 
 	frappe.response.docs.extend(docs)
 
+
 def get_meta_bundle(doctype):
 	bundle = [frappe.desk.form.meta.get_meta(doctype)]
 	for df in bundle[0].fields:
 		if df.fieldtype in frappe.model.table_fields:
 			bundle.append(frappe.desk.form.meta.get_meta(df.options, not frappe.conf.developer_mode))
 	return bundle
+
 
 @frappe.whitelist()
 def get_docinfo(doc=None, doctype=None, name=None):
@@ -320,6 +323,7 @@ def get_badge_info(doctypes, filters):
 		out[doctype] = frappe.db.get_value(doctype, filters, "count(*)")
 
 	return out
+
 
 def run_onload(doc):
 	doc.set("__onload", frappe._dict())

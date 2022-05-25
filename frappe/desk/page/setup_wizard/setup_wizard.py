@@ -93,15 +93,18 @@ def update_global_settings(args):
 	update_system_settings(args)
 	update_user_name(args)
 
+
 def run_post_setup_complete(args):
 	disable_future_access()
 	frappe.db.commit()
 	frappe.clear_cache()
 
+
 def run_setup_success(args):
 	for hook in frappe.get_hooks("setup_wizard_success"):
 		frappe.get_attr(hook)(args)
 	install_fixtures.install()
+
 
 def get_stages_hooks(args):
 	stages = []
@@ -132,6 +135,7 @@ def handle_setup_exception(args):
 		print(traceback)
 		for hook in frappe.get_hooks("setup_wizard_exception"):
 			frappe.get_attr(hook)(traceback, args)
+
 
 def update_system_settings(args):
 	number_format = get_country_info(args.get("country")).get("number_format", "#,###.##")
@@ -267,6 +271,7 @@ def disable_future_access():
 		page.flags.ignore_permissions = True
 		page.save()
 
+
 @frappe.whitelist()
 def load_messages(language):
 	"""Load translation messages for given language from all `setup_wizard_requires`
@@ -334,6 +339,7 @@ def prettify_args(args):
 	for key in sorted(args):
 		pretty_args.append("{} = {}".format(key, args[key]))
 	return pretty_args
+
 
 def email_setup_wizard_exception(traceback, args):
 	if not frappe.local.conf.setup_wizard_exception_email:

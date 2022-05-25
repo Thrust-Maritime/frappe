@@ -32,10 +32,12 @@ def execute(filters=None):
 
 	return columns, data
 
+
 def validate(user, doctype):
 	# check if current user is System Manager
 	check_admin_or_system_manager()
 	return user and doctype
+
 
 def get_columns_and_fields(doctype):
 	columns = ["Name:Link/{}:200".format(doctype)]

@@ -56,6 +56,7 @@ def get_meta(doctype, cached=True):
 
 	return meta
 
+
 class FormMeta(Meta):
 	def __init__(self, doctype):
 		super(FormMeta, self).__init__(doctype)
@@ -266,6 +267,7 @@ class FormMeta(Meta):
 			# no access to kanban board
 			pass
 
+
 def get_code_files_via_hooks(hook, name):
 	code_files = []
 	for app_name in frappe.get_installed_apps():
@@ -282,6 +284,7 @@ def get_code_files_via_hooks(hook, name):
 			code_files.append(path)
 
 	return code_files
+
 
 def get_js(path):
 	js = frappe.read_file(path)

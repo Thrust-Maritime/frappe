@@ -66,6 +66,7 @@ def take_backups_if(freq):
 	if frappe.db.get_value("Dropbox Settings", None, "backup_frequency") == freq:
 		take_backup_to_dropbox()
 
+
 def take_backup_to_dropbox(retry_count=0, upload_db_backup=True):
 	did_not_upload, error_log = [], []
 	try:
@@ -198,6 +199,7 @@ def upload_from_folder(
 				did_not_upload.append(filepath)
 				error_log.append(frappe.get_traceback())
 
+
 def upload_file_to_dropbox(filename, folder, dropbox_client):
 	"""upload files with chunk of 15 mb to reduce session append calls"""
 	if not os.path.exists(filename):
@@ -237,6 +239,7 @@ def upload_file_to_dropbox(filename, folder, dropbox_client):
 			frappe.log_error(error)
 		else:
 			raise
+
 
 def create_folder_if_not_exists(folder, dropbox_client):
 	try:
@@ -302,6 +305,7 @@ def get_dropbox_settings(redirect_uri=False):
 		raise Exception(_("Please set Dropbox access keys in your site config"))
 
 	return app_details
+
 
 def delete_older_backups(dropbox_client, folder_path, to_keep):
 	res = dropbox_client.files_list_folder(path=folder_path)

@@ -316,6 +316,7 @@ class BaseDocument(object):
 		if self.doctype not in frappe.local.valid_columns:
 			if self.doctype in DOCTYPES_FOR_DOCTYPE:
 				from frappe.model.meta import get_table_columns
+
 				valid = get_table_columns(self.doctype)
 			else:
 				valid = self.meta.get_valid_columns()
@@ -550,6 +551,7 @@ class BaseDocument(object):
 
 	def _get_missing_mandatory_fields(self):
 		"""Get mandatory fields that do not have any values"""
+
 		def get_msg(df):
 			if df.fieldtype in table_fields:
 				return "{}: {}: {}".format(_("Error"), _("Data missing in table"), _(df.label))
@@ -583,6 +585,7 @@ class BaseDocument(object):
 
 	def get_invalid_links(self, is_submittable=False):
 		"""Returns list of invalid links and also updates fetch values if not set"""
+
 		def get_msg(df, docname):
 			if self.parentfield:
 				return "{} #{}: {}: {}".format(_("Row"), self.idx, _(df.label), docname)
@@ -968,6 +971,7 @@ class BaseDocument(object):
 		df = self.meta.get_field(fieldname)
 		if not df and fieldname in default_fields:
 			from frappe.model.meta import get_default_df
+
 			df = get_default_df(fieldname)
 
 		if df and not currency:

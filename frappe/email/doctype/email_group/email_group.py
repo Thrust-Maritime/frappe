@@ -67,11 +67,13 @@ class EmailGroup(Document):
 		for d in frappe.get_all("Email Group Member", "name", {"email_group": self.name}):
 			frappe.delete_doc("Email Group Member", d.name)
 
+
 @frappe.whitelist()
 def import_from(name, doctype):
 	nlist = frappe.get_doc("Email Group", name)
 	if nlist.has_permission("write"):
 		return nlist.import_from(doctype)
+
 
 @frappe.whitelist()
 def add_subscribers(name, email_list):
@@ -103,6 +105,7 @@ def add_subscribers(name, email_list):
 	frappe.msgprint(_("{0} subscribers added").format(count))
 
 	return frappe.get_doc("Email Group", name).update_total_subscribers()
+
 
 def send_welcome_email(welcome_email, email, email_group):
 	"""Send welcome email for the subscribers of a given email group."""

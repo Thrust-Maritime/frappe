@@ -188,6 +188,7 @@ def add_preload_headers(response):
 			response.headers["Link"] = ",".join(links)
 	except Exception:
 		import traceback
+
 		traceback.print_exc()
 
 
@@ -208,6 +209,7 @@ def render_page_by_language(path):
 	else:
 		return render_page(path)
 
+
 def render_page(path):
 	"""get page html"""
 	out = None
@@ -224,6 +226,7 @@ def render_page(path):
 
 	return build(path)
 
+
 def build(path):
 	if not frappe.db:
 		frappe.connect()
@@ -239,6 +242,7 @@ def build(path):
 			raise
 	except Exception:
 		raise
+
 
 def build_page(path):
 	if not getattr(frappe.local, "path", None):
@@ -268,6 +272,7 @@ def build_page(path):
 		frappe.cache().hset("website_page", path, page_cache)
 
 	return html
+
 
 def resolve_path(path):
 	if not path:

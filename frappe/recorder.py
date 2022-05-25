@@ -67,6 +67,7 @@ def get_current_stack_frames():
 	except Exception:
 		pass
 
+
 def record():
 	if __debug__:
 		if frappe.cache().get_value(RECORDER_INTERCEPT_FLAG):

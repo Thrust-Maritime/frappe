@@ -44,6 +44,7 @@ def report_error(status_code):
 	response.status_code = status_code
 	return response
 
+
 def build_response(response_type=None):
 	if "docs" in frappe.local.response and not frappe.local.response.docs:
 		del frappe.local.response["docs"]

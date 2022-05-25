@@ -14,6 +14,7 @@ from frappe.modules.import_file import import_file_by_path
 from frappe.modules.patch_handler import block_user
 from frappe.utils import update_progress_bar
 
+
 def sync_all(force=0, verbose=False, reset_permissions=False):
 	block_user(True)
 
@@ -82,6 +83,7 @@ def sync_for(app_name, force=0, sync_everything=False, verbose=False, reset_perm
 
 		# print each progress bar on new line
 		print()
+
 
 def get_doc_files(files, start_path):
 	"""walk and sync all doctypes and pages"""

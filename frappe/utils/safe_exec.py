@@ -66,6 +66,7 @@ def safe_exec(script, _globals=None, _locals=None, restrict_commit_rollback=Fals
 
 	return exec_globals, _locals
 
+
 def get_safe_globals():
 	datautils = frappe._dict()
 	if frappe.db:
@@ -292,15 +293,18 @@ def _getattr(object, name, default=None):
 		raise SyntaxError("{name} is an unsafe attribute".format(name=name))
 	return RestrictedPython.Guards.safer_getattr(object, name, default=default)
 
+
 def _write(obj):
 	# guard function for RestrictedPython
 	# allow writing to any object
 	return obj
 
+
 def add_data_utils(data):
 	for key, obj in frappe.utils.data.__dict__.items():
 		if key in VALID_UTILS:
 			data[key] = obj
+
 
 def add_module_properties(module, data, filter_method):
 	for key, obj in module.__dict__.items():

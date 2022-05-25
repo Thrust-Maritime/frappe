@@ -621,6 +621,7 @@ DOCTYPE_TABLE_FIELDS = [
 
 #######
 
+
 def is_single(doctype):
 	try:
 		return frappe.db.get_value("DocType", doctype, "issingle")

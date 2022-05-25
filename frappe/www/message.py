@@ -8,6 +8,7 @@ from frappe.utils import strip_html_tags
 
 no_cache = 1
 
+
 def get_context(context):
 	message_context = {}
 	if hasattr(frappe.local, "message"):

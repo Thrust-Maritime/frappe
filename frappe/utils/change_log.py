@@ -28,6 +28,7 @@ def get_change_log(user=None):
 		return []
 
 	change_log = []
+
 	def set_in_change_log(app, opts, change_log):
 		from_version = last_known_versions.get(app, {}).get("version") or "0.0.1"
 		to_version = opts["version"]
@@ -53,6 +54,7 @@ def get_change_log(user=None):
 		set_in_change_log("frappe", current_versions["frappe"], change_log)
 
 	return change_log
+
 
 def get_change_log_for_app(app, from_version, to_version):
 	change_log_folder = os.path.join(frappe.get_app_path(app), "change_log")

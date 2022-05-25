@@ -142,6 +142,7 @@ def update_order_for_single_card(
 
 	return board
 
+
 def get_kanban_column_order_and_index(board, colname):
 	for i, col in enumerate(board.columns):
 		if col.column_name == colname:

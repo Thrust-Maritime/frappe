@@ -66,6 +66,7 @@ def get_transitions(doc, workflow=None, raise_exception=False):
 			transitions.append(transition.as_dict())
 	return transitions
 
+
 def get_workflow_safe_globals():
 	# access to frappe.db.get_value, frappe.db.get_list, and date time utils.
 	return dict(
@@ -80,6 +81,7 @@ def get_workflow_safe_globals():
 			),
 		)
 	)
+
 
 def is_transition_condition_satisfied(transition, doc):
 	if not transition.condition:
@@ -284,6 +286,7 @@ def bulk_workflow_approval(docnames, doctype, action):
 	print_workflow_log(failed_transactions, _("Failed Transactions"), doctype, indicator)
 	print_workflow_log(successful_transactions, _("Successful Transactions"), doctype, indicator)
 
+
 def print_workflow_log(messages, title, doctype, indicator):
 	if messages.keys():
 		msg = "<h4>{0}</h4>".format(title)
@@ -302,6 +305,7 @@ def print_workflow_log(messages, title, doctype, indicator):
 			msg += html
 
 		frappe.msgprint(msg, title=_("Workflow Status"), indicator=indicator, is_minimizable=True)
+
 
 @frappe.whitelist()
 def get_common_transition_actions(docs, doctype):

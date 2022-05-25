@@ -141,6 +141,7 @@ def get_google_contacts_object(g_contact):
 
 	return google_contacts, account
 
+
 @frappe.whitelist()
 def sync(g_contact=None):
 	filters = {"enable": 1}

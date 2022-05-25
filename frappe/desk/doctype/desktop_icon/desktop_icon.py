@@ -419,6 +419,7 @@ def sync_from_app(app):
 
 	return modules_list
 
+
 @frappe.whitelist()
 def update_icons(hidden_list, user=None):
 	"""update modules"""
@@ -464,6 +465,7 @@ def get_user_icons(user):
 	user_perms.build_permissions()
 
 	from frappe.boot import get_allowed_pages
+
 	allowed_pages = get_allowed_pages()
 
 	icons = []

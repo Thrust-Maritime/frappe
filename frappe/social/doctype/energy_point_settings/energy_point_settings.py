@@ -41,6 +41,7 @@ def allocate_review_points():
 	settings.last_point_allocation_date = today()
 	settings.save(ignore_permissions=True)
 
+
 def can_allocate_today(last_date, periodicity):
 	if not last_date:
 		return True

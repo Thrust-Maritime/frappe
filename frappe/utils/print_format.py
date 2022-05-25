@@ -14,6 +14,7 @@ no_cache = 1
 base_template_path = "templates/www/printview.html"
 standard_format = "templates/print_formats/standard.html"
 
+
 @frappe.whitelist()
 def download_multi_pdf(doctype, name, format=None, no_letterhead=False, options=None):
 	"""
@@ -56,6 +57,7 @@ def download_multi_pdf(doctype, name, format=None, no_letterhead=False, options=
 	"""
 
 	import json
+
 	output = PdfFileWriter()
 
 	if isinstance(options, str):

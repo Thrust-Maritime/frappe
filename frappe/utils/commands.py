@@ -1,5 +1,6 @@
 import functools
 
+
 @functools.lru_cache(maxsize=1024)
 def get_first_party_apps():
 	"""Get list of all apps under orgs: frappe. erpnext from GitHub"""
@@ -23,15 +24,18 @@ def render_table(data):
 
 def add_line_after(function):
 	"""Adds an extra line to STDOUT after the execution of a function this decorates"""
+
 	def empty_line(*args, **kwargs):
 		result = function(*args, **kwargs)
 		print()
 		return result
+
 	return empty_line
 
 
 def add_line_before(function):
 	"""Adds an extra line to STDOUT before the execution of a function this decorates"""
+
 	def empty_line(*args, **kwargs):
 		print()
 		result = function(*args, **kwargs)

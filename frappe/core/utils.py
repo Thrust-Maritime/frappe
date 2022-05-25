@@ -2,6 +2,7 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
+
 import frappe
 
 
@@ -13,6 +14,7 @@ def get_parent_doc(doc):
 		else:
 			doc.parent_doc = None
 	return doc.parent_doc
+
 
 def set_timeline_doc(doc):
 	"""Set timeline_doctype and timeline_name"""
@@ -69,6 +71,7 @@ def find_all(list_of_dict, match_function):
 		if match_function(entry):
 			found.append(entry)
 	return found
+
 
 def ljust_list(_list, length, fill_word=None):
 	"""

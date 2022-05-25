@@ -106,6 +106,7 @@ def fetch_assets(url, frappe_head):
 
 def setup_assets(assets_archive):
 	import tarfile
+
 	directories_created = set()
 
 	click.secho("\nExtracting assets...\n", fg="yellow")
@@ -279,6 +280,7 @@ def get_safe_max_old_space_size():
 		pass
 
 	return safe_max_old_space_size
+
 
 def generate_assets_map():
 	symlinks = {}

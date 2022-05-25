@@ -57,6 +57,7 @@ def rename_field(doctype, old_fieldname, new_fieldname):
 	# update in user settings
 	update_user_settings(doctype, old_fieldname, new_fieldname)
 
+
 def update_reports(doctype, old_fieldname, new_fieldname):
 	def _get_new_sort_by(report_dict, report, key):
 		sort_by = report_dict.get(key) or ""

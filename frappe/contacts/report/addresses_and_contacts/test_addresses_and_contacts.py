@@ -63,6 +63,7 @@ def create_linked_address(link_list):
 
 	return address.name
 
+
 def create_linked_contact(link_list, address):
 	if frappe.flags.test_contact_created:
 		return

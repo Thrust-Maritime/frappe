@@ -174,6 +174,7 @@ def has_permission(doc, user):
 
 	return False
 
+
 def send_event_digest():
 	today = nowdate()
 	for user in get_enabled_system_users():

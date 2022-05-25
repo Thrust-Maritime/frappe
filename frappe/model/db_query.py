@@ -917,6 +917,7 @@ def check_parent_permission(parent, child_doctype):
 	# Either parent not passed or the user doesn't have permission on parent doctype of child table!
 	raise frappe.PermissionError
 
+
 def get_order_by(doctype, meta):
 	order_by = ""
 
@@ -958,6 +959,7 @@ def is_parent_only_filter(doctype, filters):
 				flt[3] = get_between_date_filter(flt[3])
 
 	return only_parent_doctype
+
 
 def has_any_user_permission_for_doctype(doctype, user, applicable_for):
 	user_permissions = frappe.permissions.get_user_permissions(user=user)

@@ -31,6 +31,7 @@ class EmailQueue(Document):
 		duplicate.set_recipients(recipients)
 		return duplicate
 
+
 @frappe.whitelist()
 def retry_sending(name):
 	doc = frappe.get_doc("Email Queue", name)

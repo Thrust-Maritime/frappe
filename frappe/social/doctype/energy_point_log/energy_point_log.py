@@ -128,6 +128,7 @@ def get_notification_message(doc):
 
 	return message
 
+
 def get_alert_dict(doc):
 	alert_dict = frappe._dict()
 	owner_name = get_fullname(doc.owner)

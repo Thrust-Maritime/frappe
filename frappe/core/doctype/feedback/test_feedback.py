@@ -16,6 +16,7 @@ class TestFeedback(unittest.TestCase):
 
 	def test_feedback_creation_updation(self):
 		from frappe.website.doctype.blog_post.test_blog_post import make_test_blog
+
 		test_blog = make_test_blog()
 
 		frappe.db.sql("delete from `tabFeedback` where reference_doctype = 'Blog Post'")

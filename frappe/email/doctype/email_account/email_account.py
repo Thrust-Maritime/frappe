@@ -859,6 +859,7 @@ def get_append_to(
 
 	return email_append_to
 
+
 def test_internet(host="8.8.8.8", port=53, timeout=3):
 	"""Returns True if internet is connected
 
@@ -923,6 +924,7 @@ def notify_unreplied():
 				# update flag
 				comm.db_set("unread_notification_sent", 1)
 
+
 def pull(now=False):
 	"""Will be called via scheduler, pull emails from all enabled Email accounts."""
 	if frappe.cache().get_value("workers:no-internet") == True:
@@ -958,6 +960,7 @@ def pull_from_email_account(email_account):
 
 	# mark Email Flag Queue mail as read
 	email_account.mark_emails_as_read_unread()
+
 
 def get_max_email_uid(email_account):
 	# get maximum uid of emails
@@ -1051,6 +1054,7 @@ def remove_user_email_inbox(email_account):
 		[doc.remove(row) for row in to_remove]
 
 		doc.save(ignore_permissions=True)
+
 
 @frappe.whitelist(allow_guest=False)
 def set_email_password(email_account, user, password):

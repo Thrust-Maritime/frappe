@@ -186,6 +186,7 @@ var framework = {
 			// Detect old Android (before KitKat)
 			// due to bugs related to position:fixed
 			// http://stackoverflow.com/questions/7184573/pick-up-the-android-version-in-the-browser-by-javascript
+
 			var match = ua.match(/Android\s([0-9\.]*)/);
 			var androidversion =  match ? match[1] : 0;
 			androidversion = parseFloat(androidversion);
@@ -199,6 +200,7 @@ var framework = {
 
 			// p.s. yes, yes, UA sniffing is bad, propose your solution for above bugs.
 		}
+
 		var styleChecks = ['transform', 'perspective', 'animationName'],
 			vendors = ['', 'webkit','Moz','ms','O'],
 			styleCheckItem,
@@ -229,6 +231,7 @@ var framework = {
 				}
 			}
 		}
+
 		if(!features.raf) {
 			var lastTime = 0;
 			features.raf = function(fn) {
@@ -257,6 +260,7 @@ framework.detectFeatures();
 if(framework.features.oldIE) {
 
 	framework.bind = function(target, type, listener, unbind) {
+
 		type = type.split(' ');
 
 		var methodName = (unbind ? 'detach' : 'attach') + 'Event',
@@ -286,6 +290,7 @@ if(framework.features.oldIE) {
 			}
 		}
 	};
+
 }
 
 /*>>framework-bridge*/
@@ -408,6 +413,7 @@ var _isOpen,
 		}
 		return index;
 	},
+
 	// Micro bind/trigger
 	_listeners = {},
 	_listen = function(name, fn) {
@@ -461,6 +467,7 @@ var _isOpen,
 				}
 			}
 
+
 			_applyZoomTransform(_currZoomElementStyle, _panOffset.x, _panOffset.y, _currZoomLevel);
 		}
 	},
@@ -496,6 +503,7 @@ var _isOpen,
 		var m = _midZoomPoint[axis] - _offset[axis];
 		return _startPanOffset[axis] + _currPanDist[axis] + m - m * ( zoomLevel / _startZoomLevel );
 	},
+
 	_equalizePoints = function(p1, p2) {
 		p1.x = p2.x;
 		p1.y = p2.y;
@@ -531,6 +539,7 @@ var _isOpen,
 			framework.bind(self.scrollWrap, 'click', self);
 		}
 
+
 		if(!_options.mouseUsed) {
 			framework.bind(document, 'mousemove', _onFirstMouseMove);
 		}
@@ -556,6 +565,7 @@ var _isOpen,
 
 		_shout('unbindEvents');
 	},
+
 	_calculatePanBounds = function(zoomLevel, update) {
 		var bounds = _calculateItemSize( self.currItem, _viewportSize, zoomLevel );
 		if(update) {
@@ -563,6 +573,7 @@ var _isOpen,
 		}
 		return bounds;
 	},
+
 	_getMinZoomLevel = function(item) {
 		if(!item) {
 			item = self.currItem;
@@ -607,6 +618,7 @@ var _isOpen,
 
 		// Override zoom/pan/move functions in case old browser is used (most likely IE)
 		// (so they use left/top/width/height, instead of CSS transform)
+
 		_transformKey = 'left';
 		framework.addClass(template, 'pswp--ie');
 
@@ -642,6 +654,7 @@ var _isOpen,
 				s.left = _panOffset.x + 'px';
 				s.top = _panOffset.y + 'px';
 			}
+
 		};
 	},
 
@@ -729,6 +742,7 @@ var _animations = {},
 
 		var animloop = function(){
 			if ( _animations[name] ) {
+
 				t = _getCurrentTime() - startAnimTime; // time diff
 				//b - beginning (start prop)
 				//d - anim duration
@@ -748,6 +762,7 @@ var _animations = {},
 		};
 		animloop();
 	};
+
 
 
 var publicMethods = {
@@ -799,11 +814,13 @@ var publicMethods = {
 
 		_initalClassName = template.className;
 		_isOpen = true;
+
 		_features = framework.detectFeatures();
 		_requestAF = _features.raf;
 		_cancelAF = _features.caf;
 		_transformKey = _features.transform;
 		_oldIE = _features.oldIE;
+
 		self.scrollWrap = framework.getChildByClass(template, 'pswp__scroll-wrap');
 		self.container = framework.getChildByClass(self.scrollWrap, 'pswp__container');
 
@@ -840,6 +857,7 @@ var publicMethods = {
 		for(i = 0; i < _modules.length; i++) {
 			self['init' + _modules[i]]();
 		}
+
 		// init
 		if(UiClass) {
 			var ui = self.ui = new UiClass(self, framework);
@@ -873,6 +891,7 @@ var publicMethods = {
 			_shout('initialLayout');
 			_currentWindowScrollY = _initalWindowScrollY = framework.getScrollY();
 		}
+
 		// add classes to root element of PhotoSwipe
 		var rootClasses = 'pswp--open ';
 		if(_options.mainClass) {
@@ -918,6 +937,7 @@ var publicMethods = {
 
 		// set content for center slide (first time)
 		self.setContent(_itemHolders[1], _currentItemIndex);
+
 		self.updateCurrItem();
 
 		_shout('afterInit');
@@ -964,6 +984,7 @@ var publicMethods = {
 		if(_showOrHideTimeout) {
 			clearTimeout(_showOrHideTimeout);
 		}
+
 		template.setAttribute('aria-hidden', 'true');
 		template.className = _initalClassName;
 
@@ -1003,10 +1024,12 @@ var publicMethods = {
 				y = _currPanBounds.max.y;
 			}
 		}
+
 		_panOffset.x = x;
 		_panOffset.y = y;
 		_applyCurrentZoomPan();
 	},
+
 	handleEvent: function (e) {
 		e = e || window.event;
 		if(_globalEventHandlers[e.type]) {
@@ -1096,6 +1119,7 @@ var publicMethods = {
 
 		self.currItem = _getItemAt( _currentItemIndex );
 		_renderMaxResolution = false;
+
 		_shout('beforeChange', _indexDiff);
 
 		if(diffAbs >= NUM_HOLDERS) {
@@ -1118,6 +1142,7 @@ var publicMethods = {
 				_setTranslateX( _containerShiftIndex * _slideSize.x, tempHolder.el.style);
 				self.setContent(tempHolder, _currentItemIndex + diffAbs - i - 1 - 1);
 			}
+
 		}
 
 		// reset zoom/pan on previous item
@@ -1140,11 +1165,13 @@ var publicMethods = {
 		_prevItemIndex = _currentItemIndex;
 
 		_shout('afterChange');
+
 	},
 
 
 
 	updateSize: function(force) {
+
 		if(!_isFixedPosition && _options.modal) {
 			var windowScrollY = framework.getScrollY();
 			if(_currentWindowScrollY !== windowScrollY) {
@@ -1201,6 +1228,7 @@ var publicMethods = {
 				if( item && (_itemsNeedUpdate || item.needsUpdate || !item.bounds) ) {
 
 					self.cleanSlide( item );
+
 					self.setContent( holder, hIndex );
 
 					// if "center" slide
@@ -1378,6 +1406,7 @@ var _gestureStartTime,
 	_canPan = function() {
 		return !(_options.scaleMode === 'fit' && _currZoomLevel ===  self.currItem.initialZoomLevel);
 	},
+
 	// find the closest parent DOM element
 	_closestElement = function(el, fn) {
 	  	if(!el || el === document) {
@@ -1429,6 +1458,7 @@ var _gestureStartTime,
 		return 1 -  Math.abs( yOffset / (_viewportSize.y / 2)  );
 	},
 
+
 	// points pool, reused during touch events
 	_ePoint1 = {},
 	_ePoint2 = {},
@@ -1449,6 +1479,7 @@ var _gestureStartTime,
 						_tempPointsArr[1] = _convertTouchToPoint(e.touches[1], _ePoint2);
 					}
 				}
+
 			} else {
 				_ePoint1.x = e.pageX;
 				_ePoint1.y = e.pageY;
@@ -1492,6 +1523,7 @@ var _gestureStartTime,
 		} else {
 			panFriction = 1;
 		}
+
 		newOffset = _panOffset[axis] + delta[axis] * panFriction;
 
 		// move main scroll or start panning
@@ -1510,6 +1542,7 @@ var _gestureStartTime,
 						overDiff = _currPanBounds.min[axis] - newOffset;
 						startOverDiff = _currPanBounds.min[axis] - _startPanOffset[axis];
 					}
+
 					// drag right
 					if( (startOverDiff <= 0 || mainScrollDiff < 0) && _getNumItems() > 1 ) {
 						newMainScrollPos = newMainScrollPosition;
@@ -1520,6 +1553,7 @@ var _gestureStartTime,
 						if(_currPanBounds.min.x !== _currPanBounds.max.x) {
 							newPanPos = newOffset;
 						}
+
 					}
 
 				} else {
@@ -1625,6 +1659,7 @@ var _gestureStartTime,
 		}
 
 
+
 		var startPointsList = _getTouchPoints(e),
 			numPoints = startPointsList.length;
 
@@ -1634,6 +1669,7 @@ var _gestureStartTime,
 
 		// init drag
 		if(!_isDragging || numPoints === 1) {
+
 
 
 			_isDragging = _isFirstMove = true;
@@ -1758,6 +1794,7 @@ var _gestureStartTime,
 
 			_currPoint.x = p.x;
 			_currPoint.y = p.y;
+
 			// check if one of two points changed
 			if( !delta.x && !delta.y && _isEqualPoints(_currentPoints[1], p2) ) {
 				return;
@@ -1770,6 +1807,7 @@ var _gestureStartTime,
 				_zoomStarted = true;
 				_shout('zoomGestureStarted');
 			}
+
 			// Distance between two points
 			var pointsDistance = _calculatePointsDistance(p,p2);
 
@@ -1786,6 +1824,7 @@ var _gestureStartTime,
 				maxZoomLevel = _getMaxZoomLevel();
 
 			if ( zoomLevel < minZoomLevel ) {
+
 				if(_options.pinchToClose && !_wasOverInitialZoom && _startZoomLevel <= self.currItem.initialZoomLevel) {
 					// fade out background if zooming out
 					var minusDiff = minZoomLevel - zoomLevel;
@@ -1801,6 +1840,7 @@ var _gestureStartTime,
 					}
 					zoomLevel = minZoomLevel - zoomFriction * (minZoomLevel / 3);
 				}
+
 			} else if ( zoomLevel > maxZoomLevel ) {
 				// 1.5 - extra zoom level above the max. E.g. if max is x6, real max 6 + 1.5 = 7.5
 				zoomFriction = (zoomLevel - maxZoomLevel) / ( minZoomLevel * 6 );
@@ -1819,6 +1859,7 @@ var _gestureStartTime,
 
 			// _centerPoint - The point in the middle of two pointers
 			_findCenterOfPoints(p, p2, _centerPoint);
+
 			// paning with two pointers pressed
 			_currPanDist.x += _centerPoint.x - _currCenterPoint.x;
 			_currPanDist.y += _centerPoint.y - _currCenterPoint.y;
@@ -1847,6 +1888,7 @@ var _gestureStartTime,
 				if( Math.abs(delta.x) >= DIRECTION_CHECK_OFFSET) {
 					delta.x -= _currentPoints[0].x - _startPoint.x;
 				}
+
 				if( Math.abs(delta.y) >= DIRECTION_CHECK_OFFSET) {
 					delta.y -= _currentPoints[0].y - _startPoint.y;
 				}
@@ -1880,6 +1922,7 @@ var _gestureStartTime,
 
 			_moved = true;
 			_currPanBounds = self.currItem.bounds;
+
 			var mainScrollChanged = _panOrMoveMainScroll('x', delta);
 			if(!mainScrollChanged) {
 				_panOrMoveMainScroll('y', delta);
@@ -1891,6 +1934,7 @@ var _gestureStartTime,
 		}
 
 	},
+
 	// Pointerup/pointercancel/touchend/touchcancel/mouseup event handler
 	_onDragRelease = function(e) {
 
@@ -1910,6 +1954,7 @@ var _gestureStartTime,
 					_oldAndroidTouchEndTimeout = 0;
 				}, 600);
 			}
+
 		}
 
 		_shout('pointerUp');
@@ -1922,6 +1967,7 @@ var _gestureStartTime,
 
 		if(_pointerEventEnabled) {
 			var pointerIndex = framework.arraySearch(_currPointers, e.pointerId, 'id');
+
 			if(pointerIndex > -1) {
 				releasePoint = _currPointers.splice(pointerIndex, 1)[0];
 
@@ -1994,6 +2040,7 @@ var _gestureStartTime,
 			}
 		}
 		_lastReleaseTime = numPoints === 1 ? _getCurrentTime() : -1;
+
 		if(releaseTimeDiff !== -1 && releaseTimeDiff < 150) {
 			gestureType = 'zoom';
 		} else {
@@ -2037,6 +2084,7 @@ var _gestureStartTime,
 					initialBgOpacity = _bgOpacity;
 
 				_animateProp('verticalDrag', 0, 1, 300, framework.easing.cubic.out, function(now) {
+
 					_panOffset.y = (self.currItem.initialPosition.y - initalPanY) * now + initalPanY;
 
 					_applyBgOpacity(  (1 - initialBgOpacity) * now + initialBgOpacity );
@@ -2069,6 +2117,7 @@ var _gestureStartTime,
 			_completeZoomGesture();
 			return;
 		}
+
 		// Complete pan gesture if main scroll is not shifted, and it's possible to pan current image
 		if(!_mainScrollShifted && _currZoomLevel > self.currItem.fitRatio) {
 			_completePanGesture(_releaseAnimData);
@@ -2097,6 +2146,7 @@ var _gestureStartTime,
 			backAnimStarted: {},
 			calculateSwipeSpeed: function(axis) {
 
+
 				if( _posPoints.length > 1) {
 					lastFlickDuration = _getCurrentTime() - _gestureCheckSpeedTime + 50;
 					tempReleasePos = _posPoints[_posPoints.length-2][axis];
@@ -2114,6 +2164,7 @@ var _gestureStartTime,
 				if( Math.abs(s.lastFlickSpeed[axis]) < 0.1 ) {
 					s.lastFlickSpeed[axis] = 0;
 				}
+
 				s.slowDownRatio[axis] = 0.95;
 				s.slowDownRatioReverse[axis] = 1 - s.slowDownRatio[axis];
 				s.speedDecelerationRatio[axis] = 1;
@@ -2124,6 +2175,7 @@ var _gestureStartTime,
 
 					if(_panOffset[axis] > _currPanBounds.min[axis]) {
 						s.backAnimDestination[axis] = _currPanBounds.min[axis];
+
 					} else if(_panOffset[axis] < _currPanBounds.max[axis]) {
 						s.backAnimDestination[axis] = _currPanBounds.max[axis];
 					}
@@ -2172,10 +2224,12 @@ var _gestureStartTime,
 					s.now = _getCurrentTime();
 					s.timeDiff = s.now - s.lastNow;
 					s.lastNow = s.now;
+
 					s.calculateAnimOffset('x');
 					s.calculateAnimOffset('y');
 
 					_applyCurrentZoomPan();
+
 					s.calculateOverBoundsAnimOffset('x');
 					s.calculateOverBoundsAnimOffset('y');
 
@@ -2186,6 +2240,7 @@ var _gestureStartTime,
 						_panOffset.x = Math.round(_panOffset.x);
 						_panOffset.y = Math.round(_panOffset.y);
 						_applyCurrentZoomPan();
+
 						_stopAnimation('zoomPan');
 						return;
 					}
@@ -2201,6 +2256,7 @@ var _gestureStartTime,
 		animData.calculateSwipeSpeed('y');
 
 		_currPanBounds = self.currItem.bounds;
+
 		animData.backAnimDestination = {};
 		animData.backAnimStarted = {};
 
@@ -2228,6 +2284,7 @@ var _gestureStartTime,
 		}
 
 
+
 		var itemsDiff;
 
 		if(gestureType === 'swipe') {
@@ -2250,6 +2307,7 @@ var _gestureStartTime,
 		var nextCircle;
 
 		if(itemsDiff) {
+
 			_currentItemIndex += itemsDiff;
 
 			if(_currentItemIndex < 0) {
@@ -2510,6 +2568,7 @@ var _showOrHideTimeout,
 		var startAnimation = function() {
 			var closeWithRaf = _closedByScroll,
 				fadeEverything = !self.currItem.src || self.currItem.loadError || _options.showHideOpacity;
+
 			// apply hw-acceleration to image
 			if(item.miniImg) {
 				item.miniImg.style.webkitBackfaceVisibility = 'hidden';
@@ -2525,6 +2584,7 @@ var _showOrHideTimeout,
 			}
 
 			_registerStartAnimation('initialZoom');
+
 			if(out && !closeWithRaf) {
 				framework.removeClass(template, 'pswp--animated-in');
 			}
@@ -2542,6 +2602,7 @@ var _showOrHideTimeout,
 			_showOrHideTimeout = setTimeout(function() {
 
 				_shout('initialZoom' + (out ? 'Out' : 'In') );
+
 
 				if(!out) {
 
@@ -2573,6 +2634,7 @@ var _showOrHideTimeout,
 						initialZoomLevel = _currZoomLevel,
 						initalBgOpacity = _bgOpacity,
 						onUpdate = function(now) {
+
 							if(now === 1) {
 								_currZoomLevel = destZoomLevel;
 								_panOffset.x = thumbBounds.x;
@@ -2582,6 +2644,7 @@ var _showOrHideTimeout,
 								_panOffset.x = (thumbBounds.x - initialPanOffset.x) * now + initialPanOffset.x;
 								_panOffset.y = (thumbBounds.y - _currentWindowScrollY - initialPanOffset.y) * now + initialPanOffset.y;
 							}
+
 							_applyCurrentZoomPan();
 							if(fadeEverything) {
 								template.style.opacity = 1 - now;
@@ -2597,11 +2660,13 @@ var _showOrHideTimeout,
 						_showOrHideTimeout = setTimeout(onComplete, duration + 20);
 					}
 				}
+
 			}, out ? 25 : 90); // Main purpose of this delay is to give browser time to paint and
 					// create composite layers of PhotoSwipe UI parts (background, controls, caption, arrows).
 					// Which avoids lag at the beginning of scale transition.
 		};
 		startAnimation();
+
 
 	};
 
@@ -2664,6 +2729,7 @@ var _getItemAt,
 
 		if (item.src && !item.loadError) {
 			var isInitial = !zoomLevel;
+
 			if(isInitial) {
 				if(!item.vGap) {
 					item.vGap = {top:0,bottom:0};
@@ -2740,6 +2806,7 @@ var _getItemAt,
 
 			item.imageAppended = true;
 			_setImageSize(item, img, (item === self.currItem && _renderMaxResolution) );
+
 			baseDiv.appendChild(img);
 
 			if(keepPlaceholder) {
@@ -2752,6 +2819,7 @@ var _getItemAt,
 			}
 		}
 	},
+
 
 
 	_preloadImage = function(item) {
@@ -2789,6 +2857,7 @@ var _getItemAt,
 
 			item.container.innerHTML = _options.errorMsg.replace('%url%',  item.src );
 			return true;
+
 		}
 	},
 	_setImageSize = function(item, img, maxRes) {
@@ -2802,6 +2871,7 @@ var _getItemAt,
 
 		var w = maxRes ? item.w : Math.round(item.w * item.fitRatio),
 			h = maxRes ? item.h : Math.round(item.h * item.fitRatio);
+
 		if(item.placeholder && !item.loaded) {
 			item.placeholder.style.width = w + 'px';
 			item.placeholder.style.height = h + 'px';
@@ -2824,6 +2894,7 @@ var _getItemAt,
 			_imagesToAppendPool = [];
 		}
 	};
+
 
 
 _registerModule('Controller', {
@@ -2974,6 +3045,7 @@ _registerModule('Controller', {
 			_checkForError(item);
 
 			_calculateItemSize(item, _viewportSize);
+
 			if(item.src && !item.loadError && !item.loaded) {
 
 				item.loadComplete = function(item) {
@@ -3033,6 +3105,7 @@ _registerModule('Controller', {
 					if(item.msrc) {
 						placeholder.src = item.msrc;
 					}
+
 					_setImageSize(item, placeholder);
 
 					baseDiv.appendChild(placeholder);
@@ -3062,6 +3135,7 @@ _registerModule('Controller', {
 						_appendImage(index, item, baseDiv, item.img, true, true);
 					}
 				}
+
 			} else if(item.src && !item.loadError) {
 				// image object is created every time, due to bugs of image loading & delay when switching images
 				img = framework.createEl('pswp__img', 'img');
@@ -3070,6 +3144,7 @@ _registerModule('Controller', {
 				_setImageSize(item, img);
 				_appendImage(index, item, baseDiv, img, true);
 			}
+
 
 			if(!_initialContentSet && index === _currentItemIndex) {
 				_currZoomElementStyle = baseDiv.style;
@@ -3218,6 +3293,7 @@ _registerModule('DesktopZoom', {
 			_wheelDelta = {};
 
 			var events = 'wheel mousewheel DOMMouseScroll';
+
 			_listen('bindEvents', function() {
 				framework.bind(template, events,  self.handleMouseWheel);
 			});
@@ -3263,6 +3339,7 @@ _registerModule('DesktopZoom', {
 			if(!onInit) {
 				updateZoomable();
 			}
+
 		},
 
 		handleMouseWheel: function(e) {
@@ -3336,6 +3413,7 @@ _registerModule('DesktopZoom', {
 
 			var doubleTapZoomLevel = _options.getDoubleTapZoom(true, self.currItem);
 			var zoomOut = _currZoomLevel === doubleTapZoomLevel;
+
 			self.mouseZoomedIn = !zoomOut;
 
 			self.zoomTo(zoomOut ? self.currItem.initialZoomLevel : doubleTapZoomLevel, centerPoint, 333);
@@ -3448,6 +3526,7 @@ var _historyUpdateTimeout,
 			_hashAnimCheckTimeout = setTimeout(_updateHash, 500);
 			return;
 		}
+
 		if(_hashChangedByScript) {
 			clearTimeout(_hashChangeTimeout);
 		} else {
@@ -3525,6 +3604,7 @@ _registerModule('History', {
 				_initialHash = _initialHash.split('?gid=')[0];
 			}
 
+
 			_listen('afterChange', self.updateURL);
 			_listen('unbindEvents', function() {
 				framework.unbind(window, 'hashchange', self.onHashChange);
@@ -3551,6 +3631,7 @@ _registerModule('History', {
 							}
 						}
 					}
+
 				}
 
 				_cleanHistoryTimeouts();
@@ -3584,11 +3665,13 @@ _registerModule('History', {
 				}
 			}
 
+
 			setTimeout(function() {
 				if(_isOpen) { // hasn't destroyed yet
 					framework.bind(window, 'hashchange', self.onHashChange);
 				}
 			}, 40);
+
 		},
 		onHashChange: function() {
 
@@ -3624,6 +3707,7 @@ _registerModule('History', {
 				_historyUpdateTimeout = setTimeout(_updateHash, 800);
 			}
 		}
+
 	}
 });
 

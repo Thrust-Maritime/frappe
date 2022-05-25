@@ -1,5 +1,6 @@
 import frappe
 
+
 def execute():
 	frappe.reload_doc("contacts", "doctype", "contact_email")
 	frappe.reload_doc("contacts", "doctype", "contact_phone")

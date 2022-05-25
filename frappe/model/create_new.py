@@ -2,6 +2,7 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
+
 """
 Create a new document with defaults set
 """
@@ -51,6 +52,7 @@ def make_new_doc(doctype):
 
 	return doc
 
+
 def set_user_and_static_default_values(doc):
 	user_permissions = get_user_permissions()
 	defaults = frappe.defaults.get_defaults()
@@ -78,6 +80,7 @@ def set_user_and_static_default_values(doc):
 					if static_default_value is not None:
 						doc.set(df.fieldname, static_default_value)
 
+
 def get_user_default_value(df, defaults, doctype_user_permissions, allowed_records, default_doc):
 	# don't set defaults for "User" link field using User Permissions!
 	if df.fieldtype == "Link" and df.options != "User":
@@ -95,6 +98,7 @@ def get_user_default_value(df, defaults, doctype_user_permissions, allowed_recor
 		# is this user default also allowed as per user permissions?
 		if user_default and allowed_by_user_permission:
 			return user_default
+
 
 def get_static_default_value(df, doctype_user_permissions, allowed_records):
 	# 3 - look in default of docfield
@@ -132,6 +136,7 @@ def validate_value_via_user_permissions(
 		is_valid = value in allowed_records
 
 	return is_valid
+
 
 def set_dynamic_default_values(doc, parent_doc, parentfield):
 	# these values should not be cached

@@ -25,12 +25,14 @@ def delete_page_cache(path):
 		for name in groups:
 			cache.delete_key(name)
 
+
 def find_first_image(html):
 	m = re.finditer(r"""<img[^>]*src\s?=\s?['"]([^'"]*)['"]""", html)
 	try:
 		return next(m).groups()[0]
 	except StopIteration:
 		return None
+
 
 def can_cache(no_cache=False):
 	if frappe.conf.disable_website_cache or frappe.conf.developer_mode:
@@ -255,6 +257,7 @@ def convert_to_hex(channel_value):
 
 	return h
 
+
 def abs_url(path):
 	"""Deconstructs and Reconstructs a URL into an absolute URL or a URL relative from root '/'"""
 	if not path:
@@ -310,6 +313,7 @@ def get_full_index(route=None, app=None):
 	from frappe.website.router import get_pages
 
 	if not frappe.local.flags.children_map:
+
 		def _build():
 			children_map = {}
 			added = []

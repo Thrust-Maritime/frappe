@@ -9,6 +9,7 @@ queue_prefix = "insert_queue_for_"
 def deferred_insert(doctype, records):
 	frappe.cache().rpush(queue_prefix + doctype, records)
 
+
 def save_to_db():
 	queue_keys = frappe.cache().get_keys(queue_prefix)
 	for key in queue_keys:

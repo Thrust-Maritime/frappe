@@ -196,6 +196,7 @@ class StripeSettings(Document):
 
 	def create_request(self, data):
 		import stripe
+
 		self.data = frappe._dict(data)
 		stripe.api_key = self.get_password(fieldname="secret_key", raise_exception=False)
 		stripe.default_http_client = stripe.http_client.RequestsClient()

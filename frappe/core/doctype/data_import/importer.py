@@ -217,6 +217,7 @@ class Importer:
 		existing_doc = frappe.get_doc(self.doctype, doc.get(id_field.fieldname))
 
 		updated_doc = frappe.get_doc(self.doctype, doc.get(id_field.fieldname))
+
 		updated_doc.update(doc)
 
 		if get_diff(existing_doc, updated_doc):
@@ -639,6 +640,7 @@ class Row:
 				return
 		elif df.fieldtype == "Duration":
 			import re
+
 			is_valid_duration = re.match(r"^(?:(\d+d)?((^|\s)\d+h)?((^|\s)\d+m)?((^|\s)\d+s)?)$", value)
 			if not is_valid_duration:
 				self.warnings.append(

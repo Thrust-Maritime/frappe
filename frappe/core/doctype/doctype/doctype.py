@@ -431,6 +431,7 @@ class DocType(Document):
 
 	def run_module_method(self, method):
 		from frappe.modules import load_doctype_module
+
 		module = load_doctype_module(self.name, self.module)
 		if hasattr(module, method):
 			getattr(module, method)()
@@ -890,6 +891,7 @@ def validate_fields_for_doctype(doctype):
 	validate_links_table_fieldnames(meta)
 	validate_fields(meta)
 
+
 # this is separate because it is also called via custom field
 def validate_fields(meta):
 	"""Validate doctype fields. Checks
@@ -1312,6 +1314,7 @@ def validate_fields(meta):
 	check_sort_field(meta)
 	check_image_field(meta)
 
+
 def validate_permissions_for_doctype(doctype, for_remove=False, alert=False):
 	"""Validates if permissions are set correctly."""
 	doctype = frappe.get_doc("DocType", doctype)
@@ -1501,6 +1504,7 @@ def make_module_and_roles(doc, perm_fieldname="permissions"):
 			pass
 		else:
 			raise
+
 
 def check_fieldname_conflicts(doctype, fieldname):
 	"""Checks if fieldname conflicts with methods or properties"""

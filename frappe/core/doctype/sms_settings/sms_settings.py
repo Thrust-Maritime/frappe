@@ -112,6 +112,7 @@ def get_headers(sms_settings=None):
 
 	return headers
 
+
 def send_request(gateway_url, params, headers=None, use_post=False, use_json=False):
 	import requests
 

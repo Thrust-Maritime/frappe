@@ -61,6 +61,7 @@ def get_fullname(user=None):
 
 	return frappe.local.fullnames.get(user)
 
+
 def get_email_address(user=None):
 	"""get the email address of the user from User"""
 	if not user:
@@ -95,6 +96,7 @@ def extract_email_id(email):
 		email_id = email_id.decode("utf-8", "ignore")
 	return email_id
 
+
 def validate_phone_number(phone_number, throw=False):
 	"""Returns True if valid phone number"""
 	if not phone_number:
@@ -126,6 +128,7 @@ def validate_name(name, throw=False):
 		frappe.throw(frappe._("{0} is not a valid Name").format(name), frappe.InvalidNameError)
 
 	return bool(match)
+
 
 def validate_email_address(email_str, throw=False):
 	"""Validates the email string"""
@@ -314,6 +317,7 @@ def get_defaults(key=None):
 	"""
 	return frappe.db.get_defaults(key)
 
+
 def set_default(key, val):
 	"""
 	Set / add a default value to defaults`
@@ -334,6 +338,7 @@ def remove_blanks(d):
 		del d[key]
 
 	return d
+
 
 def strip_html_tags(text):
 	"""Remove html tags from text"""
@@ -458,6 +463,7 @@ def encode_dict(d, encoding="utf-8"):
 
 	return d
 
+
 def decode_dict(d, encoding="utf-8"):
 	for key in d:
 		if isinstance(d[key], str) and not isinstance(d[key], str):
@@ -500,6 +506,7 @@ def get_hook_method(hook_name, fallback=None):
 	if fallback:
 		return fallback
 
+
 def call_hook_method(hook, *args, **kwargs):
 	out = None
 	for method_name in frappe.get_hooks(hook):
@@ -516,6 +523,7 @@ def is_cli() -> bool:
 	except Exception:
 		invoked_from_terminal = sys.stdin.isatty()
 	return invoked_from_terminal
+
 
 def update_progress_bar(txt, i, l):
 	if os.environ.get("CI"):
@@ -559,6 +567,7 @@ def get_html_format(print_path):
 					break
 
 	return html_format
+
 
 def is_markdown(text):
 	if "<!-- markdown -->" in text:
@@ -630,6 +639,7 @@ def watch(path, handler=None, debug=True):
 		observer.stop()
 	observer.join()
 
+
 def markdown(text, sanitize=True, linkify=True):
 	html = text if is_html(text) else frappe.utils.md_to_html(text)
 
@@ -638,6 +648,7 @@ def markdown(text, sanitize=True, linkify=True):
 		html = sanitize_html(html, linkify=linkify)
 
 	return html
+
 
 def sanitize_email(emails):
 	sanitized = []
@@ -649,6 +660,7 @@ def sanitize_email(emails):
 		sanitized.append(formataddr((full_name, email_id)))
 
 	return ", ".join(sanitized)
+
 
 def parse_addr(email_string):
 	"""
@@ -668,6 +680,7 @@ def parse_addr(email_string):
 			name = get_name_from_email_string(email_string, email, name)
 			return (name, email)
 	return (None, email)
+
 
 def check_format(email_id):
 	"""
@@ -691,6 +704,7 @@ def get_name_from_email_string(email_string, email_id, name):
 	if not name:
 		name = email_id
 	return name
+
 
 def get_installed_apps_info():
 	out = []
@@ -760,6 +774,7 @@ def get_site_info():
 	# dumps -> loads to prevent datatype conflicts
 	return json.loads(frappe.as_json(site_info))
 
+
 def parse_json(val):
 	"""
 	Parses json if string else return
@@ -769,6 +784,7 @@ def parse_json(val):
 	if isinstance(val, dict):
 		val = frappe._dict(val)
 	return val
+
 
 def get_db_count(*args):
 	"""
@@ -788,6 +804,7 @@ def get_db_count(*args):
 		db_count[doctype] = frappe.db.count(doctype)
 
 	return json.loads(frappe.as_json(db_count))
+
 
 def call(fn, *args, **kwargs):
 	"""
@@ -824,6 +841,7 @@ def gzip_decompress(data):
 	with GzipFile(fileobj=io.BytesIO(data)) as f:
 		return f.read()
 
+
 def get_safe_filters(filters):
 	try:
 		filters = json.loads(filters)
@@ -836,6 +854,7 @@ def get_safe_filters(filters):
 		pass
 
 	return filters
+
 
 def create_batch(iterable: Iterable, size: int) -> Generator[Iterable, None, None]:
 	"""Convert an iterable to multiple batches of constant size of batch_size
@@ -868,6 +887,7 @@ def get_html_for_route(route):
 	html = frappe.safe_decode(response.get_data())
 	return html
 
+
 def get_file_size(path, format=False):
 	num = os.path.getsize(path)
 
@@ -891,6 +911,7 @@ def get_build_version():
 		# .build can sometimes not exist
 		# this is not a major problem so send fallback
 		return frappe.utils.random_string(8)
+
 
 def get_bench_relative_path(file_path):
 	"""Fixes paths relative to the bench root directory if exists and returns the absolute path
@@ -952,6 +973,7 @@ def squashify(what):
 
 	return what
 
+
 def safe_json_loads(*args):
 	results = []
 
@@ -964,6 +986,7 @@ def safe_json_loads(*args):
 		results.append(arg)
 
 	return squashify(results)
+
 
 def dictify(arg):
 	if isinstance(arg, MutableSequence):

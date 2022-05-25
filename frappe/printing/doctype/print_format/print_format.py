@@ -86,6 +86,7 @@ class PrintFormat(Document):
 		if self.doc_type:
 			frappe.clear_cache(doctype=self.doc_type)
 
+
 @frappe.whitelist()
 def make_default(name):
 	"""Set print format as default"""

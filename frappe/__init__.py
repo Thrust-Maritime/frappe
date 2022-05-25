@@ -249,6 +249,7 @@ def init(site, sites_path=None, new_site=False):
 
 	local.initialised = True
 
+
 def connect(site=None, db_name=None, set_admin_as_user=True):
 	"""Connect to site database instance.
 
@@ -257,6 +258,7 @@ def connect(site=None, db_name=None, set_admin_as_user=True):
 	:param set_admin_as_user: Set Administrator as current user.
 	"""
 	from frappe.database import get_db
+
 	if site:
 		init(site)
 
@@ -281,6 +283,7 @@ def connect_replica():
 	# swap db connections
 	local.primary_db = local.db
 	local.db = local.replica_db
+
 
 def get_site_config(sites_path=None, site_path=None):
 	"""Returns `site_config.json` combined with `sites/common_site_config.json`.
@@ -334,6 +337,7 @@ class init_site:
 
 	def __exit__(self, type, value, traceback):
 		destroy()
+
 
 def destroy():
 	"""Closes connection and releases werkzeug local."""
@@ -485,9 +489,11 @@ def get_message_log():
 
 	return log
 
+
 def clear_last_message():
 	if len(local.message_log) > 0:
 		local.message_log = local.message_log[:-1]
+
 
 def throw(msg, exc=ValidationError, title=None, is_minimizable=None, wide=None, as_list=False):
 	"""Throw execption and show message (`msgprint`).
@@ -517,11 +523,13 @@ def create_folder(path, with_init=False):
 	:param path: Folder path.
 	:param with_init: Create `__init__.py` in the new folder."""
 	from frappe.utils import touch_file
+
 	if not os.path.exists(path):
 		os.makedirs(path)
 
 		if with_init:
 			touch_file(os.path.join(path, "__init__.py"))
+
 
 def set_user(username):
 	"""Set current user.
@@ -544,6 +552,7 @@ def get_user():
 	if not local.user_perms:
 		local.user_perms = UserPermissions(local.session.user)
 	return local.user_perms
+
 
 def get_roles(username=None):
 	"""Returns roles of current user."""
@@ -643,6 +652,7 @@ def sendmail(
 
 	if as_markdown:
 		from frappe.utils import md_to_html
+
 		message = md_to_html(message)
 
 	if not delayed:
@@ -687,6 +697,7 @@ whitelisted = []
 guest_methods = []
 xss_safe_methods = []
 allowed_http_methods_for_whitelisted_func = {}
+
 
 def whitelist(allow_guest=False, xss_safe=False, methods=None):
 	"""
@@ -743,6 +754,7 @@ def is_whitelisted(method):
 		for key, value in form_dict.items():
 			if isinstance(value, string_types):
 				form_dict[key] = sanitize_html(value)
+
 
 def read_only():
 	def innfn(fn):
@@ -829,6 +841,7 @@ def clear_cache(user=None, doctype=None):
 	:param user: If user is given, only user cache is cleared.
 	:param doctype: If doctype is given, only DocType cache is cleared."""
 	import frappe.cache_manager
+
 	if doctype:
 		frappe.cache_manager.clear_doctype_cache(doctype)
 		reset_metadata_version()
@@ -849,6 +862,7 @@ def clear_cache(user=None, doctype=None):
 
 	local.role_permissions = {}
 
+
 def only_has_select_perm(doctype, user=None, ignore_permissions=False):
 	if ignore_permissions:
 		return False
@@ -864,6 +878,7 @@ def only_has_select_perm(doctype, user=None, ignore_permissions=False):
 		return True
 	else:
 		return False
+
 
 def has_permission(doctype=None, ptype="read", doc=None, user=None, verbose=False, throw=False):
 	"""Raises `frappe.PermissionError` if not permitted.
@@ -959,11 +974,13 @@ def generate_hash(txt=None, length=None):
 		digest = digest[:length]
 	return digest
 
+
 def reset_metadata_version():
 	"""Reset `metadata_version` (Client (Javascript) build ID) hash."""
 	v = generate_hash()
 	cache().set_value("metadata_version", v)
 	return v
+
 
 def new_doc(doctype, parent_doc=None, parentfield=None, as_dict=False):
 	"""Returns a new document of the given DocType with defaults set.
@@ -1028,6 +1045,7 @@ def get_cached_value(doctype, name, fieldname, as_dict=False):
 		return _dict(zip(fieldname, values))
 	return values
 
+
 def get_doc(*args, **kwargs):
 	"""Return a `frappe.model.document.Document` object of the given type and name.
 
@@ -1064,6 +1082,7 @@ def get_last_doc(doctype, filters=None, order_by="creation desc"):
 		return get_doc(doctype, d[0])
 	else:
 		raise DoesNotExistError
+
 
 def get_single(doctype):
 	"""Return a `frappe.model.document.Document` object of the given Single doctype."""
@@ -1189,6 +1208,7 @@ def get_module_path(module, *joins):
 	module = scrub(module)
 	return get_pymodule_path(local.module_app[module] + "." + module, *joins)
 
+
 def get_app_path(app_name, *joins):
 	"""Return path of given app.
 
@@ -1196,11 +1216,13 @@ def get_app_path(app_name, *joins):
 	:param *joins: Join additional path elements using `os.path.join`."""
 	return get_pymodule_path(app_name, *joins)
 
+
 def get_site_path(*joins):
 	"""Return path of current site.
 
 	:param *joins: Join additional path elements using `os.path.join`."""
 	return os.path.join(local.site_path, *joins)
+
 
 def get_pymodule_path(modulename, *joins):
 	"""Return path of given Python module name.
@@ -1215,6 +1237,7 @@ def get_pymodule_path(modulename, *joins):
 def get_module_list(app_name):
 	"""Get list of modules for given all via `app/modules.txt`."""
 	return get_file_items(os.path.join(os.path.dirname(get_module(app_name).__file__), "modules.txt"))
+
 
 def get_all_apps(with_internal_apps=True, sites_path=None):
 	"""Get list of all apps via `sites/apps.txt`."""
@@ -1274,6 +1297,7 @@ def get_doc_hooks():
 		local.doc_events_hooks = out
 
 	return local.doc_events_hooks
+
 
 def get_hooks(hook=None, default=None, app_name=None):
 	"""Get hooks via `app/hooks.py`
@@ -1338,6 +1362,7 @@ def append_hook(target, key, value):
 			value = [value]
 		target[key].extend(value)
 
+
 def setup_module_map():
 	"""Rebuild map of all modules (internal)."""
 	_cache = cache()
@@ -1358,6 +1383,7 @@ def setup_module_map():
 		if conf.db_name:
 			_cache.set_value("app_modules", local.app_modules)
 			_cache.set_value("module_app", local.module_app)
+
 
 def get_file_items(path, raise_not_found=False, ignore_empty_lines=True):
 	"""Returns items from text file as a list. Ignores empty lines."""
@@ -1439,6 +1465,7 @@ def get_newargs(fn, kwargs):
 	newargs.pop("flags", None)
 
 	return newargs
+
 
 def make_property_setter(args, ignore_validate=False, validate_fields_for_doctype=True):
 	"""Create a new **Property Setter** (for overriding DocType and DocField properties).
@@ -1531,6 +1558,7 @@ def copy_doc(doc, ignore_no_copy=True):
 			remove_no_copy_fields(d)
 
 	return newdoc
+
 
 def compare(val1, condition, val2):
 	"""Compare two values using `frappe.utils.compare`
@@ -1702,6 +1730,7 @@ def get_all(doctype, *args, **kwargs):
 		kwargs["limit_page_length"] = 0
 	return get_list(doctype, *args, **kwargs)
 
+
 def get_value(*args, **kwargs):
 	"""Returns a document property or list of properties.
 
@@ -1746,6 +1775,7 @@ def get_test_records(doctype):
 			return json.loads(f.read())
 	else:
 		return []
+
 
 def format_value(*args, **kwargs):
 	"""Format value with given field properties.
@@ -1866,6 +1896,7 @@ def attach_print(
 
 	return out
 
+
 def publish_progress(*args, **kwargs):
 	"""Show the user progress for a long request
 
@@ -1894,6 +1925,7 @@ def publish_realtime(*args, **kwargs):
 	import frappe.realtime
 
 	return frappe.realtime.publish_realtime(*args, **kwargs)
+
 
 def local_cache(namespace, key, generator, regenerate_if_none=False):
 	"""A key value store for caching within a request

@@ -26,6 +26,7 @@ def test_password_strength(password, user_inputs=None):
 
 # Used for regex matching capitalization
 import re
+
 # Used to get the regex patterns for capitalization
 # (Used the same way in the original zxcvbn)
 from zxcvbn import scoring
@@ -76,6 +77,7 @@ def get_match_feedback(match, is_sole_match):
 	"""
 	Returns feedback as a dictionary for a certain match
 	"""
+
 	def fun_bruteforce():
 		# Define a number of functions that are used in a look up dictionary
 		return None

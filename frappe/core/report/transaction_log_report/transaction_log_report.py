@@ -15,6 +15,7 @@ def execute(filters=None):
 
 	return columns, data
 
+
 def get_data(filters=None):
 
 	logs = frappe.db.sql("SELECT * FROM `tabTransaction Log` order by creation desc ", as_dict=1)
@@ -67,6 +68,7 @@ def check_data_integrity(chaining_hash, transaction_hash, registered_previous_ha
 		return False
 	else:
 		return True
+
 
 def calculate_chain(transaction_hash, previous_hash):
 	sha = hashlib.sha256()

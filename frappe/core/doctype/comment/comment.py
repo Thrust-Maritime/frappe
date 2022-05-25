@@ -170,6 +170,7 @@ def get_comments_from_parent(doc):
 	except ValueError:
 		return []
 
+
 def update_comments_in_parent(reference_doctype, reference_name, _comments):
 	"""Updates `_comments` property in parent Document with given dict.
 
@@ -207,6 +208,7 @@ def update_comments_in_parent(reference_doctype, reference_name, _comments):
 			reference_doc = frappe.get_doc(reference_doctype, reference_name)
 			if getattr(reference_doc, "route", None):
 				clear_cache(reference_doc.route)
+
 
 def update_comments_in_parent_after_request():
 	"""update _comments in parent if _comments column is missing"""

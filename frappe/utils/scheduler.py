@@ -107,6 +107,7 @@ def is_scheduler_inactive():
 
 	return False
 
+
 def is_scheduler_disabled():
 	if frappe.conf.disable_scheduler:
 		return True

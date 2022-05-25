@@ -2,6 +2,7 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
+
 import sys
 
 # BEWARE don't put anything in this file except exceptions
@@ -83,6 +84,7 @@ class ImproperDBConfigurationError(Exception):
 	Used when frappe detects that database or tables are not properly
 	configured
 	"""
+
 	def __init__(self, reason, msg=None):
 		if not msg:
 			msg = "MariaDb is not properly configured"

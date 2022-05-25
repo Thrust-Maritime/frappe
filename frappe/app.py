@@ -44,6 +44,7 @@ class RequestContext(object):
 	def __exit__(self, type, value, traceback):
 		frappe.destroy()
 
+
 @Request.application
 def application(request):
 	response = None
@@ -212,6 +213,7 @@ def make_form_dict(request):
 	if "_" in frappe.local.form_dict:
 		# _ is passed by $.ajax so that the request is not cached by the browser. So, remove _ from form_dict
 		frappe.local.form_dict.pop("_")
+
 
 def handle_exception(e):
 	response = None

@@ -27,6 +27,7 @@ class ActivityLog(Document):
 		if self.reference_doctype and self.reference_name:
 			self.status = "Linked"
 
+
 def on_doctype_update():
 	"""Add indexes in `tabActivity Log`"""
 	frappe.db.add_index("Activity Log", ["reference_doctype", "reference_name"])

@@ -388,6 +388,7 @@ class Communication(Document):
 		if autosave:
 			self.save(ignore_permissions=ignore_permissions)
 
+
 def on_doctype_update():
 	"""Add indexes in `tabCommunication`"""
 	frappe.db.add_index("Communication", ["reference_doctype", "reference_name"])

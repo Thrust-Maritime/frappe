@@ -109,6 +109,7 @@ def rate_limit(
 
 	:returns: a decorator function that limit the number of requests per endpoint
 	"""
+
 	def ratelimit_decorator(fun):
 		@wraps(fun)
 		def wrapper(*args, **kwargs):

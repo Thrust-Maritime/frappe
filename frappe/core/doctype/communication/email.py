@@ -334,10 +334,12 @@ def get_recipients_cc_and_bcc(doc, recipients, cc, bcc, fetched_from_email_accou
 
 	return recipients, cc, bcc
 
+
 def remove_administrator_from_email_list(email_list):
 	administrator_email = list(filter(lambda emails: "Administrator" in emails, email_list))
 	if administrator_email:
 		email_list.remove(administrator_email[0])
+
 
 def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None):
 	"""Prepare to make multipart MIME Email
@@ -400,6 +402,7 @@ def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None)
 			else:
 				doc.attachments.append(a)
 
+
 def set_incoming_outgoing_accounts(doc):
 	doc.incoming_email_account = doc.outgoing_email_account = None
 
@@ -429,6 +432,7 @@ def set_incoming_outgoing_accounts(doc):
 	if doc.sent_or_received == "Sent":
 		doc.db_set("email_account", doc.outgoing_email_account.name)
 
+
 def get_recipients(doc, fetched_from_email_account=False):
 	"""Build a list of email addresses for To"""
 	# [EDGE CASE] doc.recipients can be None when an email is sent as BCC
@@ -443,6 +447,7 @@ def get_recipients(doc, fetched_from_email_account=False):
 		recipients = filter_email_list(doc, recipients, [])
 
 	return recipients
+
 
 def get_cc(doc, recipients=None, fetched_from_email_account=False):
 	"""Build a list of email addresses for CC"""
@@ -484,6 +489,7 @@ def get_cc(doc, recipients=None, fetched_from_email_account=False):
 		cc = filter_email_list(doc, cc, exclude, is_cc=True)
 
 	return cc
+
 
 def get_bcc(doc, recipients=None, fetched_from_email_account=False):
 	"""Build a list of email addresses for BCC"""
@@ -576,6 +582,7 @@ def filter_email_list(doc, email_list, exclude, is_cc=False, is_bcc=False):
 
 	return filtered
 
+
 def get_owner_email(doc):
 	owner = get_parent_doc(doc).owner
 	return get_formatted_email(owner) or owner
@@ -661,6 +668,7 @@ def sendmail(
 	except:
 		traceback = frappe.log_error("frappe.core.doctype.communication.email.sendmail")
 		raise
+
 
 @frappe.whitelist(allow_guest=True, methods=("GET",))
 def mark_email_as_seen(name: str = None):

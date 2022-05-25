@@ -62,6 +62,7 @@ def get_list(
 	validate_args(args)
 	return frappe.get_list(**args)
 
+
 @frappe.whitelist()
 def get_count(doctype, filters=None, debug=False, cache=False):
 	return frappe.db.count(doctype, get_safe_filters(filters), debug, cache)
@@ -137,6 +138,7 @@ def get_value(doctype, fieldname, filters=None, as_dict=True, debug=False, paren
 		return
 
 	return value[0] if len(fields) > 1 else value[0][0]
+
 
 @frappe.whitelist()
 def get_single_value(doctype, field):
@@ -435,9 +437,11 @@ def attach_file(
 
 	return _file.as_dict()
 
+
 @frappe.whitelist()
 def get_hooks(hook, app_name=None):
 	return frappe.get_hooks(hook, app_name)
+
 
 @frappe.whitelist()
 def is_document_amended(doctype, docname):
@@ -448,6 +452,7 @@ def is_document_amended(doctype, docname):
 			pass
 
 	return False
+
 
 @frappe.whitelist()
 def validate_link(doctype: str, docname: str, fields=None):

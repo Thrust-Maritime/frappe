@@ -51,6 +51,7 @@ def pass_context(f):
 
 	return click.pass_context(_func)
 
+
 def get_site(context, raise_err=True):
 	try:
 		site = context.sites[0]
@@ -72,6 +73,7 @@ def popen(command, *args, **kwargs):
 
 	def set_low_prio():
 		import psutil
+
 		if psutil.LINUX:
 			psutil.Process().nice(19)
 			psutil.Process().ionice(psutil.IOPRIO_CLASS_IDLE)
@@ -112,5 +114,6 @@ def get_commands():
 	from .utils import commands as utils_commands
 
 	return list(set(scheduler_commands + site_commands + translate_commands + utils_commands))
+
 
 commands = get_commands()

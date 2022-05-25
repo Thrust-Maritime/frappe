@@ -82,6 +82,7 @@ def run_single(patchmodule=None, method=None, methodargs=None, force=False):
 	else:
 		return True
 
+
 def execute_patch(patchmodule, method=None, methodargs=None):
 	"""execute the patch"""
 	block_user(True)
@@ -133,6 +134,7 @@ def executed(patchmodule):
 	# if done:
 	# 	print "Patch %s already executed in %s" % (patchmodule, frappe.db.cur_db_name)
 	return done
+
 
 def block_user(block, msg=None):
 	"""stop/start execution till patch is run"""

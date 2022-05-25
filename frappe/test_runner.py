@@ -298,6 +298,7 @@ def _run_unittest(
 
 	return out
 
+
 def _add_test(app, path, filename, verbose, test_suite=None, ui_tests=False):
 	import os
 
@@ -338,6 +339,7 @@ def _add_test(app, path, filename, verbose, test_suite=None, ui_tests=False):
 
 	test_suite.addTest(unittest.TestLoader().loadTestsFromModule(module))
 
+
 def make_test_records(doctype, verbose=0, force=False):
 	if not frappe.db:
 		frappe.connect()
@@ -354,6 +356,7 @@ def make_test_records(doctype, verbose=0, force=False):
 			make_test_records(options, verbose, force)
 			make_test_records_for_doctype(options, verbose, force)
 
+
 def get_modules(doctype):
 	module = frappe.db.get_value("DocType", doctype, "module")
 	try:
@@ -364,6 +367,7 @@ def get_modules(doctype):
 		test_module = None
 
 	return module, test_module
+
 
 def get_dependencies(doctype):
 	module, test_module = get_modules(doctype)
@@ -388,6 +392,7 @@ def get_dependencies(doctype):
 	options_list.sort()
 
 	return options_list
+
 
 def make_test_records_for_doctype(doctype, verbose=0, force=False):
 	if not force and doctype in get_test_record_log():
@@ -481,6 +486,7 @@ def make_test_objects(doctype, test_records=None, verbose=None, reset=False):
 
 		frappe.db.commit()
 	return records
+
 
 def print_mandatory_fields(doctype):
 	print("Please setup make_test_records for: " + doctype)

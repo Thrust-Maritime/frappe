@@ -24,6 +24,7 @@ def make_social_login_key(**kwargs):
 	doc = frappe.get_doc(kwargs)
 	return doc
 
+
 def create_or_update_social_login_key():
 	# used in other tests (connected app, oauth20)
 	try:

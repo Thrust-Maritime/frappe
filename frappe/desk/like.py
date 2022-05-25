@@ -28,6 +28,7 @@ def toggle_like(doctype, name, add=False):
 
 	_toggle_like(doctype, name, add)
 
+
 def _toggle_like(doctype, name, add, user=None):
 	"""Same as toggle_like but hides param `user` from API"""
 

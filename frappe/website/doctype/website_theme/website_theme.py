@@ -13,6 +13,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_path
 
+
 class WebsiteTheme(Document):
 	def validate(self):
 		self.validate_if_customizable()
@@ -138,6 +139,7 @@ def add_website_theme(context):
 	if not context.disable_website_theme:
 		website_theme = get_active_theme()
 		context.theme = website_theme or frappe._dict()
+
 
 def get_active_theme():
 	website_theme = frappe.db.get_single_value("Website Settings", "website_theme")

@@ -33,6 +33,7 @@ def savedocs(doc, action):
 		frappe.errprint(frappe.utils.get_traceback())
 		raise
 
+
 @frappe.whitelist()
 def cancel(doctype=None, name=None, workflow_state_fieldname=None, workflow_state=None):
 	"""cancel a doclist"""

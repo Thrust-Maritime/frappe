@@ -32,6 +32,7 @@ class Translation(Document):
 	def get_contribution_status(self):
 		pass
 
+
 @frappe.whitelist()
 def create_translations(translation_map, language):
 	from frappe.frappeclient import FrappeClient

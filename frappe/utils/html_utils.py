@@ -180,6 +180,7 @@ def is_json(text):
 	else:
 		return True
 
+
 def get_icon_html(icon, small=False):
 	from frappe.utils import is_image
 

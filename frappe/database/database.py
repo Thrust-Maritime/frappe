@@ -264,6 +264,7 @@ class Database(object):
 			else:
 				self._cursor.execute("explain " + query, values)
 			import json
+
 			frappe.errprint(json.dumps(self.fetch_as_dict(), indent=1))
 			frappe.errprint("--- query explain end ---")
 		except Exception:
@@ -1113,6 +1114,7 @@ class Database(object):
 	def get_system_setting(self, key):
 		def _load_system_settings():
 			return self.get_singles_dict("System Settings")
+
 		return frappe.cache().get_value("system_settings", _load_system_settings).get(key)
 
 	def close(self):

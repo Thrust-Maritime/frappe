@@ -41,6 +41,7 @@ def _new_site(
 
 	if not db_name:
 		import hashlib
+
 		db_name = "_" + hashlib.sha1(site.encode()).hexdigest()[:16]
 
 	frappe.init(site=site)
@@ -467,6 +468,7 @@ def get_conf_params(db_name=None, db_password=None):
 
 	if not db_password:
 		from frappe.utils import random_string
+
 		db_password = random_string(16)
 
 	return {"db_name": db_name, "db_password": db_password}
@@ -550,6 +552,7 @@ def extract_sql_gzip(sql_gz_path):
 def extract_files(site_name, file_path):
 	import shutil
 	import subprocess
+
 	from frappe.utils import get_bench_relative_path
 
 	file_path = get_bench_relative_path(file_path)
@@ -587,6 +590,7 @@ def is_downgrade(sql_file_path, verbose=False):
 		return False
 
 	from semantic_version import Version
+
 	head = "INSERT INTO `tabInstalled Application` VALUES"
 
 	with open(sql_file_path) as f:
@@ -686,6 +690,7 @@ def validate_database_sql(path, _raise=True):
 
 	if error_message:
 		import click
+
 		click.secho(error_message, fg="red")
 
 	if _raise and (missing_table or empty_file):

@@ -241,6 +241,7 @@ def toggle_2fa_all_role(state=None):
 	all_role.save(ignore_permissions=True)
 	frappe.db.commit()
 
+
 def get_otp(user):
 	otp_secret = get_otpsecret_for_(user)
 	otp = pyotp.TOTP(otp_secret)

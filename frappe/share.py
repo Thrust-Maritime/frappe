@@ -64,6 +64,7 @@ def remove(doctype, name, user, flags=None):
 	if share_name:
 		frappe.delete_doc("DocShare", share_name, flags=flags)
 
+
 @frappe.whitelist()
 def set_permission(doctype, name, user, permission_to, value=1, everyone=0):
 	"""Set share permission."""

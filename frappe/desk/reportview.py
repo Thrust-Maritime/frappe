@@ -67,12 +67,14 @@ def get_count():
 def execute(doctype, *args, **kwargs):
 	return DatabaseQuery(doctype).execute(*args, **kwargs)
 
+
 def get_form_params():
 	"""Stringify GET request parameters."""
 	data = frappe._dict(frappe.local.form_dict)
 	clean_params(data)
 	validate_args(data)
 	return data
+
 
 def validate_args(data):
 	parse_json(data)
@@ -87,6 +89,7 @@ def validate_args(data):
 	data.strict = None
 
 	return data
+
 
 def validate_fields(data):
 	wildcard = update_wildcard_field_param(data)
@@ -241,6 +244,7 @@ def get_parenttype_and_fieldname(field, data):
 
 	return parenttype, fieldname
 
+
 def compress(data, args=None):
 	"""separate keys and values"""
 	from frappe.desk.query_report import add_total_row
@@ -368,6 +372,7 @@ def export_query():
 
 		# convert to csv
 		import csv
+
 		from frappe.utils.xlsxutils import handle_html
 
 		f = StringIO()
@@ -413,6 +418,7 @@ def append_totals_row(data):
 
 	return data
 
+
 def get_labels(fields, doctype):
 	"""get column labels based on column names"""
 	labels = []
@@ -435,6 +441,7 @@ def get_labels(fields, doctype):
 		labels.append(label)
 
 	return labels
+
 
 def handle_duration_fieldtype_values(doctype, data, fields):
 	for field in fields:
@@ -459,6 +466,7 @@ def handle_duration_fieldtype_values(doctype, data, fields):
 					duration_val = format_duration(val_in_seconds, df.hide_days)
 					data[i][index] = duration_val
 	return data
+
 
 @frappe.whitelist()
 def delete_items():
@@ -490,6 +498,7 @@ def delete_bulk(doctype, items):
 			# rollback if any record failed to delete
 			# if not rollbacked, queries get committed on after_request method in app.py
 			frappe.db.rollback()
+
 
 @frappe.whitelist()
 @frappe.read_only()
@@ -565,10 +574,12 @@ def get_stats(stats, doctype, filters=None):
 
 	return stats
 
+
 @frappe.whitelist()
 def get_filter_dashboard_data(stats, doctype, filters=None):
 	"""get tags info"""
 	import json
+
 	tags = json.loads(stats)
 	filters = json.loads(filters or [])
 	stats = {}
@@ -616,6 +627,7 @@ def get_filter_dashboard_data(stats, doctype, filters=None):
 
 	return stats
 
+
 def scrub_user_tags(tagcount):
 	"""rebuild tag list for tags"""
 	rdict = {}
@@ -636,6 +648,7 @@ def scrub_user_tags(tagcount):
 		rlist.append([tag, rdict[tag]])
 
 	return rlist
+
 
 # used in building query in queries.py
 def get_match_cond(doctype, as_condition=True):

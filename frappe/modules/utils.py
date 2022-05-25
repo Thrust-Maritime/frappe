@@ -182,9 +182,11 @@ def scrub_dt_dn(dt, dn):
 	"""Returns in lowercase and code friendly names of doctype and name for certain types"""
 	return scrub(dt), scrub(dn)
 
+
 def get_module_path(module):
 	"""Returns path of the given module"""
 	return frappe.get_module_path(module)
+
 
 def get_doc_path(module, doctype, name):
 	dt, dn = scrub_dt_dn(doctype, name)
@@ -254,6 +256,7 @@ def get_module_name(doctype, module, prefix="", suffix="", app=None):
 
 def get_module_app(module):
 	return frappe.local.module_app[scrub(module)]
+
 
 def get_app_publisher(module):
 	app = frappe.local.module_app[scrub(module)]

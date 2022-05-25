@@ -32,12 +32,14 @@ def hide_module(module):
 	set_hidden(module, frappe.session.user, 1)
 	clear_desktop_icons_cache()
 
+
 def get_table_with_counts():
 	counts = frappe.cache().get_value("information_schema:counts")
 	if counts:
 		return counts
 	else:
 		return build_table_count_cache()
+
 
 def get_data(module, build=True):
 	"""Get module data for the module view `desk/#Module/[name]`"""
@@ -94,6 +96,7 @@ def get_data(module, build=True):
 						item["count"] = count
 
 	return data
+
 
 def build_config_from_file(module):
 	"""Build module info from `app/config/desktop.py` files."""
@@ -199,6 +202,7 @@ def get_doctype_info(module):
 
 	return doctype_info
 
+
 def combine_common_sections(data):
 	"""Combine sections declared in separate apps."""
 	sections = []
@@ -211,6 +215,7 @@ def combine_common_sections(data):
 			sections_dict[each["label"]]["items"] += each["items"]
 
 	return sections
+
 
 def apply_permissions(data):
 	default_country = frappe.db.get_default("country")
@@ -247,10 +252,12 @@ def apply_permissions(data):
 
 	return new_data
 
+
 def get_disabled_reports():
 	if not hasattr(frappe.local, "disabled_reports"):
 		frappe.local.disabled_reports = set(r.name for r in frappe.get_all("Report", {"disabled": 1}))
 	return frappe.local.disabled_reports
+
 
 def get_config(app, module):
 	"""Load module info from `[app].config.[module]`."""
@@ -283,6 +290,7 @@ def config_exists(app, module):
 	except ImportError:
 		return False
 
+
 def add_setup_section(config, app, module, label, icon):
 	"""Add common sections to `/desk#Module/Setup`"""
 	try:
@@ -291,6 +299,7 @@ def add_setup_section(config, app, module, label, icon):
 			config.append(setup_section)
 	except ImportError:
 		pass
+
 
 def get_setup_section(app, module, label, icon):
 	"""Get the setup section from each module (for global Setup page)."""
@@ -447,6 +456,7 @@ def update_modules_order(module_category, modules):
 
 	set_home_settings(home_settings)
 
+
 @frappe.whitelist()
 def update_links_for_module(module_name, links):
 	links = frappe.parse_json(links)
@@ -459,6 +469,7 @@ def update_links_for_module(module_name, links):
 	set_home_settings(home_settings)
 
 	return get_desktop_settings()
+
 
 @frappe.whitelist()
 def get_options_for_show_hide_cards():

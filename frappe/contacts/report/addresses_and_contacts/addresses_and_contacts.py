@@ -63,6 +63,7 @@ def get_data(filters):
 
 	return get_reference_addresses_and_contact(reference_doctype, reference_name)
 
+
 def get_reference_addresses_and_contact(reference_doctype, reference_name):
 	data = []
 	filters = None
@@ -129,6 +130,7 @@ def get_reference_details(reference_doctype, doctype, reference_list, reference_
 
 	reference_details[reference_list[0]][frappe.scrub(doctype)] = temp_records
 	return reference_details
+
 
 def add_blank_columns_for(doctype):
 	return ["" for field in field_map.get(doctype, [])]

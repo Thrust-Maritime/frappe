@@ -33,6 +33,7 @@ def add_random_children(doc, fieldname, rows, randomize, unique=None):
 		else:
 			doc.append(fieldname, d)
 
+
 def get_random(doctype, filters=None, doc=False):
 	condition = []
 	if filters:

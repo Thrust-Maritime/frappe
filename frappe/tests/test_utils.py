@@ -305,6 +305,7 @@ class TestImage(unittest.TestCase):
 		self.assertEqual(new_image._getexif(), None)
 		self.assertNotEqual(original_image._getexif(), new_image._getexif())
 
+
 class TestPythonExpressions(unittest.TestCase):
 	def test_validation_for_good_python_expression(self):
 		valid_expressions = [

@@ -260,6 +260,7 @@ def setup_redirect(data, redirect_url, custom_redirect_to=None, redirect=True):
 		frappe.local.response["type"] = "redirect"
 		frappe.local.response["location"] = get_url(redirect_url)
 
+
 @frappe.whitelist(allow_guest=True, xss_safe=True)
 def get_express_checkout_details(token):
 	try:
@@ -296,6 +297,7 @@ def get_express_checkout_details(token):
 
 	except Exception:
 		frappe.log_error(frappe.get_traceback())
+
 
 @frappe.whitelist(allow_guest=True, xss_safe=True)
 def confirm_payment(token):
@@ -342,6 +344,7 @@ def confirm_payment(token):
 
 	except Exception:
 		frappe.log_error(frappe.get_traceback())
+
 
 @frappe.whitelist(allow_guest=True, xss_safe=True)
 def create_recurring_profile(token, payerid):
@@ -415,11 +418,13 @@ def create_recurring_profile(token, payerid):
 	except Exception:
 		frappe.log_error(frappe.get_traceback())
 
+
 def update_integration_request_status(token, data, status, error=False, doc=None):
 	if not doc:
 		doc = frappe.get_doc("Integration Request", token)
 
 	doc.update_status(data, status)
+
 
 def get_redirect_uri(doc, token, payerid):
 	data = json.loads(doc.data)
@@ -478,6 +483,7 @@ def ipn_handler():
 		pass
 	except Exception as e:
 		frappe.log(frappe.log_error(title=e))
+
 
 def validate_ipn_request(data):
 	def _throw():

@@ -166,6 +166,7 @@ def get_assignments(doc):
 @frappe.whitelist()
 def bulk_apply(doctype, docnames):
 	import json
+
 	docnames = json.loads(docnames)
 
 	background = len(docnames) > 5

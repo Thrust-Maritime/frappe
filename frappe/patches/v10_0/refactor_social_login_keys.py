@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.utils import cstr
 
+
 def execute():
 	# Update Social Logins in User
 	run_patch()
@@ -58,6 +59,7 @@ def execute():
 		google_login_key.save()
 
 	frappe.delete_doc("DocType", "Social Login Keys")
+
 
 def run_patch():
 	frappe.reload_doc("core", "doctype", "user", force=True)

@@ -377,6 +377,7 @@ def get_desktop_page(page):
 		frappe.log_error(frappe.get_traceback())
 		return {}
 
+
 @frappe.whitelist()
 def get_desk_sidebar_items():
 	"""Get list of sidebar items for desk"""
@@ -416,6 +417,7 @@ def get_desk_sidebar_items():
 			pass
 
 	return pages
+
 
 def get_table_with_counts():
 	counts = frappe.cache().get_value("information_schema:counts")
@@ -603,6 +605,7 @@ def update_onboarding_step(name, field, value):
 	"""
 	frappe.db.set_value("Onboarding Step", name, field, value)
 
+
 @frappe.whitelist()
 def reset_customization(page):
 	"""Reset workspace customizations for a user
@@ -612,6 +615,7 @@ def reset_customization(page):
 	"""
 	page_doc = get_custom_workspace_for_user(page)
 	page_doc.delete()
+
 
 def merge_cards_based_on_label(cards):
 	"""Merge cards with common label."""

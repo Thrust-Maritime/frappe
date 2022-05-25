@@ -38,6 +38,7 @@ ignore_values = {
 
 ignore_doctypes = [""]
 
+
 def import_files(module, dt=None, dn=None, force=False, pre_process=None, reset_permissions=False):
 	if type(module) is list:
 		out = []
@@ -168,6 +169,7 @@ def import_file_by_path(
 				update_modified(new_modified_timestamp, doc)
 
 	return True
+
 
 def is_timestamp_changed(doc):
 	# check if timestamps match

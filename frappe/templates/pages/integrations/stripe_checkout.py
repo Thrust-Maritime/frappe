@@ -62,10 +62,12 @@ def get_api_key(doc, gateway_controller):
 
 	return publishable_key
 
+
 def get_header_image(doc, gateway_controller):
 	header_image = frappe.db.get_value("Stripe Settings", gateway_controller, "header_img")
 
 	return header_image
+
 
 @frappe.whitelist(allow_guest=True)
 def make_payment(stripe_token_id, data, reference_doctype=None, reference_docname=None):

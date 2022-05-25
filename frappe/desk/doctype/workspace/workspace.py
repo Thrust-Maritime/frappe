@@ -132,6 +132,7 @@ def get_link_type(key):
 
 	return "DocType"
 
+
 def get_report_type(report):
 	report_type = frappe.get_value("Report", report, "report_type")
 	return report_type in ["Query Report", "Script Report", "Custom Report"]

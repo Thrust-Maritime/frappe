@@ -4,6 +4,7 @@
 import frappe
 from frappe.model.document import Document
 
+
 class DiscussionReply(Document):
 	def after_insert(self):
 

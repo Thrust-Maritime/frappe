@@ -103,10 +103,12 @@ def throw_permission_error():
 def version():
 	return frappe.__version__
 
+
 @frappe.whitelist(allow_guest=True)
 def logout():
 	frappe.local.login_manager.logout()
 	frappe.db.commit()
+
 
 @frappe.whitelist(allow_guest=True)
 def web_logout():
@@ -188,6 +190,7 @@ def upload_file():
 
 	if not file_url and (frappe.session.user == "Guest" or (user and not user.has_desk_access())):
 		import mimetypes
+
 		filetype = mimetypes.guess_type(filename)[0]
 		if filetype not in ALLOWED_MIMETYPES:
 			frappe.throw(_("You can only upload JPG, PNG, PDF, or Microsoft documents."))
@@ -222,6 +225,7 @@ def get_attr(cmd):
 		method = globals()[cmd]
 	frappe.log("method:" + cmd)
 	return method
+
 
 @frappe.whitelist(allow_guest=True)
 def ping():

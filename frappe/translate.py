@@ -229,6 +229,7 @@ def get_dict_from_hooks(fortype, name):
 
 	return translated_dict
 
+
 def make_dict_from_messages(messages, full_dict=None, load_user_translation=True):
 	"""Returns translated messages as a dict in Language specified in `frappe.local.lang`
 
@@ -252,6 +253,7 @@ def make_dict_from_messages(messages, full_dict=None, load_user_translation=True
 
 	return out
 
+
 def get_lang_js(fortype, name):
 	"""Returns code snippet to be appended at the end of a JS script.
 
@@ -259,6 +261,7 @@ def get_lang_js(fortype, name):
 	:param name: Document name
 	"""
 	return "\n\n$.extend(frappe._messages, %s)" % json.dumps(get_dict(fortype, name))
+
 
 def get_full_dict(lang):
 	"""Load and return the entire translations dictionary for a language from :meth:`frape.cache`
@@ -282,6 +285,7 @@ def get_full_dict(lang):
 		pass
 
 	return frappe.local.lang_full_dict
+
 
 def load_lang(lang, apps=None):
 	"""Combine all translations from `.csv` files in all `apps`.
@@ -641,6 +645,7 @@ def get_server_messages(app):
 
 	return messages
 
+
 def get_messages_from_include_files(app_name=None):
 	"""Returns messages from js files included at time of boot like desk.min.js for desk and web"""
 	messages = []
@@ -670,6 +675,7 @@ def get_all_messages_from_js_files(app_name=None):
 						messages.extend(get_messages_from_file(os.path.join(basepath, fname)))
 
 	return messages
+
 
 def get_messages_from_file(path: str) -> List[Tuple[str, str, str, str]]:
 	"""Returns a list of transatable strings from a code file
@@ -850,6 +856,7 @@ def get_untranslated(lang, untranslated_file, get_all=False):
 		else:
 			print("all translated!")
 
+
 def update_translations(lang, untranslated_file, translated_file):
 	"""Update translations from a source and target file for a given language.
 
@@ -883,6 +890,7 @@ def update_translations(lang, untranslated_file, translated_file):
 	for app in frappe.get_all_apps(True):
 		write_translations_file(app, lang, full_dict)
 
+
 def import_translations(lang, path):
 	"""Import translations from file in standard format"""
 	clear_cache()
@@ -898,6 +906,7 @@ def rebuild_all_translation_files():
 	for lang in get_all_languages():
 		for app in frappe.get_all_apps():
 			write_translations_file(app, lang)
+
 
 def write_translations_file(app, lang, full_dict=None, app_messages=None):
 	"""Write a translation file for a given language.
@@ -924,6 +933,7 @@ def send_translations(translation_dict):
 		frappe.local.response["__messages"] = {}
 
 	frappe.local.response["__messages"].update(translation_dict)
+
 
 def deduplicate_messages(messages):
 	ret = []
@@ -981,6 +991,7 @@ def update_translations_for_source(source=None, translation_dict=None):
 		doc.save()
 
 	return translation_records
+
 
 @frappe.whitelist()
 def get_translations(source_text):
@@ -1063,6 +1074,7 @@ def get_all_languages(with_language_name=False):
 @frappe.whitelist(allow_guest=True)
 def set_preferred_language_cookie(preferred_language):
 	frappe.local.cookie_manager.set_cookie("preferred_language", preferred_language)
+
 
 def get_preferred_language_cookie():
 	return frappe.request.cookies.get("preferred_language")

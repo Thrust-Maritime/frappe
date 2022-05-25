@@ -98,6 +98,7 @@ def get_communication_doctype(doctype, txt, searchfield, start, page_len, filter
 			out.append([dt])
 	return out
 
+
 def get_cached_contacts(txt):
 	contacts = frappe.cache().hget("contacts", frappe.session.user) or []
 

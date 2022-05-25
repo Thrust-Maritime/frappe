@@ -75,6 +75,7 @@ class CustomField(Document):
 
 		if not self.flags.ignore_validate:
 			from frappe.core.doctype.doctype.doctype import check_fieldname_conflicts
+
 			check_fieldname_conflicts(self.dt, self.fieldname)
 
 	def on_update(self):
@@ -121,6 +122,7 @@ class CustomField(Document):
 
 		if self.fieldname == self.insert_after:
 			frappe.throw(_("Insert After cannot be set as {0}").format(meta.get_label(self.insert_after)))
+
 
 @frappe.whitelist()
 def get_fields_label(doctype=None):

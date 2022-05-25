@@ -99,6 +99,7 @@ def has_permission(doc, ptype, user):
 
 	return False
 
+
 @frappe.whitelist()
 def get_result(doc, filters, to_date=None):
 	doc = frappe.parse_json(doc)
@@ -182,6 +183,7 @@ def create_number_card(args):
 	doc.insert(ignore_permissions=True)
 	return doc
 
+
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_cards_for_user(doctype, txt, searchfield, start, page_len, filters):
@@ -213,6 +215,7 @@ def create_report_number_card(args):
 	args.name = card.name
 	if args.dashboard:
 		add_card_to_dashboard(frappe.as_json(args))
+
 
 @frappe.whitelist()
 def add_card_to_dashboard(args):

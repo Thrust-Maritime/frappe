@@ -146,6 +146,7 @@ def normalize_result(result, columns):
 
 	return data
 
+
 @frappe.whitelist()
 def background_enqueue_run(report_name, filters=None, user=None):
 	"""run reports in background"""

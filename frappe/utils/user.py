@@ -184,6 +184,7 @@ class UserPermissions:
 
 	def get_defaults(self):
 		import frappe.defaults
+
 		self.defaults = frappe.defaults.get_defaults(self.name)
 		return self.defaults
 

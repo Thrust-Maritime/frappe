@@ -84,6 +84,7 @@ def get_connection_class(python_module):
 
 	return _class
 
+
 connection_boilerplate = """from __future__ import unicode_literals
 from frappe.data_migration.doctype.data_migration_connector.connectors.base import BaseConnection
 

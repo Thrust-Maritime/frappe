@@ -170,6 +170,7 @@ def update_password(user, pwd, doctype="User", fieldname="password", logout_all_
 	# clear all the sessions except current
 	if logout_all_sessions:
 		from frappe.sessions import clear_sessions
+
 		clear_sessions(user=user, keep_current=True, force=True)
 
 

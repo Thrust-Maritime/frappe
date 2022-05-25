@@ -45,6 +45,7 @@ def get_oauth2_providers():
 
 	return out
 
+
 def get_oauth_keys(provider):
 	"""get client_id and client_secret from database or conf"""
 
@@ -85,6 +86,7 @@ def get_oauth2_authorize_url(provider, redirect_to):
 
 	return flow.get_authorize_url(**data)
 
+
 def get_oauth2_flow(provider):
 	from rauth import OAuth2Service
 
@@ -98,6 +100,7 @@ def get_oauth2_flow(provider):
 
 	# and we have setup the communication lines
 	return OAuth2Service(**params)
+
 
 def get_redirect_uri(provider):
 	keys = frappe.conf.get("{provider}_login".format(provider=provider))
@@ -114,13 +117,16 @@ def get_redirect_uri(provider):
 		# this uses the site's url + the relative redirect uri
 		return frappe.utils.get_url(redirect_uri)
 
+
 def login_via_oauth2(provider, code, state, decoder=None):
 	info = get_info_via_oauth(provider, code, decoder)
 	login_oauth_user(info, provider=provider, state=state)
 
+
 def login_via_oauth2_id_token(provider, code, state, decoder=None):
 	info = get_info_via_oauth(provider, code, decoder, id_token=True)
 	login_oauth_user(info, provider=provider, state=state)
+
 
 def get_info_via_oauth(provider, code, decoder=None, id_token=False):
 	flow = get_oauth2_flow(provider)

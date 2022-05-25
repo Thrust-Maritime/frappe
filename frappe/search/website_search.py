@@ -124,9 +124,11 @@ def update_index_for_path(path):
 	ws = WebsiteSearch(INDEX_NAME)
 	return ws.update_index_by_name(path)
 
+
 def remove_document_from_index(path):
 	ws = WebsiteSearch(INDEX_NAME)
 	return ws.remove_document_from_index(path)
+
 
 def build_index_for_all_routes():
 	ws = WebsiteSearch(INDEX_NAME)

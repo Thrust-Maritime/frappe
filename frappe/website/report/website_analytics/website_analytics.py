@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+
 from datetime import datetime
 
 import frappe
@@ -12,6 +13,7 @@ from frappe.utils.dateutils import get_dates_from_timegrain
 
 def execute(filters=None):
 	return WebsiteAnalytics(filters).run()
+
 
 class WebsiteAnalytics(object):
 	def __init__(self, filters=None):

@@ -99,12 +99,14 @@ def get_file_doc(dt=None, dn=None, folder=None, is_private=None, df=None):
 
 	return file_doc
 
+
 def save_uploaded(dt, dn, folder, is_private, df=None):
 	fname, content = get_uploaded_content()
 	if content:
 		return save_file(fname, content, dt, dn, folder, is_private=is_private, df=df)
 	else:
 		raise Exception
+
 
 def save_url(file_url, filename, dt, dn, folder, is_private, df=None):
 	# if not (file_url.startswith("http://") or file_url.startswith("https://")):
@@ -427,6 +429,7 @@ def download_file(file_url):
 	frappe.local.response.filecontent = filedata
 	frappe.local.response.type = "download"
 
+
 def extract_images_from_doc(doc, fieldname):
 	content = doc.get(fieldname)
 	content = extract_images_from_html(doc, content)
@@ -470,6 +473,7 @@ def extract_images_from_html(doc, content):
 		content = re.sub(r'<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, content)
 
 	return content
+
 
 def get_random_filename(extn=None, content_type=None):
 	if extn:

@@ -231,6 +231,7 @@ def map_fields(source_doc, target_doc, table_map, source_parent):
 		if target_doc.get(df.fieldname):
 			map_fetch_fields(target_doc, df, no_copy_fields)
 
+
 def map_fetch_fields(target_doc, df, no_copy_fields):
 	linked_doc = None
 
@@ -254,6 +255,7 @@ def map_fetch_fields(target_doc, df, no_copy_fields):
 
 			if val not in (None, ""):
 				target_doc.set(fetch_df.fieldname, val)
+
 
 def map_child_doc(source_d, target_parent, table_map, source_parent=None):
 	target_child_doctype = table_map["doctype"]

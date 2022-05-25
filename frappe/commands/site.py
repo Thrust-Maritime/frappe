@@ -208,6 +208,7 @@ def restore(
 @pass_context
 def partial_restore(context, sql_file_path, verbose):
 	from frappe.installer import partial_restore
+
 	verbose = context.verbose or verbose
 
 	site = get_site(context)
@@ -277,6 +278,7 @@ def _reinstall(
 def install_app(context, apps):
 	"Install a new app to site, supports multiple apps"
 	from frappe.installer import install_app as _install_app
+
 	exit_code = 0
 
 	if not context.sites:
@@ -416,6 +418,7 @@ def migrate(context, skip_failing=False, skip_search_index=False):
 def migrate_to(context, frappe_provider):
 	"Migrates site to the specified provider"
 	from frappe.integrations.frappe_providers import migrate_to
+
 	for site in context.sites:
 		frappe.init(site=site)
 		frappe.connect()
@@ -432,6 +435,7 @@ def migrate_to(context, frappe_provider):
 def run_patch(context, module, force):
 	"Run a particular patch"
 	import frappe.modules.patch_handler
+
 	for site in context.sites:
 		frappe.init(site=site)
 		try:
@@ -604,6 +608,7 @@ def backup(
 def remove_from_installed_apps(context, app):
 	"Remove app from site's installed-apps list"
 	from frappe.installer import remove_from_installed_apps
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -634,6 +639,7 @@ def remove_from_installed_apps(context, app):
 def uninstall(context, app, dry_run, yes, no_backup, force):
 	"Remove app and linked modules from site"
 	from frappe.installer import remove_app
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -750,6 +756,7 @@ def move(dest_dir, site):
 def set_admin_password(context, admin_password, logout_all_sessions=False):
 	"Set Administrator password for a site"
 	import getpass
+
 	from frappe.utils.password import update_password
 
 	for site in context.sites:
@@ -807,6 +814,7 @@ def set_last_active_for_user(context, user=None):
 def publish_realtime(context, event, message, room, user, doctype, docname, after_commit):
 	"Publish realtime event from bench"
 	from frappe import publish_realtime
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -915,6 +923,7 @@ def build_search_index(context):
 		build_index_for_all_routes()
 	finally:
 		frappe.destroy()
+
 
 commands = [
 	add_system_manager,

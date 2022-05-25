@@ -242,6 +242,7 @@ def toggle_visible_pdf(soup):
 		# remove tag from html
 		tag.extract()
 
+
 def get_wkhtmltopdf_version():
 	wkhtmltopdf_version = frappe.cache().hget("wkhtmltopdf_version", None)
 

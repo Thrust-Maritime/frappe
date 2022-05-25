@@ -242,6 +242,7 @@ def search_widget(
 			else:
 				frappe.response["values"] = [r[:-1] for r in values]
 
+
 def get_std_fields_list(meta, key):
 	# get additional search fields
 	sflist = ["name"]
@@ -257,6 +258,7 @@ def get_std_fields_list(meta, key):
 		sflist.append(key)
 
 	return sflist
+
 
 def build_for_autosuggest(res):
 	results = []

@@ -101,6 +101,7 @@ def sync_dashboards(app=None):
 			make_records_in_module(app_name, module_name)
 			frappe.flags.in_import = False
 
+
 def make_records_in_module(app, module):
 	dashboards_path = frappe.get_module_path(module, "{module}_dashboard".format(module=module))
 	charts_path = frappe.get_module_path(module, "dashboard chart")
@@ -109,6 +110,7 @@ def make_records_in_module(app, module):
 	paths = [dashboards_path, charts_path, cards_path]
 	for path in paths:
 		make_records(path)
+
 
 def make_records(path, filters=None):
 	if os.path.isdir(path):

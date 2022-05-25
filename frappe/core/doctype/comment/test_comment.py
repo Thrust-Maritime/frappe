@@ -34,6 +34,7 @@ class TestComment(unittest.TestCase):
 	# test via blog
 	def test_public_comment(self):
 		from frappe.website.doctype.blog_post.test_blog_post import make_test_blog
+
 		test_blog = make_test_blog()
 
 		frappe.db.sql("delete from `tabComment` where reference_doctype = 'Blog Post'")

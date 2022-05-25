@@ -315,6 +315,7 @@ def validate_column_length(fieldname):
 	if len(fieldname) > frappe.db.MAX_COLUMN_LENGTH:
 		frappe.throw(_("Fieldname is limited to 64 characters ({0})").format(fieldname))
 
+
 def get_definition(fieldtype, precision=None, length=None):
 	d = frappe.db.type_map.get(fieldtype)
 
@@ -341,6 +342,7 @@ def get_definition(fieldtype, precision=None, length=None):
 		coltype = "{coltype}({size})".format(coltype=coltype, size=size)
 
 	return coltype
+
 
 def add_column(doctype, column_name, fieldtype, precision=None):
 	if column_name in frappe.db.get_table_columns(doctype):

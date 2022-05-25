@@ -16,6 +16,7 @@ class db_type_is(Enum):
 	MARIADB = "mariadb"
 	POSTGRES = "postgres"
 
+
 class ImportMapper:
 	def __init__(self, func_map: Dict[db_type_is, Callable]) -> None:
 		self.func_map = func_map
@@ -23,6 +24,7 @@ class ImportMapper:
 	def __call__(self, *args: Any, **kwds: Any) -> Callable:
 		db = db_type_is(frappe.conf.db_type or "mariadb")
 		return self.func_map[db](*args, **kwds)
+
 
 class BuilderIdentificationFailed(Exception):
 	def __init__(self):

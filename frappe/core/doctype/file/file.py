@@ -584,6 +584,7 @@ def create_new_folder(file_name, folder):
 	file.insert(ignore_if_duplicate=True)
 	return file
 
+
 @frappe.whitelist()
 def move_file(file_list, new_parent, old_parent):
 
@@ -596,6 +597,7 @@ def move_file(file_list, new_parent, old_parent):
 	# recalculate sizes
 	frappe.get_doc("File", old_parent).save()
 	frappe.get_doc("File", new_parent).save()
+
 
 def setup_folder_path(filename, new_parent):
 	file = frappe.get_doc("File", filename)
@@ -769,6 +771,7 @@ def remove_file_by_url(file_url, doctype=None, name=None):
 
 	if fid:
 		from frappe.utils.file_manager import remove_file
+
 		return remove_file(fid=fid)
 
 
@@ -806,6 +809,7 @@ def download_file(file_url):
 	frappe.local.response.filename = os.path.basename(file_url)
 	frappe.local.response.filecontent = file_doc.get_content()
 	frappe.local.response.type = "download"
+
 
 def extract_images_from_doc(doc, fieldname):
 	content = doc.get(fieldname)

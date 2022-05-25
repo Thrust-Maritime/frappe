@@ -3,9 +3,11 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+
 import frappe
 from frappe.core.doctype.report.report import is_prepared_report_disabled
 from frappe.model.document import Document
+
 
 class RolePermissionforPageandReport(Document):
 	@frappe.whitelist()

@@ -12,6 +12,7 @@ from frappe.exceptions import SiteNotSpecifiedError
 def build_message_files(context):
 	"Build message files for translation"
 	import frappe.translate
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -56,6 +57,7 @@ def new_language(context, lang_code, app):
 def get_untranslated(context, lang, untranslated_file, all=None):
 	"Get untranslated strings for language"
 	import frappe.translate
+
 	site = get_site(context)
 	try:
 		frappe.init(site=site)
@@ -73,6 +75,7 @@ def get_untranslated(context, lang, untranslated_file, all=None):
 def update_translations(context, lang, untranslated_file, translated_file):
 	"Update translated strings"
 	import frappe.translate
+
 	site = get_site(context)
 	try:
 		frappe.init(site=site)
@@ -89,6 +92,7 @@ def update_translations(context, lang, untranslated_file, translated_file):
 def import_translations(context, lang, path):
 	"Update translated strings"
 	import frappe.translate
+
 	site = get_site(context)
 	try:
 		frappe.init(site=site)
@@ -96,6 +100,7 @@ def import_translations(context, lang, path):
 		frappe.translate.import_translations(lang, path)
 	finally:
 		frappe.destroy()
+
 
 commands = [
 	build_message_files,

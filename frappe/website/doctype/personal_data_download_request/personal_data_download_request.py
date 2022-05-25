@@ -11,6 +11,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils.verified_command import get_signed_params
 
+
 class PersonalDataDownloadRequest(Document):
 	def after_insert(self):
 		personal_data = get_user_data(self.user)

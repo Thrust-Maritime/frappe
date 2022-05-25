@@ -38,6 +38,7 @@ def get_doctypes_with_global_search(with_child_tables=True):
 	:param with_child_tables:
 	:return:
 	"""
+
 	def _get():
 		global_search_doctypes = []
 		filters = {}
@@ -505,6 +506,7 @@ def search(text, start=0, limit=20, doctype=""):
 				sorted_results.extend([r])
 
 	return sorted_results
+
 
 @frappe.whitelist(allow_guest=True)
 def web_search(text, scope=None, start=0, limit=20):

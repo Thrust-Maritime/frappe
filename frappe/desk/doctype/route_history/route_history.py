@@ -14,6 +14,7 @@ from frappe.model.document import Document
 class RouteHistory(Document):
 	pass
 
+
 def flush_old_route_records():
 	"""Deletes all route records except last 500 records per user"""
 

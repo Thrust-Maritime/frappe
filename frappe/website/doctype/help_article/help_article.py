@@ -110,6 +110,7 @@ def clear_website_cache(path=None):
 	frappe.cache().delete_value("knowledge_base:category_sidebar")
 	frappe.cache().delete_value("knowledge_base:faq")
 
+
 @frappe.whitelist(allow_guest=True)
 def add_feedback(article, helpful):
 	field = "helpful"

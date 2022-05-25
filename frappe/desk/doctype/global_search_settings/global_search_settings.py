@@ -46,6 +46,7 @@ def get_doctypes_for_global_search():
 def reset_global_search_settings_doctypes():
 	update_global_search_doctypes()
 
+
 def update_global_search_doctypes():
 	global_search_doctypes = []
 	show_message(1, _("Fetching default Global Search documents."))

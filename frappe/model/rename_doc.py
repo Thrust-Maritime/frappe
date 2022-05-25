@@ -300,6 +300,7 @@ def validate_rename(doctype, new, meta, merge, force, ignore_permissions):
 
 	return new
 
+
 def rename_doctype(doctype, old, new, force=False):
 	# change options for fieldtype Table, Table MultiSelect and Link
 	fields_with_options = ("Link",) + frappe.model.table_fields
@@ -414,6 +415,7 @@ def get_link_fields(doctype):
 		frappe.flags.link_fields[doctype] = link_fields
 
 	return frappe.flags.link_fields[doctype]
+
 
 def update_options_for_fieldtype(fieldtype, old, new):
 	if frappe.conf.developer_mode:
@@ -572,6 +574,7 @@ def update_parenttype_values(old, new):
 
 	for doctype in child_doctypes:
 		frappe.db.sql(f"update `tab{doctype}` set parenttype=%s where parenttype=%s", (new, old))
+
 
 def rename_dynamic_links(doctype, old, new):
 	for df in get_dynamic_link_map().get(doctype, []):

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+
 class TestGeoIP(unittest.TestCase):
 	def test_geo_ip(self):
 		return

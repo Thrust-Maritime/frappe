@@ -394,6 +394,7 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 			});
 			return obj;
 		};
+
 		if(this.get_query || this.df.get_query) {
 			var get_query = this.get_query || this.df.get_query;
 			if($.isPlainObject(get_query)) {

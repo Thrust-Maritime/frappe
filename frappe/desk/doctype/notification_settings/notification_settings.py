@@ -28,6 +28,7 @@ def is_email_notifications_enabled(user):
 		return True
 	return enabled
 
+
 def is_email_notifications_enabled_for_type(user, notification_type):
 	if not is_email_notifications_enabled(user):
 		return False

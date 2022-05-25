@@ -251,6 +251,7 @@ class TestEmailAccount(unittest.TestCase):
 		self.assertEqual(comm_list[0].reference_doctype, event.doctype)
 		self.assertEqual(comm_list[0].reference_name, event.name)
 
+
 def cleanup(sender=None):
 	filters = {}
 	if sender:

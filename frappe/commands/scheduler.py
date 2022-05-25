@@ -56,6 +56,7 @@ def trigger_scheduler_event(context, event):
 def enable_scheduler(context):
 	"Enable scheduler"
 	import frappe.utils.scheduler
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -74,6 +75,7 @@ def enable_scheduler(context):
 def disable_scheduler(context):
 	"Disable scheduler"
 	import frappe.utils.scheduler
+
 	for site in context.sites:
 		try:
 			frappe.init(site=site)
@@ -146,6 +148,7 @@ def set_maintenance_mode(context, state, site=None):
 def doctor(context, site=None):
 	"Get diagnostic info about background workers"
 	from frappe.utils.doctor import doctor as _doctor
+
 	if not site:
 		site = get_site(context, raise_err=False)
 	return _doctor(site=site)
@@ -157,6 +160,7 @@ def doctor(context, site=None):
 def show_pending_jobs(context, site=None):
 	"Get diagnostic info about background jobs"
 	from frappe.utils.doctor import pending_jobs as _pending_jobs
+
 	if not site:
 		site = get_site(context)
 
@@ -222,6 +226,7 @@ def ready_for_migration(context, site=None):
 
 	finally:
 		frappe.destroy()
+
 
 commands = [
 	disable_scheduler,

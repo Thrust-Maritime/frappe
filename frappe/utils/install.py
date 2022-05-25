@@ -16,6 +16,7 @@ def before_install():
 	frappe.reload_doc("core", "doctype", "doctype_link")
 	frappe.reload_doc("core", "doctype", "doctype")
 
+
 def after_install():
 	# reset installed apps for re-install
 	frappe.db.set_global("installed_apps", '["frappe"]')
@@ -24,11 +25,13 @@ def after_install():
 	install_basic_docs()
 
 	from frappe.core.doctype.file.file import make_home_folder
+
 	make_home_folder()
 
 	import_country_and_currency()
 
 	from frappe.core.doctype.language.language import sync_languages
+
 	sync_languages()
 
 	# save default print setting
@@ -139,6 +142,7 @@ def install_basic_docs():
 			frappe.get_doc(d).insert()
 		except frappe.NameError:
 			pass
+
 
 def get_admin_password():
 	def ask_admin_password():

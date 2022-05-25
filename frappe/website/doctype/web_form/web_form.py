@@ -516,6 +516,7 @@ def accept(web_form, data, docname=None, for_payment=False):
 	else:
 		return doc
 
+
 @frappe.whitelist()
 def delete(web_form_name, docname):
 	web_form = frappe.get_doc("Web Form", web_form_name)
@@ -557,6 +558,7 @@ def check_webform_perm(doctype, name):
 	if hasattr(doc, "has_webform_permission"):
 		if doc.has_webform_permission():
 			return True
+
 
 @frappe.whitelist(allow_guest=True)
 def get_web_form_filters(web_form_name):
@@ -609,6 +611,7 @@ def get_form_data(doctype, docname=None, web_form_name=None):
 
 	return out
 
+
 @frappe.whitelist()
 def get_in_list_view_fields(doctype):
 	meta = frappe.get_meta(doctype)
@@ -630,6 +633,7 @@ def get_in_list_view_fields(doctype):
 		return meta.get_field(fieldname).as_dict()
 
 	return [get_field_df(f) for f in fields]
+
 
 @frappe.whitelist(allow_guest=True)
 def get_link_options(web_form_name, doctype, allow_read_on_all_link_options=False):

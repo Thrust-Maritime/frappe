@@ -168,6 +168,7 @@ def google_callback(code=None):
 
 	authorize_access(google_calendar)
 
+
 @frappe.whitelist()
 def sync(g_calendar=None):
 	filters = {"enable": 1}
@@ -576,6 +577,7 @@ def google_calendar_to_repeat_on(start, end, recurrence=None):
 
 	return repeat_on
 
+
 def format_date_according_to_google_calendar(all_day, starts_on, ends_on=None):
 	if not ends_on:
 		ends_on = starts_on + timedelta(minutes=10)
@@ -679,6 +681,7 @@ def get_recurrence_parameters(recurrence):
 			pass
 
 	return frequency, until, byday
+
 
 """API Response
 	{

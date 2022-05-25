@@ -52,12 +52,14 @@ def get_context(context):
 		frappe.local.flags.redirect_location = frappe.local.response.location
 		raise frappe.Redirect
 
+
 def get_api_key():
 	api_key = frappe.db.get_value("Razorpay Settings", None, "api_key")
 	if cint(frappe.form_dict.get("use_sandbox")):
 		api_key = frappe.conf.sandbox_api_key
 
 	return api_key
+
 
 @frappe.whitelist(allow_guest=True)
 def make_payment(razorpay_payment_id, options, reference_doctype, reference_docname, token):

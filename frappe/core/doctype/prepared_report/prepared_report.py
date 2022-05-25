@@ -14,6 +14,7 @@ from frappe.model.document import Document
 from frappe.utils import gzip_compress, gzip_decompress
 from frappe.utils.background_jobs import enqueue
 
+
 class PreparedReport(Document):
 	def before_insert(self):
 		self.status = "Queued"
@@ -140,6 +141,7 @@ def get_permission_query_condition(user):
 		return None
 
 	from frappe.utils.user import UserPermissions
+
 	user = UserPermissions(user)
 
 	if "System Manager" in user.roles:
@@ -159,6 +161,7 @@ def has_permission(doc, user):
 		return True
 
 	from frappe.utils.user import UserPermissions
+
 	user = UserPermissions(user)
 
 	if "System Manager" in user.roles:

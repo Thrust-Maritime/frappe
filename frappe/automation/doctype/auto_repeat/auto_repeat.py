@@ -496,6 +496,7 @@ def make_auto_repeat(doctype, docname, frequency="Daily", start_date=None, end_d
 	doc.save()
 	return doc
 
+
 # method for reference_doctype filter
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
@@ -522,6 +523,7 @@ def get_auto_repeat_doctypes(doctype, txt, searchfield, start, page_len, filters
 
 	return [[d] for d in docs]
 
+
 @frappe.whitelist()
 def update_reference(docname, reference):
 	result = ""
@@ -532,6 +534,7 @@ def update_reference(docname, reference):
 		result = "error"
 		raise e
 	return result
+
 
 @frappe.whitelist()
 def generate_message_preview(reference_dt, reference_doc, message=None, subject=None):

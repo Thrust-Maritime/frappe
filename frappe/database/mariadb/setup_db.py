@@ -66,6 +66,7 @@ def setup_database(force, source_sql, verbose, no_mariadb_socket=False):
 
 	bootstrap_database(db_name, verbose, source_sql)
 
+
 def setup_help_database(help_db_name):
 	dbman = DbManager(get_root_connection(frappe.flags.root_login, frappe.flags.root_password))
 	dbman.drop_database(help_db_name)
@@ -82,12 +83,14 @@ def setup_help_database(help_db_name):
 		dbman.grant_all_privileges(help_db_name, help_db_name)
 		dbman.flush_privileges()
 
+
 def drop_user_and_database(db_name, root_login, root_password):
 	frappe.local.db = get_root_connection(root_login, root_password)
 	dbman = DbManager(frappe.local.db)
 	dbman.delete_user(db_name, host="%")
 	dbman.delete_user(db_name)
 	dbman.drop_database(db_name)
+
 
 def bootstrap_database(db_name, verbose, source_sql=None):
 	import sys

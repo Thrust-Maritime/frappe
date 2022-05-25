@@ -2,6 +2,7 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
+
 """
 Boot session from cache or build
 
@@ -132,6 +133,7 @@ def clear_expired_sessions():
 	for sid in get_expired_sessions():
 		delete_session(sid, reason="Session Expired")
 
+
 def get():
 	"""get session boot info"""
 	from frappe.boot import get_bootinfo, get_unseen_notes
@@ -187,6 +189,7 @@ def get_csrf_token():
 		generate_csrf_token()
 
 	return frappe.local.session.data.csrf_token
+
 
 def generate_csrf_token():
 	frappe.local.session.data.csrf_token = frappe.generate_hash()
@@ -293,6 +296,7 @@ class Session:
 	def get_session_record(self):
 		"""get session record, or return the standard Guest Record"""
 		from frappe.auth import clear_cookies
+
 		r = self.get_session_data()
 
 		if not r:
@@ -407,6 +411,7 @@ def get_expiry_period_for_query(device=None):
 	else:
 		return get_expiry_in_seconds(device=device)
 
+
 def get_expiry_in_seconds(expiry=None, device=None):
 	if not expiry:
 		expiry = get_expiry_period(device)
@@ -446,6 +451,7 @@ def get_geo_from_ip(ip_addr):
 		return
 	except TypeError:
 		return
+
 
 def get_geo_ip_country(ip_addr):
 	match = get_geo_from_ip(ip_addr)

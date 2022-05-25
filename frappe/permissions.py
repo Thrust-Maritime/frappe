@@ -399,6 +399,7 @@ def get_all_perms(role):
 			custom_perms.append(p)
 	return custom_perms
 
+
 def get_roles(user=None, with_standard=True):
 	"""get roles of current user"""
 	if not user:
@@ -526,6 +527,7 @@ def can_import(doctype, raise_exception=False):
 		else:
 			return False
 	return True
+
 
 def can_export(doctype, raise_exception=False):
 	if "System Manager" in frappe.get_roles():

@@ -416,6 +416,7 @@ def get_api_key():
 	controller = frappe.get_doc("Razorpay Settings")
 	return controller.api_key
 
+
 @frappe.whitelist(allow_guest=True)
 def get_order(doctype, docname):
 	# Order returned to be consumed by razorpay.js
@@ -426,6 +427,7 @@ def get_order(doctype, docname):
 	except AttributeError:
 		frappe.log_error(frappe.get_traceback(), _("Controller method get_razorpay_order missing"))
 		frappe.throw(_("Could not create Razorpay order. Please contact Administrator"))
+
 
 @frappe.whitelist(allow_guest=True)
 def order_payment_success(integration_request, params):
@@ -453,6 +455,7 @@ def order_payment_success(integration_request, params):
 
 	# Authorize payment
 	controller.authorize_payment()
+
 
 @frappe.whitelist(allow_guest=True)
 def order_payment_failure(integration_request, params):
@@ -507,6 +510,7 @@ def razorpay_subscription_callback():
 	except Exception as e:
 		frappe.log(frappe.log_error(title=e))
 
+
 def validate_payment_callback(data):
 	def _throw():
 		frappe.throw(_("Invalid Subscription"), exc=frappe.InvalidStatusError)
@@ -527,6 +531,7 @@ def validate_payment_callback(data):
 
 	if resp.get("status") != "active":
 		_throw()
+
 
 def handle_subscription_notification(doctype, docname):
 	call_hook_method("handle_subscription_notification", doctype=doctype, docname=docname)

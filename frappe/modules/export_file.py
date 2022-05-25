@@ -77,6 +77,7 @@ def get_module_name(doc):
 
 	return module
 
+
 def create_folder(module, dt, dn, create_init):
 	module_path = get_module_path(module)
 

@@ -248,11 +248,13 @@ def upload(
 
 			if (autoname not in doc) or (not doc[autoname]):
 				from frappe.model.base_document import get_controller
+
 				if not hasattr(get_controller(doctype), "autoname"):
 					frappe.throw(_("{0} is a mandatory field").format(autoname))
 		return True
 
 	users = frappe.db.sql_list("select name from tabUser")
+
 	def prepare_for_insert(doc):
 		# don't block data import if user is not set
 		# migrating from another system
@@ -602,6 +604,7 @@ def upload(
 	else:
 		return log_message
 
+
 def get_parent_field(doctype, parenttype):
 	parentfield = None
 
@@ -617,6 +620,7 @@ def get_parent_field(doctype, parenttype):
 			raise Exception
 
 	return parentfield
+
 
 def delete_child_rows(rows, doctype):
 	"""delete child rows for all parents"""

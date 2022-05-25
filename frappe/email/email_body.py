@@ -101,6 +101,7 @@ def get_email(
 
 	return emailobj
 
+
 class EMail:
 	"""
 	Wrapper on the email module. Email object represents emails to be sent to the client.
@@ -449,6 +450,7 @@ def add_attachment(fname, fcontent, content_type=None, parent=None, content_id=N
 		part.set_payload(fcontent)
 		# Encode the payload using Base64
 		from email import encoders
+
 		encoders.encode_base64(part)
 
 	# Set the filename parameter
@@ -474,6 +476,7 @@ def get_signature(email_account):
 		return "<br>" + email_account.signature
 	else:
 		return ""
+
 
 def get_footer(email_account, footer=None):
 	"""append a footer (signature)"""

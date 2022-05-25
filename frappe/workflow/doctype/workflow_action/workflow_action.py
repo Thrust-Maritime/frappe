@@ -101,6 +101,7 @@ def apply_action(action, doctype, docname, current_state, user=None, last_modifi
 	else:
 		return_link_expired_page(doc, doc_workflow_state)
 
+
 @frappe.whitelist(allow_guest=True)
 def confirm_action(doctype, docname, user, action):
 	if not verify_request():
@@ -201,6 +202,7 @@ def get_next_possible_transitions(workflow_name, state, doc=None):
 		transitions_to_return.append(transition)
 
 	return transitions_to_return
+
 
 def get_users_next_action_data(transitions, doc):
 	user_data_map = {}

@@ -47,6 +47,7 @@ def set_listview_fields(doctype, listview_fields, removed_listview_fields):
 	for field in listview_fields:
 		set_in_list_view_property(doctype, meta.get_field(field), "1")
 
+
 def set_in_list_view_property(doctype, field, value):
 	if not field or field.fieldname == "status_field":
 		return

@@ -14,6 +14,7 @@ from frappe import _
 from frappe.model.meta import is_single
 from frappe.modules import load_doctype_module
 
+
 @frappe.whitelist()
 def get_submitted_linked_docs(doctype, name, docs=None, visited=None):
 	"""
@@ -238,6 +239,7 @@ def get_linked_docs(doctype, name, linkinfo=None, for_doctype=None):
 				results[dt] = ret
 
 	return results
+
 
 @frappe.whitelist()
 def get_linked_doctypes(doctype, without_ignore_user_permissions_enabled=False):

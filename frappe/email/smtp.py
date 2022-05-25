@@ -291,6 +291,7 @@ class SMTPServer:
 
 		except smtplib.SMTPAuthenticationError as e:
 			from frappe.email.doctype.email_account.email_account import EmailAccount
+
 			EmailAccount.throw_invalid_credentials_exception()
 
 		except _socket.error as e:

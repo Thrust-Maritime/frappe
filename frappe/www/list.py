@@ -26,6 +26,7 @@ def get_context(context, **dict_params):
 	context.txt = frappe.local.form_dict.txt
 	context.update(get(**frappe.local.form_dict))
 
+
 @frappe.whitelist(allow_guest=True)
 def get(doctype, txt=None, limit_start=0, limit=20, pathname=None, **kwargs):
 	"""Returns processed HTML page for a standard listing."""
@@ -65,6 +66,7 @@ def get(doctype, txt=None, limit_start=0, limit=20, pathname=None, **kwargs):
 		result.append(rendered_row)
 
 	from frappe.utils.response import json_handler
+
 	return {
 		"raw_result": json.dumps(raw_result, default=json_handler),
 		"result": result,
@@ -156,6 +158,7 @@ def prepare_filters(doctype, controller, kwargs):
 			del filters[fieldname]
 
 	return filters
+
 
 def get_list_context(context, doctype, web_form_name=None):
 	from frappe.modules import load_doctype_module

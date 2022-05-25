@@ -88,6 +88,7 @@ def read_csv_content(fcontent, ignore_encoding=False):
 		frappe.msgprint(_("Not a valid Comma Separated Value (CSV File)"))
 		raise
 
+
 @frappe.whitelist()
 def send_csv_to_client(args):
 	if isinstance(args, string_types):
@@ -99,6 +100,7 @@ def send_csv_to_client(args):
 	frappe.response["doctype"] = args.filename
 	frappe.response["type"] = "csv"
 
+
 def to_csv(data):
 	writer = UnicodeWriter()
 	for row in data:
@@ -106,10 +108,12 @@ def to_csv(data):
 
 	return writer.getvalue()
 
+
 def build_csv_response(data, filename):
 	frappe.response["result"] = cstr(to_csv(data))
 	frappe.response["doctype"] = filename
 	frappe.response["type"] = "csv"
+
 
 class UnicodeWriter:
 	def __init__(self, encoding="utf-8", quoting=csv.QUOTE_NONNUMERIC):
@@ -182,6 +186,7 @@ def import_doc(d, doctype, overwrite, row_idx, submit=False, ignore_links=False)
 
 def getlink(doctype, name):
 	return '<a href="/app/Form/%(doctype)s/%(name)s">%(name)s</a>' % locals()
+
 
 def get_csv_content_from_google_sheets(url):
 	# https://docs.google.com/spreadsheets/d/{sheetid}}/edit#gid={gid}

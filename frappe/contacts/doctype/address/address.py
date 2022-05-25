@@ -165,6 +165,7 @@ def get_territory_from_address(address):
 
 	return territory
 
+
 def get_list_context(context=None):
 	return {
 		"title": _("Addresses"),
@@ -227,6 +228,7 @@ def get_company_address(company):
 	ret.company_address_display = get_address_display(ret.company_address)
 
 	return ret
+
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs

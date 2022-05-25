@@ -245,6 +245,7 @@ def get_column(doctype):
 
 	return column
 
+
 def load_translations(bootinfo):
 	messages = frappe.get_lang_dict("boot")
 
@@ -287,6 +288,7 @@ def get_user_info():
 		user_info_map[admin_data.email] = admin_data
 
 	return user_info_map
+
 
 def get_user(bootinfo):
 	"""get user info"""

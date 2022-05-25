@@ -344,6 +344,7 @@ class LoginManager:
 	def clear_cookies(self):
 		clear_cookies()
 
+
 class CookieManager:
 	def __init__(self):
 		self.cookies = {}
@@ -439,6 +440,7 @@ def validate_ip_address(user):
 			return
 
 	frappe.throw(_("Access not allowed from this IP Address"), frappe.AuthenticationError)
+
 
 def get_login_attempt_tracker(user_name: str, raise_locked_exception: bool = True):
 	"""Get login attempt tracker instance.

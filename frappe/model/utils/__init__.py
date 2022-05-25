@@ -32,6 +32,7 @@ STANDARD_FIELD_CONVERSION_MAP = {
 Model utilities, unclassified functions
 """
 
+
 def set_default(doc, key):
 	"""Set is_default property of given doc and unset all others filtered by given key."""
 	if not doc.is_default:

@@ -82,6 +82,7 @@ def get_notifications_for_doctypes(config, notification_count):
 
 	return open_count_doctype
 
+
 def get_notifications_for_targets(config, notification_percent):
 	"""Notifications for doc targets"""
 	can_read = frappe.get_user().get_can_read()
@@ -173,6 +174,7 @@ def clear_doctype_notifications(doc, method=None, *args, **kwargs):
 	if doctype in config.for_doctype:
 		delete_notification_count_for(doctype)
 		return
+
 
 @frappe.whitelist()
 def get_notification_info():

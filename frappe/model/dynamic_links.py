@@ -2,6 +2,7 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
+
 import frappe
 
 # select doctypes that are accessed by the user (not read_only) first, so that the

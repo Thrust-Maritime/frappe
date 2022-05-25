@@ -32,6 +32,7 @@ def resolve_route(path):
 			return context
 		return get_page_info_from_template(path)
 
+
 def get_page_context(path):
 	page_context = None
 	if can_cache():
@@ -45,6 +46,7 @@ def get_page_context(path):
 			frappe.cache().hset("page_context", path, page_context_cache)
 
 	return page_context
+
 
 def make_page_context(path):
 	context = resolve_route(path)
@@ -83,6 +85,7 @@ def get_page_info_from_template(path):
 					return get_page_info(option, app, start, app_path=app_path)
 
 	return None
+
 
 def get_page_context_from_doctype(path):
 	page_info = get_page_info_from_doctypes(path)
@@ -299,6 +302,7 @@ def get_page_info(path, app, start, basepath=None, app_path=None, fname=None):
 	page_info.build_version = frappe.utils.get_build_version()
 
 	return page_info
+
 
 def get_frontmatter(string):
 	"""
