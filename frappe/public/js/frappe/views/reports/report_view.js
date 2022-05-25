@@ -17,7 +17,6 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 	setup_defaults() {
 		super.setup_defaults();
 		this.page_title = __('Report:') + ' ' + this.page_title;
-		this.menu_items = this.report_menu_items();
 		this.view = 'Report';
 
 		const route = frappe.get_route();
@@ -49,6 +48,11 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 		this.setup_columns();
 		super.setup_new_doc_event();
 		this.page.main.addClass('report-view');
+	}
+
+	setup_page() {
+		this.menu_items = this.report_menu_items();
+		super.setup_page();
 	}
 
 	toggle_side_bar() {
@@ -282,6 +286,8 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 			columns: this.columns,
 			data: this.get_data(values),
 			getEditor: this.get_editing_object.bind(this),
+			language: frappe.boot.lang,
+			translations: frappe.utils.datatable.get_translations(),
 			checkboxColumn: true,
 			inlineFilters: true,
 			cellHeight: 35,
@@ -336,7 +342,7 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 								options: columns_in_picker
 							},
 							{
-								label: __('Insert Column Before {0}', [datatabe_col.docfield.label.bold()]),
+								label: __('Insert Column Before {0}', [__(datatabe_col.docfield.label).bold()]),
 								fieldname: 'insert_before',
 								fieldtype: 'Check'
 							}
@@ -785,17 +791,23 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 			} else {
 				this.fields.splice(col_index, 0, field);
 			}
-			frappe.show_alert(__('Also adding the dependent currency field {0}', [field[0].bold()]));
+			const field_label = frappe.meta.get_label(doctype, field[0]);
+			frappe.show_alert(
+				__('Also adding the dependent currency field {0}', [__(field_label).bold()])
+			);
 		}
 	}
 
 	add_status_dependency_column(col, doctype) {
 		// Adds dependent column from which status is derived if required
-		if (!this.fields.find(f => f[0] === col)) {
+		if (col && !this.fields.find(f => f[0] === col)) {
 			const field = [col, doctype];
 			this.fields.push(field);
 			this.refresh();
-			frappe.show_alert(__('Also adding the status dependency field {0}', [field[0].bold()]));
+			const field_label = frappe.meta.get_label(doctype, field[0]);
+			frappe.show_alert(
+				__('Also adding the status dependency field {0}', [__(field_label).bold()])
+			);
 		}
 	}
 
@@ -1136,12 +1148,10 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 				// get status from docstatus
 				let status = frappe.get_indicator(d, this.doctype);
 				if (status) {
-					if (!status[0]) {
-						// get_indicator returns the dependent field's condition as the 3rd parameter
-						let dependent_col = status[2].split(',')[0];
-						// add status dependency column
-						this.add_status_dependency_column(dependent_col, this.doctype);
-					}
+					// get_indicator returns the dependent field's condition as the 3rd parameter
+					let dependent_col = status[2] && status[2].split(',')[0];
+					// add status dependency column
+					this.add_status_dependency_column(dependent_col, this.doctype);
 					return {
 						name: d.name,
 						doctype: col.docfield.parent,
@@ -1197,7 +1207,7 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 				args: {
 					name: name,
 					doctype: this.doctype,
-					json: JSON.stringify(report_settings)
+					report_settings: JSON.stringify(report_settings)
 				},
 				callback:(r) => {
 					if(r.exc) {
@@ -1232,6 +1242,17 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 				_save_report(data.name);
 			}, __('Save As'));
 		}
+	}
+
+	delete_report() {
+		return frappe.call({
+			method: 'frappe.desk.reportview.delete_report',
+			args: { name: this.report_name },
+			callback(response) {
+				if (response.exc) return;
+				window.history.back();
+			}
+		});
 	}
 
 	get_column_widths() {
@@ -1455,12 +1476,42 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 			}
 		});
 
-		// save buttons
-		if(frappe.user.is_report_manager()) {
-			items = items.concat([
-				{ label: __('Save'), action: () => this.save_report('save') },
-				{ label: __('Save As'), action: () => this.save_report('save_as') }
-			]);
+		const can_edit_or_delete = (action) => {
+			const method = action == "delete" ? "can_delete" : "can_write";
+			return (
+				this.report_doc
+				&& this.report_doc.is_standard !== "Yes"
+				&& (
+					frappe.model[method]("Report")
+					|| this.report_doc.owner === frappe.session.user
+				)
+			);
+		};
+
+		// A user with role Report Manager or Report Owner can save
+		if (can_edit_or_delete()) {
+			items.push({
+				label: __("Save"),
+				action: () => this.save_report('save')
+			});
+		}
+
+		// anyone can save as
+		items.push({
+			label: __('Save As'),
+			action: () => this.save_report('save_as')
+		});
+
+		// A user with role Report Manager or Report Owner can delete
+		if (can_edit_or_delete("delete")) {
+			items.push({
+				label: __("Delete"),
+				action: () => frappe.confirm(
+					"Are you sure you want to delete this report?",
+					() => this.delete_report(),
+				),
+				shortcut: "Shift+Ctrl+D"
+			});
 		}
 
 		// user permissions

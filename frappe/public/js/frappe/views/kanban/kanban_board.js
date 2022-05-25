@@ -150,18 +150,6 @@ frappe.provide("frappe.views");
 				}
 				updater.set({ cards: cards });
 			},
-			update_doc: function(updater, doc, card) {
-				var state = this;
-				return frappe.call({
-					method: method_prefix + "update_doc",
-					args: { doc: doc },
-					freeze: true
-				}).then(function(r) {
-					var updated_doc = r.message;
-					var updated_card = prepare_card(card, state, updated_doc);
-					fluxify.doAction('update_card', updated_card);
-				});
-			},
 			update_order_for_single_card: function(updater, card) {
 				// cache original order
 				const _cards = this.cards.slice();
@@ -337,6 +325,7 @@ frappe.provide("frappe.views");
 
 		function bind_events() {
 			bind_add_column();
+			bind_clickdrag();
 		}
 
 		function setup_sortable() {
@@ -389,6 +378,45 @@ frappe.provide("frappe.views");
 				$(this).val('');
 				$compose_column.show();
 				$compose_column_form.hide();
+			});
+		}
+
+		function bind_clickdrag() {
+			let isDown = false;
+			let startX;
+			let scrollLeft;
+			let draggable = self.$kanban_board[0];
+
+			draggable.addEventListener('mousedown', (e) => {
+				// don't trigger scroll if one of the ancestors of the
+				// clicked element matches any of these selectors
+				let ignoreEl = [
+					'.kanban-column .kanban-column-header',
+					'.kanban-column .add-card',
+					'.kanban-column .kanban-card.new-card-area',
+					'.kanban-card-wrapper',
+				];
+				if (ignoreEl.some((el) => e.target.closest(el))) return;
+
+				isDown = true;
+				draggable.classList.add('clickdrag-active');
+				startX = e.pageX - draggable.offsetLeft;
+				scrollLeft = draggable.scrollLeft;
+			});
+			draggable.addEventListener('mouseleave', () => {
+				isDown = false;
+				draggable.classList.remove('clickdrag-active');
+			});
+			draggable.addEventListener('mouseup', () => {
+				isDown = false;
+				draggable.classList.remove('clickdrag-active');
+			});
+			draggable.addEventListener('mousemove', (e) => {
+				if (!isDown) return;
+				e.preventDefault();
+				const x = e.pageX - draggable.offsetLeft;
+				const walk = (x - startX);
+				draggable.scrollLeft = scrollLeft - walk;
 			});
 		}
 
@@ -603,8 +631,6 @@ frappe.provide("frappe.views");
 			if(!card) return;
 			make_dom();
 			render_card_meta();
-			add_task_link();
-			// edit_card_title();
 		}
 
 		function make_dom() {
@@ -613,10 +639,33 @@ frappe.provide("frappe.views");
 				title: frappe.utils.html2text(card.title),
 				disable_click: card._disable_click ? 'disable-click' : '',
 				creation: card.creation,
+				doc_content: get_doc_content(card),
 				image_url: cur_list.get_image_url(card),
+				form_link: frappe.utils.get_form_link(card.doctype, card.name)
 			};
+
 			self.$card = $(frappe.render_template('kanban_card', opts))
 				.appendTo(wrapper);
+		}
+
+		function get_doc_content(card) {
+			let fields = [];
+			for (let field_name of cur_list.board.fields) {
+				let field = (
+					frappe.meta.get_docfield(card.doctype, field_name, card.name)
+					|| frappe.model.get_std_field(field_name)
+				);
+				let label = cur_list.board.show_labels ? `<span>${__(field.label)}: </span>` : '';
+				let value = frappe.format(card.doc[field_name], field);
+				fields.push(`
+					<div class="text-muted text-truncate">
+						${label}
+						<span>${value}</span>
+					</div>
+				`);
+			}
+
+			return fields.join("");
 		}
 
 		function get_tags_html(card) {
@@ -659,12 +708,6 @@ frappe.provide("frappe.views");
 
 			self.$card.find(".kanban-card-meta").empty().append(html)
 				.find('.kanban-assignments').append($assignees_group);
-		}
-
-		function add_task_link() {
-			let task_link = frappe.utils.get_form_link(card.doctype, card.name);
-			self.$card.find('.kanban-card-redirect')
-				.attr('href', task_link);
 		}
 
 		function get_assignees_group() {
@@ -717,7 +760,7 @@ frappe.provide("frappe.views");
 			assigned_list: card.assigned_list || assigned_list,
 			comment_count: card.comment_count || comment_count,
 			color: card.color || null,
-			doc: doc
+			doc: doc || card
 		};
 	}
 

@@ -2,10 +2,13 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
+
+import json
+
 import frappe
 import frappe.utils
 from frappe.utils.oauth import login_via_oauth2, login_via_oauth2_id_token
-import json
+
 
 @frappe.whitelist(allow_guest=True)
 def login_via_google(code, state):
@@ -31,9 +34,11 @@ def login_via_office365(code, state):
 def login_via_salesforce(code, state):
 	login_via_oauth2("salesforce", code, state, decoder=decoder_compat)
 
+
 @frappe.whitelist(allow_guest=True)
 def login_via_fairlogin(code, state):
-	login_via_oauth2("fairlogin", code, state, decoder=decoder_compat)	
+	login_via_oauth2("fairlogin", code, state, decoder=decoder_compat)
+
 
 @frappe.whitelist(allow_guest=True)
 def custom(code, state):

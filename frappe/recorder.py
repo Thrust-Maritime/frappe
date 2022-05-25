@@ -3,15 +3,16 @@
 # MIT License. See license.txt
 from __future__ import unicode_literals
 
-from collections import Counter
 import datetime
 import inspect
 import json
 import re
 import time
-import frappe
+from collections import Counter
+
 import sqlparse
 
+import frappe
 from frappe import _
 
 RECORDER_INTERCEPT_FLAG = "recorder-intercept"
@@ -100,9 +101,7 @@ class Recorder:
 			"cmd": self.cmd,
 			"time": self.time,
 			"queries": len(self.calls),
-			"time_queries": float(
-				"{:0.3f}".format(sum(call["duration"] for call in self.calls))
-			),
+			"time_queries": float("{:0.3f}".format(sum(call["duration"] for call in self.calls))),
 			"duration": float(
 				"{:0.3f}".format((datetime.datetime.now() - self.time).total_seconds() * 1000)
 			),

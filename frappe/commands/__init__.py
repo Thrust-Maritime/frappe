@@ -1,24 +1,28 @@
 # Copyright (c) 2015, Web Notes Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-from __future__ import unicode_literals, absolute_import, print_function
-import sys
-import click
+from __future__ import absolute_import, print_function, unicode_literals
+
 import cProfile
 import pstats
-import frappe
-import frappe.utils
-import subprocess # nosec
+import subprocess  # nosec
+import sys
 from functools import wraps
-from six import StringIO
 from os import environ
 
+import click
+from six import StringIO
+
+import frappe
+import frappe.utils
+
 click.disable_unicode_literals_warning = True
+
 
 def pass_context(f):
 	@wraps(f)
 	def _func(ctx, *args, **kwargs):
-		profile = ctx.obj['profile']
+		profile = ctx.obj["profile"]
 		if profile:
 			pr = cProfile.Profile()
 			pr.enable()
@@ -26,18 +30,17 @@ def pass_context(f):
 		try:
 			ret = f(frappe._dict(ctx.obj), *args, **kwargs)
 		except frappe.exceptions.SiteNotSpecifiedError as e:
-			click.secho(str(e), fg='yellow')
+			click.secho(str(e), fg="yellow")
 			sys.exit(1)
 		except frappe.exceptions.IncorrectSitePath:
 			site = ctx.obj.get("sites", "")[0]
-			click.secho(f'Site {site} does not exist!', fg='yellow')
+			click.secho(f"Site {site} does not exist!", fg="yellow")
 			sys.exit(1)
 
 		if profile:
 			pr.disable()
 			s = StringIO()
-			ps = pstats.Stats(pr, stream=s)\
-				.sort_stats('cumtime', 'tottime', 'ncalls')
+			ps = pstats.Stats(pr, stream=s).sort_stats("cumtime", "tottime", "ncalls")
 			ps.print_stats()
 
 			# print the top-100
@@ -57,12 +60,13 @@ def get_site(context, raise_err=True):
 			raise frappe.SiteNotSpecifiedError
 		return None
 
+
 def popen(command, *args, **kwargs):
-	output = kwargs.get('output', True)
-	cwd = kwargs.get('cwd')
-	shell = kwargs.get('shell', True)
-	raise_err = kwargs.get('raise_err')
-	env = kwargs.get('env')
+	output = kwargs.get("output", True)
+	cwd = kwargs.get("cwd")
+	shell = kwargs.get("shell", True)
+	raise_err = kwargs.get("raise_err")
+	env = kwargs.get("env")
 	if env:
 		env = dict(environ, **env)
 
@@ -78,13 +82,14 @@ def popen(command, *args, **kwargs):
 			psutil.Process().nice(19)
 			# ionice not supported
 
-	proc = subprocess.Popen(command,
+	proc = subprocess.Popen(
+		command,
 		stdout=None if output else subprocess.PIPE,
 		stderr=None if output else subprocess.PIPE,
 		shell=shell,
 		cwd=cwd,
 		preexec_fn=set_low_prio,
-		env=env
+		env=env,
 	)
 
 	return_ = proc.wait()
@@ -94,8 +99,10 @@ def popen(command, *args, **kwargs):
 
 	return return_
 
+
 def call_command(cmd, context):
 	return click.Context(cmd, obj=context).forward(cmd)
+
 
 def get_commands():
 	# prevent circular imports
