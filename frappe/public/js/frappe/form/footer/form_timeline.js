@@ -77,12 +77,14 @@ class FormTimeline extends BaseTimeline {
 			const message = __("Add to this activity by mailing to {0}", [link.bold()]);
 
 			this.document_email_link_wrapper = $(`
-				<div class="document-email-link-container">
+				<div class="timeline-item">
 					<div class="timeline-dot"></div>
-					<span class="ellipsis">${message}</span>
+					<div class="timeline-content">
+						<span>${message}</span>
+					</div>
 				</div>
 			`);
-			this.timeline_wrapper.append(this.document_email_link_wrapper);
+			this.timeline_actions_wrapper.append(this.document_email_link_wrapper);
 
 			this.document_email_link_wrapper
 				.find('.document-email-link')
@@ -424,13 +426,13 @@ class FormTimeline extends BaseTimeline {
 		}
 
 		if (this.frm.doctype === "Communication") {
-			args.txt = "";
+			args.message = "";
 			args.last_email = this.frm.doc;
 			args.recipients = this.frm.doc.sender;
 			args.subject = __("Re: {0}", [this.frm.doc.subject]);
 		} else {
 			const comment_value = frappe.markdown(this.frm.comment_box.get_value());
-			args.txt = strip_html(comment_value) ? comment_value : '';
+			args.message = strip_html(comment_value) ? comment_value : '';
 		}
 
 		new frappe.views.CommunicationComposer(args);
@@ -450,7 +452,7 @@ class FormTimeline extends BaseTimeline {
 		let content_wrapper = comment_wrapper.find('.content');
 
 		let delete_button = $();
-		if (frappe.model.can_delete("Comment")) {
+		if (frappe.model.can_delete("Comment") && (frappe.session.user == doc.owner || frappe.user.has_role("System Manager"))) {
 			delete_button = $(`
 				<button class="btn btn-link action-btn">
 					${frappe.utils.icon('close', 'sm')}

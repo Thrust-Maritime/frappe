@@ -7,12 +7,12 @@ frappe.ui.form.save = function (frm, action, callback, btn) {
 	$(btn).prop("disabled", true);
 
 	// specified here because there are keyboard shortcuts to save
-	var working_label = {
-		"Save": __("Saving"),
-		"Submit": __("Submitting"),
-		"Update": __("Updating"),
-		"Amend": __("Amending"),
-		"Cancel": __("Cancelling")
+	const working_label = {
+		"Save": __("Saving", null, "Freeze message while saving a document"),
+		"Submit": __("Submitting", null, "Freeze message while submitting a document"),
+		"Update": __("Updating", null, "Freeze message while updating a document"),
+		"Amend": __("Amending", null, "Freeze message while amending a document"),
+		"Cancel": __("Cancelling", null, "Freeze message while cancelling a document"),
 	}[toTitle(action)];
 
 	var freeze_message = working_label ? __(working_label) : "";
@@ -130,7 +130,8 @@ frappe.ui.form.save = function (frm, action, callback, btn) {
 						folded = frm.layout.folded;
 					}
 
-					if (df.reqd && !frappe.model.has_value(doc.doctype, doc.name, df.fieldname)) {
+					if (is_docfield_mandatory(doc, df) &&
+						!frappe.model.has_value(doc.doctype, doc.name, df.fieldname)) {
 						has_errors = true;
 						error_fields[error_fields.length] = __(df.label);
 						// scroll to field
@@ -148,14 +149,15 @@ frappe.ui.form.save = function (frm, action, callback, btn) {
 			});
 
 			if (frm.is_new() && frm.meta.autoname === 'Prompt' && !frm.doc.__newname) {
+				has_errors = true;
 				error_fields = [__('Name'), ...error_fields];
 			}
 
 			if (error_fields.length) {
 				let meta = frappe.get_meta(doc.doctype);
 				if (meta.istable) {
-					var message = __('Mandatory fields required in table {0}, Row {1}',
-						[__(frappe.meta.docfield_map[doc.parenttype][doc.parentfield].label).bold(), doc.idx]);
+					const table_label = __(frappe.meta.docfield_map[doc.parenttype][doc.parentfield].label).bold();
+					var message = __('Mandatory fields required in table {0}, Row {1}', [table_label, doc.idx]);
 				} else {
 					var message = __('Mandatory fields required in {0}', [__(doc.doctype)]);
 				}
@@ -170,6 +172,42 @@ frappe.ui.form.save = function (frm, action, callback, btn) {
 		});
 
 		return !has_errors;
+	};
+
+	let is_docfield_mandatory = function(doc, df) {
+		if (df.reqd) return true;
+		if (!df.mandatory_depends_on || !doc) return;
+
+		let out = null;
+		let expression = df.mandatory_depends_on;
+		let parent = frappe.get_meta(df.parent);
+
+		if (typeof (expression) === 'boolean') {
+			out = expression;
+
+		} else if (typeof (expression) === 'function') {
+			out = expression(doc);
+
+		} else if (expression.substr(0, 5) == 'eval:') {
+			try {
+				out = frappe.utils.eval(expression.substr(5), { doc, parent });
+				if (parent && parent.istable && expression.includes('is_submittable')) {
+					out = true;
+				}
+			} catch (e) {
+				frappe.throw(__('Invalid "mandatory_depends_on" expression'));
+			}
+
+		} else {
+			var value = doc[expression];
+			if ($.isArray(value)) {
+				out = !!value.length;
+			} else {
+				out = !!value;
+			}
+		}
+
+		return out;
 	};
 
 	const scroll_to = (fieldname) => {
@@ -276,4 +314,3 @@ frappe.ui.form.update_calling_link = (newdoc) => {
 		frappe._from_link = null;
 	}
 }
-

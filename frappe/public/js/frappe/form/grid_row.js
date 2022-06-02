@@ -166,21 +166,20 @@ export default class GridRow {
 	render_template() {
 		this.set_row_index();
 
-		if(this.row_display) {
+		if (this.row_display) {
 			this.row_display.remove();
 		}
 
 		// row index
-		if(this.doc) {
-			if(!this.row_index) {
-				this.row_index = $('<div style="float: left; margin-left: 15px; margin-top: 8px; \
-					margin-right: -20px;">'+this.row_check_html+' <span></span></div>').appendTo(this.row);
-			}
+		if (!this.row_index) {
+			this.row_index = $(`<div class="template-row-index">${this.row_check_html}<span></span></div>`).appendTo(this.row);
+		}
+
+		if (this.doc) {
 			this.row_index.find('span').html(this.doc.idx);
 		}
 
-		this.row_display = $('<div class="row-data sortable-handle template-row">'+
-			+'</div>').appendTo(this.row)
+		this.row_display = $('<div class="row-data sortable-handle template-row"></div>').appendTo(this.row)
 			.html(frappe.render(this.grid.template, {
 				doc: this.doc ? frappe.get_format_helper(this.doc) : null,
 				frm: this.frm,
@@ -231,19 +230,23 @@ export default class GridRow {
 		var me = this;
 		if(this.doc && !this.grid.df.in_place_edit) {
 			// remove row
-			if(!this.open_form_button) {
-				this.open_form_button = $(`
-					<div class="btn-open-row">
-						<a>${frappe.utils.icon('edit', 'xs')}</a>
-						<div class="hidden-xs edit-grid-row">${ __("Edit") }</div>
-					</div>
-				`)
-					.appendTo($('<div class="col col-xs-1"></div>').appendTo(this.row))
-					.on('click', function() {
-						me.toggle_view(); return false;
-					});
+			if (!this.open_form_button) {
+				this.open_form_button = $('<div class="col col-xs-1"></div>').appendTo(this.row);
 
-				if(this.is_too_small()) {
+				if (!this.configure_columns) {
+					this.open_form_button = $(`
+						<div class="btn-open-row">
+							<a>${frappe.utils.icon('edit', 'xs')}</a>
+							<div class="hidden-xs edit-grid-row">${ __("Edit") }</div>
+						</div>
+					`)
+						.appendTo(this.open_form_button)
+						.on('click', function() {
+							me.toggle_view(); return false;
+						});
+				}
+
+				if (this.is_too_small()) {
 					// narrow
 					this.open_form_button.css({'margin-right': '-2px'});
 				}
@@ -252,7 +255,9 @@ export default class GridRow {
 	}
 
 	add_column_configure_button() {
-		if (this.configure_columns) {
+		if (this.grid.df.in_place_edit && !this.frm) return;
+
+		if (this.configure_columns && this.frm) {
 			this.configure_columns_button = $(`
 				<div class="col grid-static-col col-xs-1 d-flex justify-content-center" style="cursor: pointer;">
 					<a>${frappe.utils.icon('setting-gear', 'sm', '', 'filter: opacity(0.5)')}</a>
@@ -262,6 +267,10 @@ export default class GridRow {
 				.on('click', () => {
 					this.configure_dialog_for_columns_selector();
 				});
+		} else if (this.configure_columns && !this.frm) {
+			this.configure_columns_button = $(`
+				<div class="col grid-static-col col-xs-1"></div>
+			`).appendTo(this.row);
 		}
 	}
 
@@ -412,7 +421,7 @@ export default class GridRow {
 							<div class='col-md-3' style='padding-left:0px;margin-top:-2px;' title='${__('Columns')}'>
 								<input class='form-control column-width input-xs text-right'
 									value='${docfield.columns || cint(d.columns)}'
-									data-fieldname='${docfield.fieldname}' style='background-color: #ffff; display: inline'>
+									data-fieldname='${docfield.fieldname}' style='background-color: var(--modal-bg); display: inline'>
 							</div>
 							<div class='col-md-1'>
 								<a class='text-muted remove-field' data-fieldname='${docfield.fieldname}'>
@@ -536,6 +545,8 @@ export default class GridRow {
 			// to get update df for the row
 			let df = this.docfields.find(field => field.fieldname === col[0].fieldname);
 
+			this.set_dependant_property(df);
+
 			let colsize = col[1];
 			let txt = this.doc ?
 				frappe.format(this.doc[df.fieldname], df, null, this.doc) :
@@ -564,6 +575,56 @@ export default class GridRow {
 				}
 			}
 		});
+	}
+
+	set_dependant_property(df) {
+		if (!df.reqd && df.mandatory_depends_on &&
+			this.evaluate_depends_on_value(df.mandatory_depends_on)) {
+			df.reqd = 1;
+		}
+
+		if (!df.read_only && df.read_only_depends_on &&
+			this.evaluate_depends_on_value(df.read_only_depends_on)) {
+			df.read_only = 1;
+		}
+	}
+
+	evaluate_depends_on_value(expression) {
+		let out = null;
+		let doc = this.doc;
+
+		if (!doc) return;
+
+		let parent = this.frm ? this.frm.doc : this.doc || null;
+
+		if (typeof (expression) === 'boolean') {
+			out = expression;
+
+		} else if (typeof (expression) === 'function') {
+			out = expression(doc);
+
+		} else if (expression.substr(0, 5)=='eval:') {
+			try {
+				out = frappe.utils.eval(expression.substr(5), { doc, parent });
+				if (parent && parent.istable && expression.includes('is_submittable')) {
+					out = true;
+				}
+			} catch (e) {
+				frappe.throw(__('Invalid "depends_on" expression'));
+			}
+
+		} else if (expression.substr(0, 3)=='fn:' && this.frm) {
+			out = this.frm.script_manager.trigger(expression.substr(3), this.doctype, this.docname);
+		} else {
+			var value = doc[expression];
+			if ($.isArray(value)) {
+				out = !!value.length;
+			} else {
+				out = !!value;
+			}
+		}
+
+		return out;
 	}
 
 	make_column(df, colsize, txt, ci) {

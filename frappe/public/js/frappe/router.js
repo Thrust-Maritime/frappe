@@ -60,6 +60,7 @@ $('body').on('click', 'a', function(e) {
 		// target has "/app, this is a v2 style route.
 		return override(e.currentTarget.pathname + e.currentTarget.hash);
 	}
+
 });
 
 frappe.router = {
@@ -232,12 +233,6 @@ frappe.router = {
 		}
 	},
 
-	clear_re_route(doctype, docname) {
-		delete frappe.re_route[
-			`${encodeURIComponent(frappe.router.slug(doctype))}/${encodeURIComponent(docname)}`
-		];
-	},
-
 	set_title(sub_path) {
 		if (frappe.route_titles[sub_path]) {
 			frappe.utils.set_title(frappe.route_titles[sub_path]);
@@ -254,7 +249,9 @@ frappe.router = {
 		return new Promise(resolve => {
 			route = this.get_route_from_arguments(route);
 			route = this.convert_from_standard_route(route);
-			const sub_path = this.make_url(route);
+			let sub_path = this.make_url(route);
+			// replace each # occurrences in the URL with encoded character except for last
+			// sub_path = sub_path.replace(/[#](?=.*[#])/g, "%23");
 			this.push_state(sub_path);
 
 			setTimeout(() => {
@@ -262,7 +259,7 @@ frappe.router = {
 					resolve();
 				});
 			}, 100);
-		});
+		}).finally(() => frappe.route_flags = {});
 	},
 
 	get_route_from_arguments(route) {
@@ -338,7 +335,7 @@ frappe.router = {
 				return null;
 			} else {
 				a = String(a);
-				if (a && a.match(/[%'"\s\t]/)) {
+				if (a && a.match(/[%'"#\s\t]/)) {
 					// if special chars, then encode
 					a = encodeURIComponent(a);
 				}
@@ -353,8 +350,9 @@ frappe.router = {
 		// change the URL and call the router
 		if (window.location.pathname !== url) {
 
-			// push state so the browser looks fine
-			history.pushState(null, null, url);
+			// push/replace state so the browser looks fine
+			const method = frappe.route_flags.replace_route ? "replaceState" : "pushState";
+			history[method](null, null, url);
 
 			// now process the route
 			this.route();
@@ -365,7 +363,7 @@ frappe.router = {
 		// return clean sub_path from hash or url
 		// supports both v1 and v2 routing
 		if (!route) {
-			route = window.location.pathname + window.location.hash + window.location.search;
+			route = window.location.pathname;
 			if (route.includes('app#')) {
 				// to support v1
 				route = window.location.hash;
