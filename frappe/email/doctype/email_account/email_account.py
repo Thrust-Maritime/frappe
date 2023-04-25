@@ -81,15 +81,18 @@ class EmailAccount(Document):
 		if frappe.local.flags.in_patch or frappe.local.flags.in_test:
 			return
 
-		# if self.enable_incoming and not self.append_to:
-		# 	frappe.throw(_("Append To is mandatory for incoming mails"))
+		use_oauth = self.auth_method == "OAuth"
+		self.use_starttls = cint(self.use_imap and self.use_starttls and not self.use_ssl)
 
-		if (
-			not self.awaiting_password
-			and not frappe.local.flags.in_install
-			and not frappe.local.flags.in_patch
-		):
-			if self.password or self.smtp_server in ("127.0.0.1", "localhost"):
+		validate_oauth = False
+		if use_oauth:
+			# no need for awaiting password for oauth
+			self.awaiting_password = 0
+			self.password = None
+			validate_oauth = not (self.is_new() and not self.get_oauth_token())
+
+		if not self.awaiting_password and not frappe.local.flags.in_install:
+			if validate_oauth or self.password or self.smtp_server in ("127.0.0.1", "localhost"):
 				if self.enable_incoming:
 					self.get_incoming_server()
 					self.no_failed = 0
@@ -98,7 +101,8 @@ class EmailAccount(Document):
 					self.check_smtp()
 			else:
 				if self.enable_incoming or (self.enable_outgoing and not self.no_smtp_authentication):
-					frappe.throw(_("Password is required or select Awaiting Password"))
+					if not use_oauth:
+						frappe.throw(_("Password is required or select Awaiting Password"))
 
 		if self.notify_if_unreplied:
 			if not self.send_notification_to:
@@ -168,6 +172,7 @@ class EmailAccount(Document):
 				"use_imap",
 				"email_server",
 				"use_ssl",
+				"use_starttls",
 				"smtp_server",
 				"use_tls",
 				"smtp_port",
@@ -185,12 +190,15 @@ class EmailAccount(Document):
 			if not self.smtp_server:
 				frappe.throw(_("{0} is required").format("SMTP Server"))
 
+			oauth_token = self.get_oauth_token()
 			server = SMTPServer(
 				login=getattr(self, "login_id", None) or self.email_id,
 				server=self.smtp_server,
 				port=cint(self.smtp_port),
 				use_tls=cint(self.use_tls),
 				use_ssl=cint(self.use_ssl_for_outgoing),
+				use_oauth=self.auth_method == "OAuth",
+				access_token=oauth_token.get_password("access_token") if oauth_token else None,
 			)
 			if self.password and not self.no_smtp_authentication:
 				server.password = self.get_password()
@@ -202,17 +210,21 @@ class EmailAccount(Document):
 		if frappe.cache().get_value("workers:no-internet") == True:
 			return None
 
+		oauth_token = self.get_oauth_token()
 		args = frappe._dict(
 			{
 				"email_account": self.name,
 				"host": self.email_server,
 				"use_ssl": self.use_ssl,
+				"use_starttls": self.use_starttls,
 				"username": getattr(self, "login_id", None) or self.email_id,
 				"use_imap": self.use_imap,
 				"email_sync_rule": email_sync_rule,
 				"uid_validity": self.uidvalidity,
 				"incoming_port": get_port(self),
 				"initial_sync_count": self.initial_sync_count or 100,
+				"use_oauth": self.auth_method == "OAuth",
+				"access_token": oauth_token.get_password("access_token") if oauth_token else None,
 			}
 		)
 
@@ -701,7 +713,7 @@ class EmailAccount(Document):
 					["reference_doctype", "reference_name"],
 					as_dict=1,
 				)
-				if comm:
+				if comm and comm.reference_doctype and comm.reference_name:
 					parent = frappe._dict(doctype=comm.reference_doctype, name=comm.reference_name)
 
 		return parent
@@ -820,6 +832,12 @@ class EmailAccount(Document):
 				frappe.throw(_("Automatic Linking can be activated only for one Email Account."))
 
 	def append_email_to_sent_folder(self, message):
+		if not (self.enable_incoming and self.use_imap):
+			# don't try appending if enable incoming and imap is not set
+			# as email domain's updation can cause email account(s) to forcibly
+			# update their settings.
+			return
+
 		email_server = None
 		try:
 			email_server = self.get_incoming_server(in_receive=True)
@@ -837,6 +855,11 @@ class EmailAccount(Document):
 				email_server.imap.append("Sent", "\\Seen", imaplib.Time2Internaldate(time.time()), message)
 			except Exception:
 				frappe.log_error()
+
+	def get_oauth_token(self):
+		if self.auth_method == "OAuth":
+			connected_app = frappe.get_doc("Connected App", self.connected_app)
+			return connected_app.get_active_token(self.connected_user)
 
 
 @frappe.whitelist()
@@ -929,15 +952,27 @@ def notify_unreplied():
 
 def pull(now=False):
 	"""Will be called via scheduler, pull emails from all enabled Email accounts."""
+	from frappe.integrations.doctype.connected_app.connected_app import has_token
+
 	if frappe.cache().get_value("workers:no-internet") == True:
 		if test_internet():
 			frappe.cache().set_value("workers:no-internet", False)
 		else:
 			return
+
 	queued_jobs = get_jobs(site=frappe.local.site, key="job_name")[frappe.local.site]
-	for email_account in frappe.get_list(
-		"Email Account", filters={"enable_incoming": 1, "awaiting_password": 0}
+
+	for email_account in frappe.get_all(
+		"Email Account",
+		filters={"enable_incoming": 1, "awaiting_password": 0},
+		fields=["name", "connected_user", "connected_app", "auth_method"],
 	):
+		if email_account.auth_method == "OAuth" and not has_token(
+			email_account.connected_app, email_account.connected_user
+		):
+			# don't try to pull from accounts which dont have access token (for Oauth)
+			continue
+
 		if now:
 			pull_from_email_account(email_account.name)
 
@@ -1058,10 +1093,10 @@ def remove_user_email_inbox(email_account):
 		doc.save(ignore_permissions=True)
 
 
-@frappe.whitelist(allow_guest=False)
+@frappe.whitelist()
 def set_email_password(email_account, user, password):
 	account = frappe.get_doc("Email Account", email_account)
-	if account.awaiting_password:
+	if account.awaiting_password and account.auth_method != "OAuth":
 		account.awaiting_password = 0
 		account.password = password
 		try:

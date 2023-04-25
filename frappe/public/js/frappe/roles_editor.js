@@ -54,16 +54,16 @@ frappe.RoleEditor = class {
 				const $body = $(this.perm_dialog.body);
 				if (!permissions.length) {
 					$body.append(`<div class="text-muted text-center padding">
-						${__('{0} role does not have permission on any doctype', [role])}
+						${__("{0} role does not have permission on any doctype", [__(role)])}
 					</div>`);
 				} else {
 					$body.append(`
 						<table class="user-perm">
 							<thead>
 								<tr>
-									<th> ${__('Document Type')} </th>
-									<th> ${__('Level')} </th>
-									${frappe.perm.rights.map(p => `<th> ${frappe.unscrub(p)}</th>`).join("")}
+									<th> ${__("Document Type")} </th>
+									<th> ${__("Level")} </th>
+									${frappe.perm.rights.map((p) => `<th> ${__(frappe.unscrub(p))}</th>`).join("")}
 								</tr>
 							</thead>
 							<tbody></tbody>
@@ -72,14 +72,14 @@ frappe.RoleEditor = class {
 					permissions.forEach(perm => {
 						$body.find('tbody').append(`
 							<tr>
-								<td>${perm.parent}</td>
+								<td>${__(perm.parent)}</td>
 								<td>${perm.permlevel}</td>
 								${frappe.perm.rights.map(p => `<td class="text-muted bold">${perm[p] ? frappe.utils.icon('check', 'xs') : '-'}</td>`).join("")}
 							</tr>
 						`);
 					});
 				}
-				this.perm_dialog.set_title(role);
+				this.perm_dialog.set_title(__(role));
 				this.perm_dialog.show();
 			});
 	}
@@ -89,15 +89,21 @@ frappe.RoleEditor = class {
 		});
 
 		this.perm_dialog.$wrapper
-			.find('.modal-dialog')
-			.css("width", "1200px")
-			.css("max-width", "80vw");
+			.find(".modal-dialog")
+			.css("width", "auto")
+			.css("max-width", "1200px");
+
+		this.perm_dialog.$wrapper.find(".modal-body").css("overflow", "overlay");
 	}
 	show() {
-		let user_roles = this.frm.doc.roles.map(a => a.role);
+		this.reset();
+		this.set_enable_disable();
+	}
+
+	reset() {
+		let user_roles = (this.frm.doc.roles || []).map(a => a.role);
 		this.multicheck.selected_options = user_roles;
 		this.multicheck.refresh_input();
-		this.set_enable_disable();
 	}
 	set_roles_in_table() {
 		let roles = this.frm.doc.roles || [];

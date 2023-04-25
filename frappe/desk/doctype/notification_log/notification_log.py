@@ -19,7 +19,10 @@ class NotificationLog(Document):
 		frappe.publish_realtime("notification", after_commit=True, user=self.for_user)
 		set_notifications_as_unseen(self.for_user)
 		if is_email_notifications_enabled_for_type(self.for_user, self.type):
-			send_notification_email(self)
+			try:
+				send_notification_email(self)
+			except frappe.OutgoingEmailError:
+				frappe.log_error(message=frappe.get_traceback(), title=_("Failed to send notification email"))
 
 
 def get_permission_query_conditions(for_user):
@@ -148,6 +151,6 @@ def trigger_indicator_hide():
 
 def set_notifications_as_unseen(user):
 	try:
-		frappe.db.set_value("Notification Settings", user, "seen", 0)
+		frappe.db.set_value("Notification Settings", user, "seen", 0, update_modified=False)
 	except frappe.DoesNotExistError:
 		return

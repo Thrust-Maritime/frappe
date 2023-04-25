@@ -479,7 +479,7 @@ export default class ChartWidget extends Widget {
 				class="btn btn-xs btn-secondary chart-menu"
 			>
 				<svg class="icon icon-sm">
-					<use xlink:href="#icon-dot-horizontal">
+					<use href="#icon-dot-horizontal">
 					</use>
 				</svg>
 			</button>
@@ -583,12 +583,13 @@ export default class ChartWidget extends Widget {
 			Heatmap: "heatmap"
 		};
 
+		let max_slices = ["Pie", "Donut"].includes(this.chart_doc.type) ? 6 : 9;
 		let chart_args = {
 			data: this.data,
 			type: chart_type_map[this.chart_doc.type],
 			colors: colors,
 			height: this.height,
-			maxSlices: ['Pie', 'Donut'].includes(this.chart_doc.type) ? 6 : 9,
+			maxSlices: this.chart_doc.number_of_groups || max_slices,
 			axisOptions: {
 				xIsSeries: this.chart_doc.timeseries,
 				shortenYAxisNumbers: 1
