@@ -5,5 +5,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-class TestListViewSetting(unittest.TestCase):
+
+class TestEventSyncLog(unittest.TestCase):
 	pass

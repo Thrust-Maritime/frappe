@@ -14,6 +14,7 @@
   "website_theme_image_link",
   "brand",
   "banner_image",
+  "splash_image",
   "brand_html",
   "set_banner_from_image",
   "favicon",
@@ -31,19 +32,14 @@
   "google_analytics_id",
   "column_break_17",
   "misc_section",
-  "subdomain",
+  "app_name",
+  "app_logo",
   "disable_signup",
   "section_break_38",
+  "subdomain",
   "head_html",
   "robots_txt",
-  "route_redirects",
-  "section_break_39",
-  "chat_enable",
-  "chat_enable_from",
-  "chat_enable_to",
-  "chat_room_name",
-  "chat_welcome_message",
-  "chat_operators"
+  "route_redirects"
  ],
  "fields": [
   {
@@ -197,7 +193,7 @@
    "collapsible": 1,
    "fieldname": "misc_section",
    "fieldtype": "Section Break",
-   "label": "Disable Signup"
+   "label": "Login Page"
   },
   {
    "description": "An icon file with .ico extension. Should be 16 x 16 px. Generated using a favicon generator. [favicon-generator.org]",
@@ -208,12 +204,12 @@
   {
    "description": "Sub-domain provided by erpnext.com",
    "fieldname": "subdomain",
-   "fieldtype": "Text",
+   "fieldtype": "Small Text",
    "label": "Subdomain",
    "read_only": 1
   },
   {
-   "default": "0",
+   "default": "1",
    "description": "Disable Customer Signup link in Login page",
    "fieldname": "disable_signup",
    "fieldtype": "Check",
@@ -238,62 +234,144 @@
    "label": "Robots.txt"
   },
   {
-   "collapsible": 1,
-   "fieldname": "section_break_39",
-   "fieldtype": "Section Break",
-   "label": "Chat"
-  },
-  {
-   "default": "0",
-   "fieldname": "chat_enable",
-   "fieldtype": "Check",
-   "label": "Enable Chat"
-  },
-  {
-   "depends_on": "chat_enable",
-   "fieldname": "chat_enable_from",
-   "fieldtype": "Time",
-   "label": "From"
-  },
-  {
-   "depends_on": "chat_enable",
-   "fieldname": "chat_enable_to",
-   "fieldtype": "Time",
-   "label": "To"
-  },
-  {
-   "default": "Support",
-   "depends_on": "chat_enable",
-   "fieldname": "chat_room_name",
-   "fieldtype": "Data",
-   "label": "Chat Room Name"
-  },
-  {
-   "default": "Hi, how may I help you?",
-   "depends_on": "chat_enable",
-   "fieldname": "chat_welcome_message",
-   "fieldtype": "Data",
-   "label": "Welcome Message"
-  },
-  {
-   "depends_on": "chat_enable",
-   "fieldname": "chat_operators",
-   "fieldtype": "Table",
-   "label": "Chat Operators",
-   "options": "Chat Room User"
-  },
-  {
    "fieldname": "route_redirects",
    "fieldtype": "Table",
    "label": "Route Redirects",
    "options": "Website Route Redirect"
+  },
+  {
+   "default": "0",
+   "description": "To use Google Indexing, enable <a href=\"#Form/Google Settings\">Google Settings</a>.",
+   "fieldname": "enable_google_indexing",
+   "fieldtype": "Check",
+   "label": "Enable Google Indexing"
+  },
+  {
+   "fieldname": "indexing_refresh_token",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Indexing Refresh Token",
+   "read_only": 1
+  },
+  {
+   "fieldname": "indexing_authorization_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Indexing Authorization Code",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.enable_google_indexing",
+   "fieldname": "authorize_api_indexing_access",
+   "fieldtype": "Button",
+   "label": "Authorize API Indexing  Access"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_view_tracking",
+   "fieldtype": "Check",
+   "label": "Enable In App Website Tracking"
+  },
+  {
+   "fieldname": "footer_logo",
+   "fieldtype": "Attach Image",
+   "label": "Footer Logo"
+  },
+  {
+   "fieldname": "call_to_action",
+   "fieldtype": "Data",
+   "label": "Call To Action"
+  },
+  {
+   "fieldname": "call_to_action_url",
+   "fieldtype": "Data",
+   "label": "Call To Action URL"
+  },
+  {
+   "default": "0",
+   "fieldname": "hide_login",
+   "fieldtype": "Check",
+   "label": "Hide Login"
+  },
+  {
+   "fieldname": "navbar_template",
+   "fieldtype": "Link",
+   "label": "Navbar Template",
+   "options": "Web Template"
+  },
+  {
+   "fieldname": "navbar_template_values",
+   "fieldtype": "Code",
+   "hidden": 1,
+   "label": "Navbar Template Values",
+   "options": "JSON"
+  },
+  {
+   "depends_on": "eval:doc.navbar_template && doc.navbar_template !== 'Standard Navbar'",
+   "fieldname": "edit_navbar_template_values",
+   "fieldtype": "Button",
+   "label": "Edit Values"
+  },
+  {
+   "fieldname": "footer_template",
+   "fieldtype": "Link",
+   "label": "Footer Template",
+   "options": "Web Template"
+  },
+  {
+   "fieldname": "footer_template_values",
+   "fieldtype": "Code",
+   "hidden": 1,
+   "label": "Footer Template Values",
+   "options": "JSON"
+  },
+  {
+   "depends_on": "eval:doc.footer_template && doc.footer_template !== 'Standard Footer'",
+   "fieldname": "edit_footer_template_values",
+   "fieldtype": "Button",
+   "label": "Edit Values"
+  },
+  {
+   "default": "1",
+   "fieldname": "google_analytics_anonymize_ip",
+   "fieldtype": "Check",
+   "label": "Google Analytics Anonymize IP"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_language_picker",
+   "fieldtype": "Check",
+   "label": "Show Language Picker"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "navbar_template",
+   "fieldname": "navbar_template_section",
+   "fieldtype": "Section Break",
+   "label": "Navbar Template"
+  },
+  {
+   "default": "Frappe",
+   "fieldname": "app_name",
+   "fieldtype": "Data",
+   "label": "App Name"
+  },
+  {
+   "fieldname": "app_logo",
+   "fieldtype": "Attach Image",
+   "label": "App Logo"
+  },
+  {
+    "fieldname": "splash_image",
+    "fieldtype": "Attach Image",
+    "label": "Splash Image"
   }
  ],
  "icon": "fa fa-cog",
  "idx": 1,
  "issingle": 1,
- "max_attachments": 10,
- "modified": "2019-06-12 17:16:37.452872",
+ "links": [],
+ "modified": "2022-12-05 04:17:56.478757",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "Website Settings",

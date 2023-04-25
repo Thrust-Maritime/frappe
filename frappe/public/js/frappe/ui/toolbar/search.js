@@ -290,16 +290,12 @@ frappe.search.SearchDialog = Class.extend({
 	render_result: function(type, result) {
 		var $result = $('<div class="result '+ type +'-result"></div>');
 
-		function get_link(result) {
-			var link;
-			if(result.route) {
-				link = 'href="#'+result.route.join('/')+'" ';
-			} else if (result.data_path) {
-				link = 'data-path="'+result.data_path+'"';
-			} else {
-				link = "";
-			}
-			return link;
+	get_link(result) {
+		let link = "";
+		if (result.route) {
+			link = `href="/app/${result.route.join("/")}"`;
+		} else if (result.data_path) {
+			link = `data-path=${result.data_path}"`;
 		}
 
 		if (result.image) {

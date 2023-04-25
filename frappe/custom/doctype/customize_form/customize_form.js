@@ -79,7 +79,7 @@ frappe.ui.form.on("Customize Form", {
 	},
 
 	refresh: function(frm) {
-		frm.disable_save();
+		frm.disable_save(true);
 		frm.page.clear_icons();
 
 		if(frm.doc.doc_type) {
@@ -97,16 +97,61 @@ frappe.ui.form.on("Customize Form", {
 				frappe.set_route('permission-manager', frm.doc.doc_type);
 			}, "fa fa-lock", "btn-default");
 
-			if(frappe.boot.developer_mode) {
-				frm.add_custom_button(__('Export Customizations'), function() {
+			frm.add_custom_button(
+				__("Set Permissions"),
+				function() {
+					frappe.set_route("permission-manager", frm.doc.doc_type);
+				},
+				__("Actions")
+			);
+		}
+
+		frm.events.setup_export(frm);
+		frm.events.setup_sort_order(frm);
+		frm.events.set_default_doc_type(frm);
+	},
+
+	set_default_doc_type(frm) {
+		let doc_type;
+		if (frappe.route_options && frappe.route_options.doc_type) {
+			doc_type = frappe.route_options.doc_type;
+			frappe.route_options = null;
+			localStorage.removeItem("customize_doctype");
+		}
+		if (!doc_type) {
+			doc_type = localStorage.getItem("customize_doctype");
+		}
+		if (doc_type) {
+			setTimeout(() => frm.set_value("doc_type", doc_type, false, true), 1000);
+		}
+	},
+
+	setup_export(frm) {
+		if (frappe.boot.developer_mode) {
+			frm.add_custom_button(
+				__("Export Customizations"),
+				function() {
 					frappe.prompt(
 						[
-							{fieldtype:'Link', fieldname:'module', options:'Module Def',
-								label: __('Module to Export')},
-							{fieldtype:'Check', fieldname:'sync_on_migrate',
-								label: __('Sync on Migrate'), 'default': 1},
-							{fieldtype:'Check', fieldname:'with_permissions',
-								label: __('Export Custom Permissions'), 'default': 1},
+							{
+								fieldtype: "Link",
+								fieldname: "module",
+								options: "Module Def",
+								label: __("Module to Export"),
+								reqd: 1,
+							},
+							{
+								fieldtype: "Check",
+								fieldname: "sync_on_migrate",
+								label: __("Sync on Migrate"),
+								default: 1
+							},
+							{
+								fieldtype: "Check",
+								fieldname: "with_permissions",
+								label: __("Export Custom Permissions"),
+								default: 1
+							}
 						],
 						function(data) {
 							frappe.call({
@@ -206,6 +251,7 @@ frappe.customize_form.confirm = function(msg, frm) {
 }
 
 frappe.customize_form.clear_locals_and_refresh = function(frm) {
+	delete frm.doc.__unsaved;
 	// clear doctype from locals
 	frappe.model.clear_doc("DocType", frm.doc.doc_type);
 	delete frappe.meta.docfield_copy[frm.doc.doc_type];

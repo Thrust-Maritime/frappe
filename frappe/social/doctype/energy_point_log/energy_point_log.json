@@ -109,8 +109,9 @@
    "label": "Seen"
   }
  ],
- "in_create": 1,
- "modified": "2019-08-21 15:51:05.288886",
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-10-25 17:25:40.477044",
  "modified_by": "Administrator",
  "module": "Social",
  "name": "Energy Point Log",
@@ -129,6 +130,5 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "user",
- "track_changes": 1
+ "title_field": "user"
 }

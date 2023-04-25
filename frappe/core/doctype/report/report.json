@@ -121,7 +121,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval:doc.is_standard == 'Yes'",
    "fieldname": "roles",
    "fieldtype": "Table",
    "label": "Roles",
@@ -147,13 +146,53 @@
    "fieldname": "report_script",
    "fieldtype": "Code",
    "label": "Script"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "filters",
+   "depends_on": "eval:doc.report_type != \"Custom Report\"",
+   "fieldname": "filters_section",
+   "fieldtype": "Section Break",
+   "label": "Filters"
+  },
+  {
+   "depends_on": "eval:doc.report_type != \"Custom Report\"",
+   "fieldname": "filters",
+   "fieldtype": "Table",
+   "label": "Filters",
+   "options": "Report Filter"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "columns",
+   "depends_on": "eval:doc.report_type != \"Custom Report\"",
+   "fieldname": "columns_section",
+   "fieldtype": "Section Break",
+   "label": "Columns"
+  },
+  {
+   "depends_on": "eval:doc.report_type != \"Custom Report\"",
+   "fieldname": "columns",
+   "fieldtype": "Table",
+   "label": "Columns",
+   "options": "Report Column"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "javascript",
+   "fieldname": "client_code_section",
+   "fieldtype": "Section Break",
+   "label": "Client Code"
   }
  ],
  "idx": 1,
- "modified": "2019-10-09 15:43:08.577610",
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2023-04-07 18:18:11.782178",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "Report",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -200,5 +239,6 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

@@ -4,12 +4,16 @@ context('List View Settings', () => {
 		cy.visit('/desk');
 	});
 	it('Default settings', () => {
-		cy.visit('/desk#List/DocType/List');
+		cy.visit('/app/List/DocType/List');
+		cy.clear_filters();
 		cy.get('.list-count').should('contain', "20 of");
 		cy.get('.sidebar-stat').should('contain', "Tags");
 	});
 	it('disable count and sidebar stats then verify', () => {
-		cy.visit('/desk#List/DocType/List');
+		cy.wait(300);
+		cy.visit('/app/List/DocType/List');
+		cy.clear_filters();
+		cy.wait(300);
 		cy.get('.list-count').should('contain', "20 of");
 		cy.get('button').contains('Menu').click();
 		cy.get('.dropdown-menu li').filter(':visible').contains('Settings').click();

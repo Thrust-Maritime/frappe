@@ -68,8 +68,60 @@ frappe.ui.form.Toolbar = Class.extend({
 	},
 	can_rename: function() {
 		return this.frm.perm[0].write && this.frm.meta.allow_rename && !this.frm.doc.__islocal;
-	},
-	setup_editable_title: function () {
+	}
+	show_unchanged_document_alert() {
+		frappe.show_alert({
+			indicator: "info",
+			message: __("Unchanged")
+		});
+	}
+	rename_document_title(new_name, new_title, merge=false) {
+		const docname = this.frm.doc.name;
+		const title_field = this.frm.meta.title_field || '';
+		const doctype = this.frm.doctype;
+
+		let confirm_message=null;
+
+		if (new_name) {
+			const warning = __("This cannot be undone");
+			const message = __("Are you sure you want to merge {0} with {1}?", [docname.bold(), new_name.bold()]);
+			confirm_message = `${message}<br><b>${warning}<b>`;
+		}
+
+		let rename_document = () => {
+			return frappe.xcall("frappe.model.rename_doc.update_document_title", {
+				doctype,
+				docname,
+				new_name,
+				title_field,
+				old_title: this.frm.doc[title_field],
+				new_title,
+				merge,
+				freeze: true,
+				freeze_message: __("Updating related fields...")
+			}).then(new_docname => {
+				if (new_name != docname) {
+					$(document).trigger("rename", [doctype, docname, new_docname || new_name]);
+					if (locals[doctype] && locals[doctype][docname]) delete locals[doctype][docname];
+				}
+				this.frm.reload_doc();
+			});
+		};
+
+		return new Promise((resolve, reject) => {
+			if (new_title === this.frm.doc[title_field] && new_name === docname) {
+				this.show_unchanged_document_alert();
+				resolve();
+			} else if (merge) {
+				frappe.confirm(confirm_message, () => {
+					rename_document().then(resolve).catch(reject);
+				}, reject);
+			} else {
+				rename_document().then(resolve).catch(reject);
+			}
+		});
+	}
+	setup_editable_title () {
 		let me = this;
 
 		this.page.$title_area.find(".title-text").on("click", () => {
@@ -114,28 +166,15 @@ frappe.ui.form.Toolbar = Class.extend({
 					fields: fields
 				});
 				d.show();
-
-				d.set_primary_action(__("Rename"), function () {
-					let args = d.get_values();
-					if (args.title != me.frm.doc[title_field] || args.name != docname) {
-						frappe.call({
-							method: "frappe.model.rename_doc.update_document_title",
-							args: {
-								doctype,
-								docname,
-								title_field,
-								old_title: me.frm.doc[title_field],
-								new_title: args.title,
-								new_name: args.name,
-								merge: args.merge
-							},
-							btn: d.get_primary_btn()
-						}).then((res) => {
-							me.frm.reload_doc();
-							if (!res.exc && (args.name != docname)) {
-								$(document).trigger("rename", [doctype, docname, res.message || args.name]);
-								if (locals[doctype] && locals[doctype][docname]) delete locals[doctype][docname];
-							}
+				d.set_primary_action(__("Rename"), (values) => {
+					d.disable_primary_action();
+					d.hide();
+					this.rename_document_title(values.name, values.title, values.merge)
+						.then(() => {
+							d.hide();
+						})
+						.catch(() => {
+							d.enable_primary_action();
 						});
 					} else {
 						frappe.show_alert({
@@ -467,17 +506,17 @@ frappe.ui.form.Toolbar = Class.extend({
 				me.set_primary_action(true);
 			}
 		});
-	},
-	show_title_as_dirty: function() {
-		if(this.frm.save_disabled)
+	}
+	show_title_as_dirty() {
+		if (this.frm.save_disabled && !this.frm.set_dirty)
 			return;
 
-		if(this.frm.doc.__unsaved) {
+		if (this.frm.is_dirty()) {
 			this.page.set_indicator(__("Not Saved"), "orange");
 		}
 
-		$(this.frm.wrapper).attr("data-state", this.frm.doc.__unsaved ? "dirty" : "clean");
-	},
+		$(this.frm.wrapper).attr("data-state", this.frm.is_dirty() ? "dirty" : "clean");
+	}
 
 	show_jump_to_field_dialog() {
 		let visible_fields_filter = f =>

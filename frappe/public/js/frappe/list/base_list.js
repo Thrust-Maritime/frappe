@@ -49,8 +49,8 @@ frappe.views.BaseList = class BaseList {
 
 		this.fields = [];
 		this.filters = [];
-		this.sort_by = 'modified';
-		this.sort_order = 'desc';
+		this.sort_by = this.meta.sort_field || "modified";
+		this.sort_order = this.meta.sort_order || "desc";
 
 		// Setup buttons
 		this.primary_action = null;
@@ -64,6 +64,14 @@ frappe.views.BaseList = class BaseList {
 			action: () => this.refresh(),
 			class: 'visible-xs'
 		}];
+	}
+
+	get_list_view_settings() {
+		return frappe
+			.call("frappe.desk.listview.get_list_settings", {
+				doctype: this.doctype,
+			})
+			.then((doc) => (this.list_view_settings = doc.message || {}));
 	}
 
 	setup_fields() {
@@ -118,7 +126,7 @@ frappe.views.BaseList = class BaseList {
 			// df is passed
 			const df = fieldname;
 			fieldname = df.fieldname;
-			doctype = df.parent;
+			doctype = df.parent || doctype;
 		}
 
 		if (!this.fields) this.fields = [];
@@ -163,6 +171,57 @@ frappe.views.BaseList = class BaseList {
 		this.page.set_title(this.page_title);
 	}
 
+	setup_view_menu() {
+		// TODO: add all icons
+		const icon_map = {
+			'Image': 'image-view',
+			'List': 'list',
+			'Report': 'small-file',
+			'Calendar': 'calendar',
+			'Gantt': 'gantt',
+			'Kanban': 'kanban',
+			'Dashboard': 'dashboard',
+			'Map': 'map',
+		};
+
+		if (frappe.boot.desk_settings.view_switcher) {
+			/* @preserve
+			for translation, don't remove
+			__("List View") __("Report View") __("Dashboard View") __("Gantt View"),
+			__("Kanban View") __("Calendar View") __("Image View") __("Inbox View"),
+			__("Tree View") __("Map View") */
+			this.views_menu = this.page.add_custom_button_group(__('{0} View', [this.view_name]),
+				icon_map[this.view_name] || 'list');
+			this.views_list = new frappe.views.ListViewSelect({
+				doctype: this.doctype,
+				parent: this.views_menu,
+				page: this.page,
+				list_view: this,
+				sidebar: this.list_sidebar,
+				icon_map: icon_map
+			});
+		}
+	}
+
+	set_default_secondary_action() {
+		if (this.secondary_action) {
+			const $secondary_action = this.page.set_secondary_action(
+				this.secondary_action.label,
+				this.secondary_action.action,
+				this.secondary_action.icon
+			);
+			if (!this.secondary_action.icon) {
+				$secondary_action.addClass("hidden-xs");
+			} else if (!this.secondary_action.label) {
+				$secondary_action.addClass("visible-xs");
+			}
+		} else {
+			this.refresh_button = this.page.add_action_icon("refresh", () => {
+				this.refresh();
+			});
+		}
+	}
+
 	set_menu_items() {
 		const $secondary_action = this.page.set_secondary_action(
 			this.secondary_action.label,
@@ -181,7 +240,7 @@ frappe.views.BaseList = class BaseList {
 			}
 			const $item = this.page.add_menu_item(item.label, item.action, item.standard, item.shortcut);
 			if (item.class) {
-				$item && $item.addClass(item.class);
+				$item[0] && $item.addClass(item.class);
 			}
 		});
 	}
@@ -314,11 +373,10 @@ frappe.views.BaseList = class BaseList {
 				$this.addClass('btn-info');
 
 				this.start = 0;
-				this.page_length = $this.data().value;
-				this.refresh();
-			} else if ($this.is('.btn-more')) {
+				this.page_length = this.selected_page_count = $this.data().value;
+			} else if ($this.is(".btn-more")) {
 				this.start = this.start + this.page_length;
-				this.refresh();
+				this.page_length = this.selected_page_count || 20;
 			}
 		});
 	}
@@ -326,6 +384,14 @@ frappe.views.BaseList = class BaseList {
 	get_fields() {
 		// convert [fieldname, Doctype] => tabDoctype.fieldname
 		return this.fields.map(f => frappe.model.get_full_column_name(f[0], f[1]));
+	}
+
+	get_group_by() {
+		let name_field = this.fields && this.fields.find(f => f[0] == 'name');
+		if (name_field) {
+			return frappe.model.get_full_column_name(name_field[0], name_field[1]);
+		}
+		return null;
 	}
 
 	setup_view() {
@@ -348,7 +414,8 @@ frappe.views.BaseList = class BaseList {
 			order_by: this.sort_selector.get_sql_string(),
 			start: this.start,
 			page_length: this.page_length,
-			view: this.view
+			view: this.view,
+			group_by: this.get_group_by()
 		};
 	}
 
@@ -378,6 +445,7 @@ frappe.views.BaseList = class BaseList {
 			this.render();
 			this.after_render();
 			this.freeze(false);
+			this.reset_defaults();
 			if (this.settings.refresh) {
 				this.settings.refresh(this);
 			}
@@ -395,6 +463,11 @@ frappe.views.BaseList = class BaseList {
 		}
 
 		this.data = this.data.uniqBy(d => d.name);
+	}
+
+	reset_defaults() {
+		this.page_length = this.page_length + this.start;
+		this.start = 0;
 	}
 
 	freeze() {
@@ -672,10 +745,32 @@ class FilterArea {
 	}
 
 	make_filter_list() {
+		$(`<div class="filter-selector">
+			<div class="btn-group">
+				<button class="btn btn-default btn-sm filter-button">
+					<span class="filter-icon">
+						${frappe.utils.icon("filter")}
+					</span>
+					<span class="button-label hidden-xs">
+					${__("Filter")}
+					<span>
+				</button>
+				<button class="btn btn-default btn-sm filter-x-button" title="${__("Clear all filters")}">
+					<span class="filter-icon">
+						${frappe.utils.icon("filter-x")}
+					</span>
+				</button>
+			</div>
+		</div>`).appendTo(this.$filter_list_wrapper);
+
+		this.filter_button = this.$filter_list_wrapper.find(".filter-button");
+		this.filter_x_button = this.$filter_list_wrapper.find(".filter-x-button");
 		this.filter_list = new frappe.ui.FilterGroup({
 			base_list: this.list_view,
 			parent: this.$filter_list_wrapper,
 			doctype: this.list_view.doctype,
+			filter_button: this.filter_button,
+			filter_x_button: this.filter_x_button,
 			default_filters: [],
 			on_change: () => this.refresh_list_view()
 		});

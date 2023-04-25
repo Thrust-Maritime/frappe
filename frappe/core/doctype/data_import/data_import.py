@@ -56,9 +56,7 @@ class DataImport(Document):
 		from frappe.utils.scheduler import is_scheduler_inactive
 
 		if is_scheduler_inactive() and not frappe.flags.in_test:
-			frappe.throw(
-				_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive")
-			)
+			frappe.throw(_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive"))
 
 		enqueued_jobs = [d.get("job_name") for d in get_info()]
 
@@ -117,11 +115,11 @@ def download_template(
 ):
 	"""
 	Download template from Exporter
-		:param doctype: Document Type
-		:param export_fields=None: Fields to export as dict {'Sales Invoice': ['name', 'customer'], 'Sales Invoice Item': ['item_code']}
-		:param export_records=None: One of 'all', 'by_filter', 'blank_template'
-		:param export_filters: Filter dict
-		:param file_type: File type to export into
+	        :param doctype: Document Type
+	        :param export_fields=None: Fields to export as dict {'Sales Invoice': ['name', 'customer'], 'Sales Invoice Item': ['item_code']}
+	        :param export_records=None: One of 'all', 'by_filter', 'blank_template'
+	        :param export_filters: Filter dict
+	        :param file_type: File type to export into
 	"""
 
 	export_fields = frappe.parse_json(export_fields)
@@ -145,9 +143,7 @@ def download_errored_template(data_import_name):
 	data_import.export_errored_rows()
 
 
-def import_file(
-	doctype, file_path, import_type, submit_after_import=False, console=False
-):
+def import_file(doctype, file_path, import_type, submit_after_import=False, console=False):
 	"""
 	Import documents in from CSV or XLSX using data import.
 
@@ -164,9 +160,7 @@ def import_file(
 		"Insert New Records" if import_type.lower() == "insert" else "Update Existing Records"
 	)
 
-	i = Importer(
-		doctype=doctype, file_path=file_path, data_import=data_import, console=console
-	)
+	i = Importer(doctype=doctype, file_path=file_path, data_import=data_import, console=console)
 	i.import_data()
 
 
@@ -183,11 +177,7 @@ def import_doc(path, pre_process=None):
 		if f.endswith(".json"):
 			frappe.flags.mute_emails = True
 			import_file_by_path(
-				f,
-				data_import=True,
-				force=True,
-				pre_process=pre_process,
-				reset_permissions=True
+				f, data_import=True, force=True, pre_process=pre_process, reset_permissions=True
 			)
 			frappe.flags.mute_emails = False
 			frappe.db.commit()
@@ -206,9 +196,7 @@ def validate_csv_import_file(path):
 		raise Exception("Method deprecated")
 
 
-def export_json(
-	doctype, path, filters=None, or_filters=None, name=None, order_by="creation asc"
-):
+def export_json(doctype, path, filters=None, or_filters=None, name=None, order_by="creation asc"):
 	def post_process(out):
 		del_keys = ("modified_by", "creation", "owner", "idx")
 		for doc in out:

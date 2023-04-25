@@ -4,19 +4,48 @@ import re
 import shlex
 import subprocess
 import sys
+import time
 import urllib.request
+from functools import lru_cache
+from urllib.error import HTTPError
+
+
+@lru_cache()
+def fetch_pr_data(pr_number, repo, endpoint):
+	api_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
+
+	if endpoint:
+		api_url += f"/{endpoint}"
+
+	res = req(api_url)
+	return json.loads(res.read().decode("utf8"))
+
+
+def req(url):
+	"Simple resilient request call to handle rate limits."
+	retries = 0
+	while True:
+		try:
+			req = urllib.request.Request(url)
+			return urllib.request.urlopen(req)
+		except HTTPError as exc:
+			if exc.code == 403 and retries < 5:
+				retries += 1
+				time.sleep(retries)
+				continue
+			raise
 
 
 def get_files_list(pr_number, repo="frappe/frappe"):
-	req = urllib.request.Request(f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files")
-	res = urllib.request.urlopen(req)
-	dump = json.loads(res.read().decode('utf8'))
-	return [change["filename"] for change in dump]
+	return [change["filename"] for change in fetch_pr_data(pr_number, repo, "files")]
 
 def get_output(command, shell=True):
 	print(command)
 	command = shlex.split(command)
 	return subprocess.check_output(command, shell=shell, encoding="utf8").strip()
+
+def has_skip_ci_label(pr_number, repo="frappe/frappe"):
+	return any([label["name"] for label in fetch_pr_data(pr_number, repo, "")["labels"] if label["name"] == "Skip CI"])
 
 def is_py(file):
 	return file.endswith("py")
@@ -50,7 +79,11 @@ if __name__ == "__main__":
 	only_frontend_code_changed = len(list(filter(is_frontend_code, files_list))) == len(files_list)
 	only_py_changed = len(list(filter(is_py, files_list))) == len(files_list)
 
-	if ci_files_changed:
+	if has_skip_ci_label(pr_number, repo):
+		print("Found `Skip CI` label on pr, stopping build process.")
+		sys.exit(0)
+
+	elif ci_files_changed:
 		print("CI related files were updated, running all build processes.")
 
 	elif only_docs_changed:
@@ -61,7 +94,7 @@ if __name__ == "__main__":
 		print("Only Frontend code was updated; Stopping Python build process.")
 		sys.exit(0)
 
-	elif only_py_changed and build_type == "ui":
+	elif build_type == "ui" and only_py_changed:
 		print("Only Python code was updated, stopping Cypress build process.")
 		sys.exit(0)
 

@@ -3,9 +3,11 @@
 # See license.txt
 from __future__ import unicode_literals
 
-import frappe
 import unittest
+
+import frappe
 import frappe.desk.form.document_follow as document_follow
+
 
 class TestDocumentFollow(unittest.TestCase):
 
@@ -29,22 +31,28 @@ class TestDocumentFollow(unittest.TestCase):
 		self.assertIn(event_doc.doctype, email_queue_entry_doc.message)
 		self.assertIn(event_doc.name, email_queue_entry_doc.message)
 
-
 	def tearDown(self):
 		frappe.db.rollback()
 
+
 def get_event():
-	doc = frappe.get_doc({
-		'doctype': 'Event',
-		'subject': "_Test_Doc_Follow",
-		'doc.starts_on':  frappe.utils.now(),
-		'doc.ends_on': frappe.utils.add_days(frappe.utils.now(),5),
-		'doc.description': "Hello"
-	})
+	doc = frappe.get_doc(
+		{
+			"doctype": "Event",
+			"subject": "_Test_Doc_Follow",
+			"doc.starts_on": frappe.utils.now(),
+			"doc.ends_on": frappe.utils.add_days(frappe.utils.now(), 5),
+			"doc.description": "Hello",
+		}
+	)
 	doc.insert()
 	return doc
 
+
 def get_user():
+	if frappe.db.exists("User", "test@docsub.com"):
+		doc = frappe.get_doc("User", "test@docsub.com")
+	else:
 		doc = frappe.new_doc("User")
 		doc.email = "test@docsub.com"
 		doc.first_name = "Test"
@@ -53,4 +61,4 @@ def get_user():
 		doc.document_follow_notify = 1
 		doc.document_follow_frequency = "Hourly"
 		doc.insert()
-		return doc
+	return doc

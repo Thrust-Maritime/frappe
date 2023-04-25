@@ -138,6 +138,56 @@ frappe.ui.Page = Class.extend({
 			.add(action_btn, action_btn.find('.actions-btn-group-label'));
 	},
 
+	setup_sidebar_toggle() {
+		let sidebar_toggle = $('.page-head').find('.sidebar-toggle-btn');
+		let sidebar_wrapper = this.wrapper.find('.layout-side-section');
+		if (this.disable_sidebar_toggle || !sidebar_wrapper.length) {
+			sidebar_toggle.remove();
+		} else {
+			sidebar_toggle.attr("title", __("Toggle Sidebar")).tooltip({
+				delay: { "show": 600, "hide": 100 },
+				trigger: "hover",
+			});
+			sidebar_toggle.click(() => {
+				if (frappe.utils.is_xs() || frappe.utils.is_sm()) {
+					this.setup_overlay_sidebar();
+				} else {
+					sidebar_wrapper.toggle();
+				}
+				$(document.body).trigger('toggleSidebar');
+				this.update_sidebar_icon();
+			});
+		}
+	},
+
+	setup_overlay_sidebar() {
+		this.sidebar.find(".close-sidebar").remove();
+		let overlay_sidebar = this.sidebar.find(".overlay-sidebar").addClass("opened");
+		$('<div class="close-sidebar">').hide().appendTo(this.sidebar).fadeIn();
+		let scroll_container = $('html').css("overflow-y", "hidden");
+
+		this.sidebar.find(".close-sidebar").on("click", (e) => this.close_sidebar(e));
+		this.sidebar.on("click", "button:not(.dropdown-toggle)", (e) => this.close_sidebar(e));
+
+		this.close_sidebar = () => {
+			scroll_container.css("overflow-y", "");
+			this.sidebar.find("div.close-sidebar").fadeOut(() => {
+				overlay_sidebar
+					.removeClass('opened')
+					.find('.dropdown-toggle')
+					.removeClass('text-muted');
+			});
+		};
+	},
+
+	update_sidebar_icon() {
+		let sidebar_toggle = $('.page-head').find('.sidebar-toggle-btn');
+		let sidebar_toggle_icon = sidebar_toggle.find('.sidebar-toggle-icon');
+		let sidebar_wrapper = this.wrapper.find('.layout-side-section');
+		let is_sidebar_visible = $(sidebar_wrapper).is(":visible");
+		sidebar_toggle_icon.html(frappe.utils.icon(is_sidebar_visible ? 'sidebar-collapse' : 'sidebar-expand', 'md'));
+	},
+
 	set_indicator: function(label, color) {
 		this.clear_indicator().removeClass("hide").html(`<span>${label}</span>`).addClass(color);
 	},
@@ -229,13 +279,14 @@ frappe.ui.Page = Class.extend({
 
 	//--- Menu --//
 
-	add_menu_item: function(label, click, standard, shortcut) {
+	add_menu_item: function(label, click, standard, shortcut, show_parent) {
 		return this.add_dropdown_item({
 			label,
 			click,
 			standard,
 			parent: this.menu,
-			shortcut
+			shortcut,
+			show_parent,
 		});
 	},
 
@@ -308,8 +359,11 @@ frappe.ui.Page = Class.extend({
 	*/
 	add_dropdown_item: function({label, click, standard, parent, shortcut, show_parent=true}) {
 		if (show_parent) {
-			parent.parent().removeClass("hide");
+			parent.parent().removeClass("hide hidden-xl");
 		}
+
+		let $link = this.is_in_group_button_dropdown(parent, 'li > a.grey-link > span', label);
+		if ($link) return $link;
 
 		let $li;
 		if (shortcut) {
@@ -386,12 +440,10 @@ frappe.ui.Page = Class.extend({
 
 		if (!label || !parent) return false;
 
-		const result = $(parent).find(`${selector}:contains('${label}')`)
-			.filter(function() {
-				let item = $(this).html();
-				return $(item).attr('data-label') === label;
-			});
-		return result.length > 0;
+		const item_selector = `${selector}[data-label="${encodeURIComponent(label)}"]`;
+
+		const existing_items = $(parent).find(item_selector);
+		if (existing_items && existing_items.length > 0) return existing_items;
 	},
 
 	clear_btn_group: function(parent) {
@@ -452,7 +504,15 @@ frappe.ui.Page = Class.extend({
 			let response = action();
 			me.btn_disable_enable(btn, response);
 		};
-		if(group) {
+		// Add actions as menu item in Mobile View
+		let menu_item_label = group ? `${group} > ${label}` : label;
+		let menu_item = this.add_menu_item(menu_item_label, _action, false, false, false);
+		menu_item.parent().addClass("hidden-xl");
+		if (this.menu_btn_group.hasClass("hide")) {
+			this.menu_btn_group.removeClass("hide").addClass("hidden-xl");
+		}
+
+		if (group) {
 			var $group = this.get_or_add_inner_group_button(group);
 			$(this.inner_toolbar).removeClass("hide");
 
@@ -490,6 +550,23 @@ frappe.ui.Page = Class.extend({
 		} else {
 
 			this.inner_toolbar.find('button[data-label="'+encodeURIComponent(label)+'"]').remove();
+		}
+	},
+
+	change_inner_button_type: function(label, group, type) {
+		let btn;
+
+		if (group) {
+			var $group = this.get_inner_group_button(__(group));
+			if ($group.length) {
+				btn = $group.find(`.dropdown-item[data-label="${encodeURIComponent(label)}"]`);
+			}
+		} else {
+			btn = this.inner_toolbar.find(`button[data-label="${encodeURIComponent(label)}"]`);
+		}
+
+		if (btn) {
+			btn.removeClass().addClass(`btn btn-${type} ellipsis`);
 		}
 	},
 
@@ -565,8 +642,54 @@ frappe.ui.Page = Class.extend({
 		//
 	},
 
-	add_button: function(label, click, icon, is_title) {
-		//
+	add_button: function(label, click, opts) {
+		if (!opts) opts = {};
+		let button = $(`<button
+			class="btn ${opts.btn_class || 'btn-default'} ${opts.btn_size || 'btn-sm'} ellipsis">
+				${opts.icon ? frappe.utils.icon(opts.icon): ''}
+				${label}
+		</button>`);
+		// Add actions as menu item in Mobile View (similar to "add_custom_button" in forms.js)
+		let menu_item = this.add_menu_item(label, click, false);
+		menu_item.parent().addClass("hidden-xl");
+
+		button.appendTo(this.custom_actions);
+		button.on('click', click);
+		this.custom_actions.removeClass('hide');
+
+		return button;
+	},
+
+	add_custom_button_group: function(label, icon, parent) {
+		let dropdown_label = `<span class="hidden-xs">
+			<span class="custom-btn-group-label">${__(label)}</span>
+			${frappe.utils.icon('select', 'xs')}
+		</span>`;
+
+		if (icon) {
+			dropdown_label = `<span class="hidden-xs">
+				${frappe.utils.icon(icon)}
+				<span class="custom-btn-group-label">${__(label)}</span>
+				${frappe.utils.icon('select', 'xs')}
+			</span>
+			<span class="visible-xs">
+				${frappe.utils.icon(icon)}
+			</span>`;
+		}
+
+		let custom_btn_group = $(`
+			<div class="custom-btn-group">
+				<button type="button" class="btn btn-default btn-sm ellipsis" data-toggle="dropdown" aria-expanded="false">
+					${dropdown_label}
+				</button>
+				<ul class="dropdown-menu" role="menu"></ul>
+			</div>
+		`);
+
+		if (!parent) parent = this.custom_actions;
+		parent.removeClass('hide').append(custom_btn_group);
+
+		return custom_btn_group.find('.dropdown-menu');
 	},
 
 	add_dropdown_button: function(parent, label, click, icon) {

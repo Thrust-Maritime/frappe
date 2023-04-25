@@ -21,7 +21,140 @@ frappe.ui.FilterGroup = class {
 			clear_filter_button.show();
 		}
 	}
-	set_events() {
+
+	make_popover() {
+		this.init_filter_popover();
+		this.set_clear_all_filters_event();
+		this.set_popover_events();
+	}
+
+	set_clear_all_filters_event() {
+		if (!this.filter_x_button) return;
+
+		this.filter_x_button.on("click", () => {
+			this.toggle_empty_filters(true);
+			if (typeof this.base_list !== "undefined") {
+				// It's a list view. Clear all the filters, also the ones in the
+				// FilterArea outside this FilterGroup
+				this.base_list.filter_area.clear();
+			} else {
+				// Not a list view, just clear the filters in this FilterGroup
+				this.clear_filters();
+			}
+			this.update_filter_button();
+		});
+	}
+
+	hide_popover() {
+		this.filter_button.popover("hide");
+	}
+
+	init_filter_popover() {
+		this.filter_button.popover({
+			content: this.get_filter_area_template(),
+			template: `
+				<div class="filter-popover popover">
+					<div class="arrow"></div>
+					<div class="popover-body popover-content">
+					</div>
+				</div>
+			`,
+			html: true,
+			trigger: 'manual',
+			container: 'body',
+			placement: 'bottom',
+			offset: '-100px, 0'
+		});
+	}
+
+	toggle_empty_filters(show) {
+		this.wrapper &&
+			this.wrapper.find('.empty-filters').toggle(show);
+	}
+
+	set_popover_events() {
+		$(document.body).on('click', (e) => {
+			if (this.wrapper && this.wrapper.is(':visible')) {
+				const in_datepicker = $(e.target).is('.datepicker--cell')
+					|| $(e.target).closest('.datepicker--nav-title').length !== 0
+					|| $(e.target).parents('.datepicker--nav-action').length !== 0;
+
+				if (
+					$(e.target).parents('.filter-popover').length === 0
+					&& $(e.target).parents('.filter-box').length === 0
+					&& this.filter_button.find($(e.target)).length === 0
+					&& !$(e.target).is(this.filter_button)
+					&& !in_datepicker
+				) {
+					this.wrapper && this.hide_popover();
+				}
+			}
+		});
+
+		this.filter_button.on('click', () => {
+			this.filter_button.popover('toggle');
+		});
+
+		this.filter_button.on('shown.bs.popover', () => {
+			let hide_empty_filters = this.filters && this.filters.length > 0;
+
+			if (!this.wrapper) {
+				this.wrapper = $('.filter-popover');
+				if (hide_empty_filters) {
+					this.toggle_empty_filters(false);
+					this.add_filters_to_popover(this.filters);
+				}
+				this.set_filter_events();
+			}
+			this.toggle_empty_filters(false);
+			!hide_empty_filters && this.add_filter(this.doctype, 'name');
+		});
+
+		this.filter_button.on('hidden.bs.popover', () => {
+			this.apply();
+		});
+
+		// REDESIGN-TODO: (Temporary) Review and find best solution for this
+		frappe.router.on("change", () => {
+			if (this.wrapper && this.wrapper.is(":visible")) {
+				this.hide_popover();
+			}
+		});
+	}
+
+	add_filters_to_popover(filters) {
+		filters.forEach(filter => {
+			filter.parent = this.wrapper;
+			filter.field = null;
+			filter.make();
+		});
+	}
+
+	apply() {
+		this.update_filters();
+		this.on_change();
+	}
+
+	update_filter_button() {
+		const filters_applied = this.filters.length > 0;
+		const button_label = filters_applied
+			? this.filters.length > 1
+				? __("{0} filters", [this.filters.length])
+				: __("{0} filter", [this.filters.length])
+			: __('Filter');
+
+
+		this.filter_button
+			.toggleClass('btn-default', !filters_applied)
+			.toggleClass('btn-primary-light', filters_applied);
+
+		this.filter_button.find('.filter-icon')
+			.toggleClass('active', filters_applied);
+
+		this.filter_button.find('.button-label').html(button_label);
+	}
+
+	set_filter_events() {
 		this.wrapper.find('.add-filter').on('click', () => {
 			this.add_filter(this.doctype, 'name')
 				.then(this.toggle_clear_filter());
@@ -29,7 +162,11 @@ frappe.ui.FilterGroup = class {
 		});
 		this.wrapper.find('.clear-filters').on('click', () => {
 			this.clear_filters();
+			this.on_change();
+			this.hide_popover();
 		});
+
+		this.wrapper.find(".apply-filters").on("click", () => this.hide_popover());
 	}
 
 	add_filters(filters) {
@@ -93,6 +230,7 @@ frappe.ui.FilterGroup = class {
 			parent: this.wrapper,
 			parent_doctype: this.doctype,
 			doctype: doctype,
+			_parent_doctype: this.parent_doctype,
 			fieldname: fieldname,
 			condition: condition,
 			value: value,

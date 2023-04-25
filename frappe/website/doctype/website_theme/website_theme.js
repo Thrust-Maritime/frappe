@@ -124,19 +124,59 @@ frappe.ui.form.on('Website Theme', {
 			});
 	},
 
-	set_theme_from_config(frm, config) {
-		const {
-			google_font,
-			font_size,
-			primary_color,
-			dark_color,
-			text_color,
-			background_color,
-			navbar_style,
-			enable_shadows,
-			enable_gradients,
-			enable_rounded
-		} = config;
+	make_app_theme_selector(frm) {
+		if (frm.app_theme_selector) {
+			frm.events.get_installed_apps(frm).then(apps => {
+				let ignored_apps = (frm.doc.ignored_apps || []).map(d => d.app);
+				frm.app_theme_selector
+					.get_field("apps")
+					.select_options(
+						apps
+							.map(d => d.name)
+							.filter(app => !ignored_apps.includes(app))
+					);
+			});
+			return;
+		}
+		let $wrapper = frm.get_field("ignored_apps").$wrapper.hide();
+		let $body = $("<div>").insertAfter($wrapper);
+		let ignored_apps = (frm.doc.ignored_apps || []).map(d => d.app);
+		frm.events.get_installed_apps(frm).then(apps => {
+			if (frm.app_theme_selector) return;
+			let form = new frappe.ui.FieldGroup({
+				fields: [
+					{
+						label: __("Include Theme from Apps"),
+						fieldname: "apps",
+						fieldtype: "MultiCheck",
+						columns: 4,
+						on_change: () => {
+							let value = form
+								.get_field("apps")
+								.get_unchecked_options()
+								.map(app => ({ app: app }));
+							frm.set_value("ignored_apps", value.length ? value : null);
+						},
+						options: apps.map(app => ({
+							label: app.title,
+							value: app.name,
+							checked: !ignored_apps.includes(app.name)
+						}))
+					}
+				],
+				body: $body
+			});
+			form.make();
+			frm.app_theme_selector = form;
+			$(form.wrapper)
+				.find(".form-section")
+				.css({
+					padding: 0,
+					marginLeft: "-15px",
+					marginRight: "-15px"
+				});
+		});
+	},
 
 		let scss_lines = [];
 		let js_lines = [];

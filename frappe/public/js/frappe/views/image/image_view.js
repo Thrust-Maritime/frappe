@@ -66,9 +66,10 @@ frappe.views.ImageView = class ImageView extends frappe.views.ListView {
 		const info_fields = this.get_fields_in_list_view().map((el)=> el.fieldname)  || [];
 		let info_html = `<div><ul class="list-unstyled image-view-info">`;
 		info_fields.forEach((field, index) => {
-			if (item[field]) {
-				if (index == 0) info_html += `<li>${item[field]}</li>`;
-				else info_html += `<li class="text-muted">${item[field]}</li>`;
+			if (item[field] && !set) {
+				if (index == 0) info_html += `<li>${__(item[field])}</li>`;
+				else info_html += `<li class="text-muted">${__(item[field])}</li>`;
+				set = true;
 			}
 		})
 		info_html += `</ul></div>`;

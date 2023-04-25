@@ -3,11 +3,10 @@
 # MIT License. See license.txt
 
 import frappe
-from frappe.model import (
-	display_fieldtypes,
-	no_value_fields,
-	table_fields as table_fieldtypes,
-)
+from frappe import _
+from frappe.model import display_fieldtypes, no_value_fields
+from frappe.model import table_fields as table_fieldtypes
+from frappe.utils import flt, format_duration, groupby_metric
 from frappe.utils.csvutils import build_csv_response
 from frappe.utils.xlsxutils import build_xlsx_response
 
@@ -24,11 +23,11 @@ class Exporter:
 	):
 		"""
 		Exports records of a DocType for use with Importer
-			:param doctype: Document Type to export
-			:param export_fields=None: One of 'All', 'Mandatory' or {'DocType': ['field1', 'field2'], 'Child DocType': ['childfield1']}
-			:param export_data=False: Whether to export data as well
-			:param export_filters=None: The filters (dict or list) which is used to query the records
-			:param file_type: One of 'Excel' or 'CSV'
+		        :param doctype: Document Type to export
+		        :param export_fields=None: One of 'All', 'Mandatory' or {'DocType': ['field1', 'field2'], 'Child DocType': ['childfield1']}
+		        :param export_data=False: Whether to export data as well
+		        :param export_filters=None: The filters (dict or list) which is used to query the records
+		        :param file_type: One of 'Excel' or 'CSV'
 		"""
 		self.doctype = doctype
 		self.meta = frappe.get_meta(doctype)
@@ -161,9 +160,7 @@ class Exporter:
 		else:
 			order_by = "`tab{0}`.`creation` DESC".format(self.doctype)
 
-		parent_fields = [
-			format_column_name(df) for df in self.fields if df.parent == self.doctype
-		]
+		parent_fields = [format_column_name(df) for df in self.fields if df.parent == self.doctype]
 		parent_data = frappe.db.get_list(
 			self.doctype,
 			filters=filters,
@@ -181,9 +178,7 @@ class Exporter:
 			child_table_df = self.meta.get_field(key)
 			child_table_doctype = child_table_df.options
 			child_fields = ["name", "idx", "parent", "parentfield"] + list(
-				set(
-					[format_column_name(df) for df in self.fields if df.parent == child_table_doctype]
-				)
+				set([format_column_name(df) for df in self.fields if df.parent == child_table_doctype])
 			)
 			data = frappe.db.get_list(
 				child_table_doctype,
@@ -213,9 +208,9 @@ class Exporter:
 		for df in self.fields:
 			is_parent = not df.is_child_table_field
 			if is_parent:
-				label = df.label
+				label = _(df.label)
 			else:
-				label = "{0} ({1})".format(df.label, df.child_table_df.label)
+				label = "{0} ({1})".format(_(df.label), _(df.child_table_df.label))
 
 			if label in header:
 				# this label is already in the header,
@@ -225,6 +220,7 @@ class Exporter:
 					label = "{0}".format(df.fieldname)
 				else:
 					label = "{0}.{1}".format(df.child_table_df.fieldname, df.fieldname)
+
 			header.append(label)
 
 		self.csv_array.append(header)
@@ -251,7 +247,10 @@ class Exporter:
 			self.build_xlsx_response()
 
 	def build_csv_response(self):
-		build_csv_response(self.get_csv_array_for_export(), self.doctype)
+		build_csv_response(self.get_csv_array_for_export(), _(self.doctype))
 
 	def build_xlsx_response(self):
-		build_xlsx_response(self.get_csv_array_for_export(), self.doctype)
+		build_xlsx_response(self.get_csv_array_for_export(), _(self.doctype))
+
+	def group_children_data_by_parent(self, children_data: typing.Dict[str, list]):
+		return groupby_metric(children_data, key="parent")

@@ -13,7 +13,12 @@
   "first_name",
   "middle_name",
   "last_name",
+  "column_break0",
   "full_name",
+  "username",
+  "column_break_11",
+  "language",
+  "time_zone",
   "send_welcome_email",
   "unsubscribed",
   "column_break0",
@@ -118,7 +123,7 @@
   {
    "fieldname": "middle_name",
    "fieldtype": "Data",
-   "label": "Middle Name (Optional)",
+   "label": "Middle Name",
    "oldfieldname": "middle_name",
    "oldfieldtype": "Data"
   },
@@ -201,7 +206,8 @@
    "fieldname": "role_profile_name",
    "fieldtype": "Link",
    "label": "Role Profile",
-   "options": "Role Profile"
+   "options": "Role Profile",
+   "permlevel": 1
   },
   {
    "fieldname": "roles_html",
@@ -486,7 +492,7 @@
   {
    "description": "Restrict user from this IP address only. Multiple IP addresses can be added by separating with commas. Also accepts partial IP addresses like (111.111.111)",
    "fieldname": "restrict_ip",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Restrict IP",
    "permlevel": 1
   },
@@ -556,20 +562,22 @@
    "collapsible": 1,
    "fieldname": "api_access",
    "fieldtype": "Section Break",
-   "label": "Api Access"
+   "label": "API Access"
   },
   {
-   "description": "API Key cannot be  regenerated",
+   "description": "API Key cannot be regenerated",
    "fieldname": "api_key",
    "fieldtype": "Data",
    "label": "API Key",
+   "permlevel": 1,
    "read_only": 1,
    "unique": 1
   },
   {
    "fieldname": "generate_keys",
    "fieldtype": "Button",
-   "label": "Generate Keys"
+   "label": "Generate Keys",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_65",
@@ -579,14 +587,71 @@
    "fieldname": "api_secret",
    "fieldtype": "Password",
    "label": "API Secret",
+   "permlevel": 1,
    "read_only": 1
   }
  ],
  "icon": "fa fa-user",
  "idx": 413,
  "image_field": "user_image",
- "max_attachments": 5,
- "modified": "2019-10-22 14:16:34.810223",
+ "links": [
+  {
+   "group": "Profile",
+   "link_doctype": "Contact",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Profile",
+   "link_doctype": "Blogger",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Logs",
+   "link_doctype": "Access Log",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Logs",
+   "link_doctype": "Activity Log",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Logs",
+   "link_doctype": "Energy Point Log",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Logs",
+   "link_doctype": "Route History",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Settings",
+   "link_doctype": "User Permission",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Settings",
+   "link_doctype": "Document Follow",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Activity",
+   "link_doctype": "Communication",
+   "link_fieldname": "user"
+  },
+  {
+   "group": "Activity",
+   "link_doctype": "ToDo",
+   "link_fieldname": "owner"
+  },
+  {
+   "group": "Integrations",
+   "link_doctype": "Token Cache",
+   "link_fieldname": "user"
+  }
+ ],
+ "modified": "2022-09-19 16:10:56.745069",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "User",
@@ -618,6 +683,7 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "full_name",
  "track_changes": 1
 }

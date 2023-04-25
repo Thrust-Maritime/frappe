@@ -67,12 +67,17 @@ frappe.views.CalendarView = class CalendarView extends frappe.views.ListView {
 		const calendar_name = this.calendar_name;
 
 		return new Promise(resolve => {
-			if (calendar_name === 'Default') {
+			if (calendar_name === 'default') {
 				Object.assign(options, frappe.views.calendar[this.doctype]);
 				resolve(options);
 			} else {
 				frappe.model.with_doc('Calendar View', calendar_name, () => {
 					const doc = frappe.get_doc('Calendar View', calendar_name);
+					if (!doc) {
+						frappe.show_alert(__("{0} is not a valid Calendar. Redirecting to default Calendar.", [calendar_name.bold()]));
+						frappe.set_route("List", this.doctype, "Calendar", "default");
+						return;
+					}
 					Object.assign(options, {
 						field_map: {
 							id: "name",
@@ -199,6 +204,7 @@ frappe.views.Calendar = Class.extend({
 		"start": "start",
 		"end": "end",
 		"allDay": "all_day",
+		"convertToUserTz": "convert_to_user_tz",
 	},
 	color_map: {
 		"danger": "red",
@@ -332,12 +338,14 @@ frappe.views.Calendar = Class.extend({
 				d[target] = d[source];
 			});
 
-			if(!me.field_map.allDay)
-				d.allDay = 1;
+			if (!me.field_map.allDay) d.allDay = 1;
+			if (!me.field_map.convertToUserTz) d.convertToUserTz = 1;
 
 			// convert to user tz
-			d.start = frappe.datetime.convert_to_user_tz(d.start);
-			d.end = frappe.datetime.convert_to_user_tz(d.end);
+			if (d.convertToUserTz) {
+				d.start = frappe.datetime.convert_to_user_tz(d.start);
+				d.end = frappe.datetime.convert_to_user_tz(d.end);
+			}
 
 			// show event on single day if start or end date is invalid
 			if (!frappe.datetime.validate(d.start) && d.end) {

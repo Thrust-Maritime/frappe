@@ -93,6 +93,9 @@ class Leaderboard {
 			options: "Company",
 			default: frappe.defaults.get_default("company"),
 			reqd: 1,
+			change: (e) => {
+				this.make_request();
+			}
 		});
 
 
@@ -124,13 +127,37 @@ class Leaderboard {
 		});
 	}
 
+	create_date_range_field() {
+		let timespan_field = $(this.parent).find(`.frappe-control[data-original-title="${__('Timespan')}"]`);
+		this.date_range_field = $(`<div class="from-date-field"></div>`).insertAfter(timespan_field).hide();
+
+		let date_field = frappe.ui.form.make_control({
+			df: {
+				fieldtype: 'DateRange',
+				fieldname: 'selected_date_range',
+				placeholder: __("Date Range"),
+				default: [frappe.datetime.month_start(), frappe.datetime.now_date()],
+				input_class: 'input-xs',
+				reqd: 1,
+				change: () => {
+					this.selected_date_range = date_field.get_value();
+					if (this.selected_date_range) this.make_request();
+				}
+			},
+			parent: $(this.parent).find('.from-date-field'),
+			render_input: 1
+		});
+	}
+
 	render_selected_doctype() {
 
 		this.$sidebar_list.on("click", "li", (e)=> {
 			let $li = $(e.currentTarget);
 			let doctype = $li.find("span").attr("doctype-value");
 
-			this.options.selected_company = frappe.defaults.get_default("company");
+			this.company_select.set_value(
+				frappe.defaults.get_default("company") || this.company_select.get_value()
+			);
 			this.options.selected_doctype = doctype;
 			this.options.selected_filter = this.filters[doctype];
 			this.options.selected_filter_item = this.filters[doctype][0];
@@ -184,15 +211,17 @@ class Leaderboard {
 	}
 
 	get_leaderboard(notify) {
-		if (!this.options.selected_company) {
-			frappe.throw(__("Please select Company"));
+		let company = this.company_select.get_value();
+		if (!company && !this.leaderboard_config[this.options.selected_doctype].company_disabled) {
+			notify(this, null);
+			frappe.show_alert(__("Please select Company"));
+			return;
 		}
 		frappe.call(
 			this.leaderboard_config[this.options.selected_doctype].method,
 			{
-				'from_date': this.get_from_date(),
-				'timespan': this.options.selected_timespan,
-				'company': this.options.selected_company,
+				'date_range': this.get_date_range(),
+				'company': company,
 				'field': this.options.selected_filter_item,
 				'limit': this.leaderboard_limit,
 			}
@@ -344,15 +373,17 @@ class Leaderboard {
 	get_from_date() {
 		let timespan = this.options.selected_timespan.toLowerCase();
 		let current_date = frappe.datetime.now_date();
-		let date = '';
-		if (timespan === "month") {
-			date = frappe.datetime.add_months(current_date, -1);
-		} else if (timespan === "quarter") {
-			date = frappe.datetime.add_months(current_date, -3);
-		} else if (timespan === "year") {
-			date = frappe.datetime.add_months(current_date, -12);
-		} else if (timespan === "week") {
-			date = frappe.datetime.add_days(current_date, -7);
+		let date_range_map = {
+			"this week": [frappe.datetime.week_start(), frappe.datetime.week_end()],
+			"this month": [frappe.datetime.month_start(), frappe.datetime.month_end()],
+			"this quarter": [frappe.datetime.quarter_start(), frappe.datetime.quarter_end()],
+			"this year": [frappe.datetime.year_start(), frappe.datetime.year_end()],
+			"last week": [frappe.datetime.add_days(current_date, -7), current_date],
+			"last month": [frappe.datetime.add_months(current_date, -1), current_date],
+			"last quarter": [frappe.datetime.add_months(current_date, -3), current_date],
+			"last year": [frappe.datetime.add_months(current_date, -12), current_date],
+			"all time": null,
+			"select date range": this.selected_date_range || [frappe.datetime.month_start(), current_date]
 		}
 		return date;
 	}

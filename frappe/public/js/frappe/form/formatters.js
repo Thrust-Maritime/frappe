@@ -40,10 +40,9 @@ frappe.form.formatters = {
 				}
 			}
 
-			return frappe.form.formatters._right(
-				((value==null || value==="")
-					? ""
-					: format_number(value, null, precision)), options);
+			value = (value == null || value === "") ? "" : value;
+
+			return frappe.form.formatters._right(format_number(value, null, precision), options);
 		}
 	},
 	Int: function(value, docfield, options) {
@@ -85,7 +84,8 @@ frappe.form.formatters = {
 			}
 		}
 
-		value = (value == null || value === "") ? "" : format_currency(value, currency, precision);
+		value = (value == null || value === "") ? "" : value;
+		value = format_currency(value, currency, precision);
 
 		if ( options && options.only_value ) {
 			return value;
@@ -167,7 +167,8 @@ frappe.form.formatters = {
 			if(frappe.boot.sysdefaults.time_zone) {
 				m = m.tz(frappe.boot.sysdefaults.time_zone);
 			}
-			return m.format(frappe.boot.sysdefaults.date_format.toUpperCase() + ', h:mm a z');
+			return m.format(frappe.boot.sysdefaults.date_format.toUpperCase()
+				+  ' ' + (frappe.boot.sysdefaults.time_format || 'HH:mm:ss'));
 		} else {
 			return "";
 		}
@@ -190,6 +191,21 @@ frappe.form.formatters = {
 		}
 
 		return frappe.form.formatters.Data(value);
+	},
+	Time: function(value) {
+		if (value) {
+			value = frappe.datetime.str_to_user(value, true);
+		}
+
+		return value || "";
+	},
+	Duration: function(value, docfield) {
+		if (value) {
+			let duration_options = frappe.utils.get_duration_options(docfield);
+			value = frappe.utils.get_formatted_duration(value, duration_options);
+		}
+
+		return value || "0s";
 	},
 	LikedBy: function(value) {
 		var html = "";
@@ -263,6 +279,18 @@ frappe.form.formatters = {
 			return frappe.format(value, link_field, options, row);
 		});
 		return formatted_values.join(', ');
+	},
+	Color: (value) => {
+		return value ? `<div>
+			<div class="selected-color" style="background-color: ${value}"></div>
+			<span class="color-value">${value}</span>
+		</div>` : '';
+	},
+	Icon: (value) => {
+		return value ? `<div>
+			<div class="selected-icon">${frappe.utils.icon(value, "md")}</div>
+			<span class="icon-value">${value}</span>
+		</div>` : '';
 	}
 }
 

@@ -30,19 +30,17 @@
 				{% endfor %}
 			</select>
 		</div>
-		<div class="col-sm-6 col-xs-12">
-			<div class="groupby-field pull-left">
-				<select class="aggregate-on form-control" style="display: none">
-					<option value="" disabled selected>{{ __("Select Field...") }}</option>
-				</select>
-			</div>
-			<div class="groupby-actions pull-left">
-				<a class="small grey remove-groupby pull-left">
-					<i class="octicon octicon-trashcan visible-xs"></i>
-					<span class="hidden-xs">{{ __("Remove") }}</span>
-				</a>
-			</div>
-			<div class="clearfix"></div>
+		<div class="col-sm-4 col-xs-12" style="display: none">
+			<select class="aggregate-on form-control input-xs">
+				<option value="" disabled selected>{{ __("Select Field...") }}</option>
+			</select>
+		</div>
+		<div class="groupby-actions pull-left col-sm-1 hidden-xs">
+			<span class="remove-group-by">
+				<svg class="icon icon-sm">
+					<use href="#icon-close"></use>
+				</svg>
+			</span>
 		</div>
 	</div>
 </div>

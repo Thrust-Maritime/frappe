@@ -54,7 +54,11 @@ frappe.ui.form.ControlBarcode = frappe.ui.form.ControlData.extend({
 
 	get_options(value) {
 		// get JsBarcode options
-		let options = JSON.parse('{ "height" : 40 }');
+		let options = {};
+		options.fontSize = "16";
+		options.width = "3";
+		options.height = "50";
+
 		if (frappe.utils.is_json(this.df.options)) {
 			options = JSON.parse(this.df.options);
 			if (options.format && options.format === 'EAN') {

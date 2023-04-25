@@ -32,8 +32,8 @@ frappe.ui.form.ControlAttach = frappe.ui.form.ControlData.extend({
 		if(this.frm) {
 			me.parse_validate_and_set_in_model(null);
 			me.refresh();
-			me.frm.attachments.remove_attachment_by_filename(me.value, function() {
-				me.parse_validate_and_set_in_model(null);
+			me.frm.attachments.remove_attachment_by_filename(me.value, async function() {
+				await me.parse_validate_and_set_in_model(null);
 				me.refresh();
 				me.frm.doc.docstatus == 1 ? me.frm.save('Update') : me.frm.save();
 			});
@@ -66,11 +66,8 @@ frappe.ui.form.ControlAttach = frappe.ui.form.ControlData.extend({
 		if (this.frm) {
 			options.doctype = this.frm.doctype;
 			options.docname = this.frm.docname;
-		}
-
-		if (this.doc) {
-			options.doctype = this.doc.doctype;
-			options.docname = this.doc.name;
+			options.fieldname = this.df.fieldname;
+			options.make_attachments_public = this.frm.meta.make_attachments_public;
 		}
 
 		if (this.df.options) {
@@ -80,8 +77,9 @@ frappe.ui.form.ControlAttach = frappe.ui.form.ControlData.extend({
 	},
 
 	set_input: function(value, dataurl) {
+		this.last_value = this.value;
 		this.value = value;
-		if(this.value) {
+		if (this.value) {
 			this.$input.toggle(false);
 			if(this.value.indexOf(",")!==-1) {
 				var parts = this.value.split(",");
@@ -101,9 +99,9 @@ frappe.ui.form.ControlAttach = frappe.ui.form.ControlData.extend({
 		return this.value || null;
 	},
 
-	on_upload_complete: function(attachment) {
+	on_upload_complete: async function(attachment) {
 		if(this.frm) {
-			this.parse_validate_and_set_in_model(attachment.file_url);
+			await this.parse_validate_and_set_in_model(attachment.file_url);
 			this.frm.attachments.update_attachment(attachment);
 			this.frm.doc.docstatus == 1 ? this.frm.save('Update') : this.frm.save();
 		}

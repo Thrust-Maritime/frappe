@@ -3,11 +3,17 @@
 # See license.txt
 from __future__ import unicode_literals
 
-import frappe
 import unittest
-from frappe.website.doctype.personal_data_deletion_request.personal_data_deletion_request import PersonalDataDeletionRequest, remove_unverified_record
-from frappe.website.doctype.personal_data_download_request.test_personal_data_download_request import create_user_if_not_exists
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
+
+import frappe
+from frappe.website.doctype.personal_data_deletion_request.personal_data_deletion_request import (
+	remove_unverified_record,
+)
+from frappe.website.doctype.personal_data_download_request.test_personal_data_download_request import (
+	create_user_if_not_exists,
+)
+
 
 class TestPersonalDataDeletionRequest(unittest.TestCase):
 	def setUp(self):
@@ -35,17 +41,23 @@ class TestPersonalDataDeletionRequest(unittest.TestCase):
 			fields = ['first_name', 'last_name', 'phone', 'birth_date'])
 		self.assertEqual(len(deleted_user), 1)
 
-		expected_data = [{
-			'first_name': 'first_name',
-  			'last_name': 'last_name',
-  			'phone': 'phone',
-			'birth_date': date(1111,1,1),
-		}]
-		self.assertEqual(expected_data, deleted_user)
-		self.assertEqual(self.delete_request.status, 'Deleted')
+		deleted_user = frappe.get_all(
+			"User",
+			filters={"name": self.delete_request.name},
+			fields=["first_name", "last_name", "phone", "birth_date"],
+		)[0]
+
+		self.assertEqual(deleted_user.first_name, self.delete_request.anonymization_value_map["Data"])
+		self.assertEqual(deleted_user.last_name, self.delete_request.anonymization_value_map["Data"])
+		self.assertEqual(deleted_user.phone, self.delete_request.anonymization_value_map["Phone"])
+		self.assertEqual(
+			deleted_user.birth_date,
+			datetime.strptime(self.delete_request.anonymization_value_map["Date"], "%Y-%m-%d").date(),
+		)
+		self.assertEqual(self.delete_request.status, "Deleted")
 
 	def test_unverified_record_removal(self):
-		date_time_obj = datetime.strptime(self.delete_request.creation, '%Y-%m-%d %H:%M:%S.%f')
+		date_time_obj = datetime.strptime(self.delete_request.creation, "%Y-%m-%d %H:%M:%S.%f")
 		date_time_obj += timedelta(days=-7)
 		self.delete_request.creation = date_time_obj
 		self.status = 'Pending Verification'

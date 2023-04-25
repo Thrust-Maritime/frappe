@@ -79,8 +79,18 @@ frappe.views.FormFactory = class FormFactory extends frappe.views.Factory {
 		});
 	}
 
-	load(dt, dn) {
-		frappe.container.change_to("Form/" + dt);
-		frappe.views.formview[dt].frm.refresh(dn);
+	render_new_doc(doctype, name, doctype_layout) {
+		const new_name = frappe.model.make_new_doc_and_get_name(doctype, true);
+		if (new_name===name) {
+			this.render(doctype_layout, name);
+		} else {
+			frappe.route_flags.replace_route = true;
+			frappe.set_route("Form", doctype_layout, new_name);
+		}
+	}
+
+	render(doctype_layout, name) {
+		frappe.container.change_to(doctype_layout);
+		frappe.views.formview[doctype_layout].frm.refresh(name);
 	}
 }

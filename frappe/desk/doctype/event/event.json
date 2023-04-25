@@ -50,7 +50,7 @@
   },
   {
    "fieldname": "subject",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "in_global_search": 1,
    "in_list_view": 1,
    "label": "Subject",
@@ -266,10 +266,12 @@
  ],
  "icon": "fa fa-calendar",
  "idx": 1,
- "modified": "2019-08-08 16:01:19.489396",
+ "links": [],
+ "modified": "2021-11-18 05:06:24.881742",
  "modified_by": "Administrator",
  "module": "Desk",
  "name": "Event",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

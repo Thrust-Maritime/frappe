@@ -77,12 +77,14 @@ class FormTimeline extends BaseTimeline {
 			const message = __("Add to this activity by mailing to {0}", [link.bold()]);
 
 			this.document_email_link_wrapper = $(`
-				<div class="document-email-link-container">
+				<div class="timeline-item">
 					<div class="timeline-dot"></div>
-					<span class="ellipsis">${message}</span>
+					<div class="timeline-content">
+						<span>${message}</span>
+					</div>
 				</div>
 			`);
-			this.timeline_wrapper.append(this.document_email_link_wrapper);
+			this.timeline_actions_wrapper.append(this.document_email_link_wrapper);
 
 			this.document_email_link_wrapper
 				.find('.document-email-link')
@@ -100,20 +102,34 @@ class FormTimeline extends BaseTimeline {
 
 	set_document_info() {
 		// TODO: handle creation via automation
-		let creation_message = __("{0} created this {1}", [
-			this.get_user_link(this.frm.doc.owner),
-			comment_when(this.frm.doc.creation)
-		]);
+		const creation = comment_when(this.frm.doc.creation);
+		let creation_message =
+			frappe.utils.is_current_user(this.frm.doc.owner)
+				? __("You created this {0}", [creation], "Form timeline")
+				: __("{0} created this {1}",
+					[
+						this.get_user_link(this.frm.doc.owner),
+						creation
+					],
+					"Form timeline"
+				);
 
-		let modified_message = __("{0} edited this {1}", [
-			this.get_user_link(this.frm.doc.modified_by),
-			comment_when(this.frm.doc.modified),
-		]);
+		const modified = comment_when(this.frm.doc.modified);
+		let modified_message =
+			frappe.utils.is_current_user(this.frm.doc.modified_by)
+				? __("You edited this {0}", [modified], "Form timeline")
+				: __("{0} edited this {1}",
+					[
+						this.get_user_link(this.frm.doc.modified_by),
+						modified
+					],
+					"Form timeline"
+				);
 
 		if (this.frm.doc.route && cint(frappe.boot.website_tracking_enabled)) {
 			let route = this.frm.doc.route;
 			frappe.utils.get_page_view_count(route).then((res) => {
-				let page_view_count_message = __('{0} Page views', [res.message]);
+				let page_view_count_message = __('{0} Page views', [res.message], "Form timeline");
 				this.add_timeline_item({
 					content: `${creation_message} • ${modified_message} • 	${page_view_count_message}`,
 					hide_timestamp: true
@@ -147,23 +163,28 @@ class FormTimeline extends BaseTimeline {
 	}
 
 	get_user_link(user) {
-		const user_display_text = (
-			(frappe.session.user == user ? __("You") : frappe.user_info(user).fullname) || ''
-		).bold();
+		const user_display_text = (frappe.user_info(user).fullname || '').bold();
 		return frappe.utils.get_form_link('User', user, true, user_display_text);
 	}
 
 	get_view_timeline_contents() {
 		let view_timeline_contents = [];
 		(this.doc_info.views || []).forEach(view => {
-			let view_content = `
-				<a href="${frappe.utils.get_form_link('View Log', view.name)}">
-					${__("{0} viewed", [this.get_user_link(view.owner)])}
-				</a>
-			`;
+			const view_time = comment_when(view.creation);
+			let view_message = frappe.utils.is_current_user(view.owner)
+				? __("You viewed this {0}", [view_time], "Form timeline")
+				: __("{0} viewed this {1}",
+					[
+						this.get_user_link(view.owner),
+						view_time
+					],
+					"Form timeline"
+				);
+
 			view_timeline_contents.push({
 				creation: view.creation,
-				content: view_content,
+				content: view_message,
+				hide_timestamp: true,
 			});
 		});
 		return view_timeline_contents;
@@ -171,9 +192,11 @@ class FormTimeline extends BaseTimeline {
 
 	get_communication_timeline_contents() {
 		let communication_timeline_contents = [];
+		let icon_set = {Email: "mail", Phone: "call", Meeting: "calendar", Other: "dot-horizontal"};
 		(this.doc_info.communications|| []).forEach(communication => {
+			let medium = communication.communication_medium;
 			communication_timeline_contents.push({
-				icon: 'mail',
+				icon: icon_set[medium],
 				icon_size: 'sm',
 				creation: communication.creation,
 				is_card: true,
@@ -299,7 +322,7 @@ class FormTimeline extends BaseTimeline {
 		(this.doc_info.info_logs || []).forEach(info_log => {
 			info_timeline_contents.push({
 				creation: info_log.creation,
-				content: `${this.get_user_link(info_log.comment_email)} ${info_log.content}`,
+				content: `${this.get_user_link(info_log.owner)} ${info_log.content}`,
 			});
 		});
 		return info_timeline_contents;
@@ -422,13 +445,13 @@ class FormTimeline extends BaseTimeline {
 		}
 
 		if (this.frm.doctype === "Communication") {
-			args.txt = "";
+			args.message = "";
 			args.last_email = this.frm.doc;
 			args.recipients = this.frm.doc.sender;
 			args.subject = __("Re: {0}", [this.frm.doc.subject]);
 		} else {
 			const comment_value = frappe.markdown(this.frm.comment_box.get_value());
-			args.txt = strip_html(comment_value) ? comment_value : '';
+			args.message = strip_html(comment_value) ? comment_value : '';
 		}
 
 		new frappe.views.CommunicationComposer(args);
@@ -448,7 +471,7 @@ class FormTimeline extends BaseTimeline {
 		let content_wrapper = comment_wrapper.find('.content');
 
 		let delete_button = $();
-		if (frappe.model.can_delete("Comment")) {
+		if (frappe.model.can_delete("Comment") && (frappe.session.user == doc.owner || frappe.user.has_role("System Manager"))) {
 			delete_button = $(`
 				<button class="btn btn-link action-btn">
 					${frappe.utils.icon('close', 'sm')}

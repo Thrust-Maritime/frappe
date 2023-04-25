@@ -21,9 +21,9 @@ $.extend(frappe.model, {
 		{fieldname:'name', fieldtype:'Link', label:__('ID')},
 		{fieldname:'owner', fieldtype:'Link', label:__('Created By'), options: 'User'},
 		{fieldname:'idx', fieldtype:'Int', label:__('Index')},
-		{fieldname:'creation', fieldtype:'Date', label:__('Created On')},
-		{fieldname:'modified', fieldtype:'Date', label:__('Last Updated On')},
-		{fieldname:'modified_by', fieldtype:'Data', label:__('Last Updated By')},
+		{fieldname:'creation', fieldtype:'Datetime', label:__('Created On')},
+		{fieldname:'modified', fieldtype:'Datetime', label:__('Last Updated On')},
+		{fieldname:'modified_by', fieldtype:'Link', label:__('Last Updated By'), options: "User"},
 		{fieldname:'_user_tags', fieldtype:'Data', label:__('Tags')},
 		{fieldname:'_liked_by', fieldtype:'Data', label:__('Liked By')},
 		{fieldname:'_comments', fieldtype:'Text', label:__('Comments')},
@@ -50,15 +50,23 @@ $.extend(frappe.model, {
 			frappe.views.ListView.trigger_list_update(data);
 			var doc = locals[data.doctype] && locals[data.doctype][data.name];
 
-			if(doc) {
+			if (doc) {
 				// current document is dirty, show message if its not me
-				if(frappe.get_route()[0]==="Form" && cur_frm.doc.doctype===doc.doctype && cur_frm.doc.name===doc.name) {
-					if(!frappe.ui.form.is_saving && data.modified!=cur_frm.doc.modified) {
-						doc.__needs_refresh = true;
-						cur_frm.show_conflict_message();
+				if (
+					frappe.get_route()[0] === "Form" &&
+					cur_frm.doc.doctype === doc.doctype &&
+					cur_frm.doc.name === doc.name
+				) {
+					if (data.modified !== cur_frm.doc.modified) {
+						if (!cur_frm.is_dirty()) {
+							cur_frm.reload_doc();
+						} else if (!frappe.ui.form.is_saving) {
+							doc.__needs_refresh = true;
+							cur_frm.check_doctype_conflict();
+						}
 					}
 				} else {
-					if(!doc.__unsaved) {
+					if (!doc.__unsaved) {
 						// no local changes, remove from locals
 						frappe.model.remove_from_locals(doc.doctype, doc.name);
 					} else {
@@ -68,11 +76,9 @@ $.extend(frappe.model, {
 				}
 			}
 		});
-
 		frappe.realtime.on("list_update", function(data) {
 			frappe.views.ListView.trigger_list_update(data);
 		});
-
 	},
 
 	is_value_type: function(fieldtype) {
@@ -294,8 +300,14 @@ $.extend(frappe.model, {
 		return frappe.boot.user.can_email.indexOf(doctype)!==-1;
 	},
 
-	can_share: function(doctype, frm) {
-		if(frm) {
+	can_share: function (doctype, frm) {
+		let disable_sharing = cint(frappe.sys_defaults.disable_document_sharing);
+
+		if (disable_sharing && frappe.session.user !== "Administrator") {
+			return false;
+		}
+
+		if (frm) {
 			return frm.perm[0].share===1;
 		}
 		return frappe.boot.user.can_share.indexOf(doctype)!==-1;
@@ -360,7 +372,7 @@ $.extend(frappe.model, {
 		}
 	},
 
-	set_value: function(doctype, docname, fieldname, value, fieldtype) {
+	set_value: function(doctype, docname, fieldname, value, fieldtype, skip_dirty_trigger=false) {
 		/* help: Set a value locally (if changed) and execute triggers */
 
 		var doc;
@@ -386,11 +398,11 @@ $.extend(frappe.model, {
 				}
 
 				doc[key] = value;
-				tasks.push(() => frappe.model.trigger(key, value, doc));
+				tasks.push(() => frappe.model.trigger(key, value, doc, skip_dirty_trigger));
 			} else {
 				// execute link triggers (want to reselect to execute triggers)
 				if(in_list(["Link", "Dynamic Link"], fieldtype) && doc) {
-					tasks.push(() => frappe.model.trigger(key, value, doc));
+					tasks.push(() => frappe.model.trigger(key, value, doc, skip_dirty_trigger));
 				}
 			}
 		});
@@ -415,32 +427,32 @@ $.extend(frappe.model, {
 		frappe.model.events[doctype][fieldname].push(fn);
 	},
 
-	trigger: function(fieldname, value, doc) {
-		let tasks = [];
-		var runner = function(events, event_doc) {
-			$.each(events || [], function(i, fn) {
-				if(fn) {
-					let _promise = fn(fieldname, value, event_doc || doc);
+	trigger: function(fieldname, value, doc, skip_dirty_trigger=false) {
+		const tasks = [];
+
+		function enqueue_events(events) {
+			if (!events) return;
+
+			for (const fn of events) {
+				if (!fn) continue;
+
+				tasks.push(() => {
+					const return_value = fn(fieldname, value, doc, skip_dirty_trigger);
 
 					// if the trigger returns a promise, return it,
 					// or use the default promise frappe.after_ajax
-					if (_promise && _promise.then) {
-						return _promise;
+					if (return_value && return_value.then) {
+						return return_value;
 					} else {
 						return frappe.after_server_call();
 					}
-				}
-			});
+				});
+			}
 		};
 
 		if(frappe.model.events[doc.doctype]) {
-			tasks.push(() => {
-				return runner(frappe.model.events[doc.doctype][fieldname]);
-			});
-
-			tasks.push(() => {
-				return runner(frappe.model.events[doc.doctype]['*']);
-			});
+			enqueue_events(frappe.model.events[doc.doctype][fieldname]);
+			enqueue_events(frappe.model.events[doc.doctype]['*']);
 		}
 
 		return frappe.run_serially(tasks);
@@ -525,21 +537,25 @@ $.extend(frappe.model, {
 	},
 
 	delete_doc: function(doctype, docname, callback) {
-		var title = docname;
-		var title_field = frappe.get_meta(doctype).title_field;
+		let title = docname;
+		const title_field = frappe.get_meta(doctype).title_field;
 		if (frappe.get_meta(doctype).autoname == "hash" && title_field) {
-			var title = frappe.model.get_value(doctype, docname, title_field);
-			title += " (" + docname + ")";
+			const value = frappe.model.get_value(doctype, docname, title_field);
+			if (value) {
+				title = `${value} (${docname})`;
+			}
 		}
-		frappe.confirm(__("Permanently delete {0}?", [title]), function() {
+		frappe.confirm(__("Permanently delete {0}?", [title.bold()]), function() {
 			return frappe.call({
 				method: 'frappe.client.delete',
 				args: {
 					doctype: doctype,
 					name: docname
 				},
-				callback: function(r, rt) {
-					if(!r.exc) {
+				freeze: true,
+				freeze_message: __("Deleting {0}...", [title]),
+				callback: function (r, rt) {
+					if (!r.exc) {
 						frappe.utils.play_sound("delete");
 						frappe.model.clear_doc(doctype, docname);
 						if(callback) callback(r,rt);
@@ -558,10 +574,13 @@ $.extend(frappe.model, {
 			]
 		});
 		d.set_primary_action(__("Rename"), function() {
+			d.hide();
 			var args = d.get_values();
 			if(!args) return;
 			return frappe.call({
-				method:"frappe.model.rename_doc.rename_doc",
+				method:"frappe.rename_doc",
+				freeze: true,
+				freeze_message: "Updating related fields...",
 				args: {
 					doctype: doctype,
 					old: docname,

@@ -51,7 +51,7 @@ frappe.ui.form.ControlGeolocation = frappe.ui.form.ControlData.extend({
 				}));
 			this.add_non_group_layers(data_layers, this.editableLayers);
 			try {
-				this.map.flyToBounds(this.editableLayers.getBounds(), {
+				this.map.fitBounds(this.editableLayers.getBounds(), {
 					padding: [50,50]
 				});
 			}
@@ -59,10 +59,10 @@ frappe.ui.form.ControlGeolocation = frappe.ui.form.ControlData.extend({
 				// suppress error if layer has a point.
 			}
 			this.editableLayers.addTo(this.map);
-			this.map._onResize();
-		} else if ((value===undefined) || (value == JSON.stringify(new L.FeatureGroup().toGeoJSON()))) {
-			this.locate_control.start();
+		} else {
+			this.map.setView(frappe.utils.map_defaults.center, frappe.utils.map_defaults.zoom);
 		}
+		this.map.invalidateSize();
 	},
 
 	bind_leaflet_map() {
@@ -90,7 +90,7 @@ frappe.ui.form.ControlGeolocation = frappe.ui.form.ControlData.extend({
 		});
 
 		L.Icon.Default.imagePath = '/assets/frappe/images/leaflet/';
-		this.map = L.map(this.map_id).setView([19.0800, 72.8961], 13);
+		this.map = L.map(this.map_id);
 
 		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -139,9 +139,8 @@ frappe.ui.form.ControlGeolocation = frappe.ui.form.ControlData.extend({
 		};
 
 		// create control and add to map
-		var drawControl = new L.Control.Draw(options);
-
-		this.map.addControl(drawControl);
+		this.drawControl = new L.Control.Draw(options);
+		this.map.addControl(this.drawControl);
 
 		this.map.on('draw:created', (e) => {
 			var type = e.layerType,

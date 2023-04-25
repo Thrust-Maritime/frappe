@@ -3,10 +3,12 @@
 # See license.txt
 from __future__ import unicode_literals
 
-import frappe
 import unittest
 
-# test_records = frappe.get_test_records('Custom Script')
+import frappe
 
-class TestCustomScript(unittest.TestCase):
+# test_records = frappe.get_test_records('Client Script')
+
+
+class TestClientScript(unittest.TestCase):
 	pass

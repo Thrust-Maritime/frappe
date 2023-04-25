@@ -8,18 +8,32 @@
 <ul class="list-unstyled sidebar-menu user-actions hide">
 	<li class="divider"></li>
 </ul>
-<ul class="list-unstyled sidebar-menu standard-actions">
-	{% if frappe.model.can_get_report(doctype) %}
-	<li class="list-sidebar-label">Views</li>
-	<li class="divider visible-sm visible-xs"></li>
-	<li class="list-link">
-		<div class="btn-group">
-			<a class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#" onclick="return false;">
-				{{ __("Reports") }} <span class="caret"></span>
-			</a>
-			<ul class="dropdown-menu reports-dropdown" role="menu">
-				<li><a href="#List/{{ doctype }}/Report">{{ __("Report Builder") }}</a></li>
-			</ul>
+<ul class="list-unstyled sidebar-menu">
+	<div class="sidebar-section views-section hide">
+		<li class="sidebar-label">
+		</li>
+		<div class="current-view">
+			<li class="list-link">
+				<a class="btn btn-default btn-sm list-sidebar-button"
+					data-toggle="dropdown"
+					aria-haspopup="true"
+					aria-expanded="false"
+					href="#"
+				>
+					<span class="selected-view ellipsis">
+					</span>
+					<span>
+						<svg class="icon icon-xs">
+							<use href="#icon-select"></use>
+						</svg>
+					</span>
+				</a>
+				<ul class="dropdown-menu views-dropdown" role="menu">
+				</ul>
+			</li>
+			<li class="sidebar-action">
+				<a class="view-action"></a>
+			</li>
 		</div>
 	</li>
 	{% endif %}
@@ -43,14 +57,34 @@
 				<li class="new-kanban-board"><a href="#" onclick="return false;">{{ __("New Kanban Board") }}</a></li>
 			</ul>
 		</div>
-	</li>
-	<li class="hide list-link" data-view="Inbox">
-		<div class="btn-group">
-			<a class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#" onclick="return false;">
-				{{ __("Email Inbox") }} <span class="caret"></span>
-			</a>
-			<ul class="dropdown-menu email-account-dropdown" style="max-height: 300px; overflow-y: auto;" role="menu">
-			</ul>
+
+		<div class="list-tags">
+			<li class="list-stats list-link">
+				<a
+					class="btn btn-default btn-sm list-sidebar-button"
+					data-toggle="dropdown"
+					aria-haspopup="true"
+					aria-expanded="false"
+					href="#"
+				>
+					<span>{{ __("Tags") }}</span>
+					<span>
+						<svg class="icon icon-xs">
+							<use href="#icon-select"></use>
+						</svg>
+					</span>
+				</a>
+				<ul class="dropdown-menu list-stats-dropdown" role="menu">
+					<div class="dropdown-search">
+						<input type="text" placeholder={{__("Search") }} data-element="search" class="form-control input-xs">
+					</div>
+					<div class="stat-result">
+					</div>
+				</ul>
+			</li>
+			<li class="sidebar-action show-tags">
+				<a class="list-tag-preview">{{ __("Show Tags") }}</a>
+			</li>
 		</div>
 	</li>
 	{% if(frappe.help.has_help(doctype)) { %}

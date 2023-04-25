@@ -168,6 +168,11 @@ CREATE TABLE `tabDocType` (
   `allow_guest_to_view` int(1) NOT NULL DEFAULT 0,
   `route` varchar(255) DEFAULT NULL,
   `is_published_field` varchar(255) DEFAULT NULL,
+  `email_append_to` int(1) NOT NULL DEFAULT 0,
+  `subject_field` varchar(255) DEFAULT NULL,
+  `sender_field` varchar(255) DEFAULT NULL,
+  `migration_hash` varchar(255) DEFAULT NULL,
+  `translated_doctype` int(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`name`),
   KEY `parent` (`parent`)
 ) ENGINE=InnoDB ROW_FORMAT=COMPRESSED CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

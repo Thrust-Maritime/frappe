@@ -89,6 +89,29 @@ frappe.ui.form.ControlTable = frappe.ui.form.Control.extend({
 			return false; // Prevent the default handler from running.
 		});
 	},
+	get_field(field_name) {
+		let fieldname;
+		field_name = field_name.toLowerCase();
+		this.grid.meta.fields.some(field => {
+			if (frappe.model.no_value_type.includes(field.fieldtype)) {
+				return false;
+			}
+
+			const is_field_matching = () => {
+				return (
+					field.fieldname.toLowerCase() === field_name ||
+					(field.label || '').toLowerCase() === field_name  ||
+					(__(field.label) || '').toLowerCase() === field_name
+				);
+			};
+
+			if (is_field_matching()) {
+				fieldname = field.fieldname;
+				return true;
+			}
+		});
+		return fieldname;
+	},
 	refresh_input: function() {
 		this.grid.refresh();
 	},

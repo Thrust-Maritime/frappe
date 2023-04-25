@@ -2,17 +2,25 @@
 // MIT License. See license.txt
 
 // for translation
-frappe._messages = {};
-frappe._ = function(txt, replace) {
-	if(!txt)
-		return txt;
-	if(typeof(txt) != "string")
-		return txt;
-	var ret = frappe._messages[txt.replace(/\n/g, "")] || txt;
-	if(replace && typeof(replace) === "object") {
-		ret = $.format(ret, replace);
+frappe._ = function(txt, replace, context = null) {
+	if (!txt) return txt;
+	if (typeof txt != "string") return txt;
+
+	let translated_text = '';
+
+	let key = txt;    // txt.replace(/\n/g, "");
+	if (context) {
+		translated_text = frappe._messages[`${key}:${context}`];
 	}
-	return ret;
+
+	if (!translated_text) {
+		translated_text = frappe._messages[key] || txt;
+	}
+
+	if (replace && typeof replace === "object") {
+		translated_text = $.format(translated_text, replace);
+	}
+	return translated_text;
 };
 window.__ = frappe._
 

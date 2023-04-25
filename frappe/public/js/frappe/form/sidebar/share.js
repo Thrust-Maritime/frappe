@@ -38,18 +38,23 @@ frappe.ui.form.Share = Class.extend({
 			}
 		}
 
-		if (!me.frm.doc.__islocal) {
-			users.push({
-				icon: "octicon octicon-plus text-muted",
-				avatar_class: "avatar-empty share-doc-btn",
-				title: __("Share")
+		this.parent
+			.find(".share-doc-btn")
+			.off("click")
+			.on("click", () => {
+				this.frm.share_doc();
 			});
+
+		this.shares.empty();
+
+		if (!shared_users.length) {
+			this.shares.hide();
+			return;
 		}
 
-		this.parent.append(frappe.render_template("users_in_sidebar", {"users": users}));
-		this.parent.find(".avatar").on("click", function() {
-			me.frm.share_doc();
-		});
+		this.shares.show();
+		// REDESIGN-TODO: handle "shared with everyone"
+		this.shares.append(frappe.avatar_group(shared_users, 5, {'align': 'left', 'overlap': true}));
 	},
 	show: function() {
 		var me = this;
@@ -59,6 +64,8 @@ frappe.ui.form.Share = Class.extend({
 
 		this.dialog = d;
 		this.dirty = false;
+
+		$(d.body).html('<p class="text-muted">' + __("Loading...") + "</p>");
 
 		frappe.call({
 			method: "frappe.share.get_users",
@@ -71,9 +78,7 @@ frappe.ui.form.Share = Class.extend({
 			}
 		});
 
-		$(d.body).html('<p class="text-muted">' + __("Loading...") + '</p>');
-
-		d.onhide = function() {
+		d.onhide = function () {
 			// reload comments
 			if(me.dirty) me.frm.sidebar.reload_docinfo();
 		}

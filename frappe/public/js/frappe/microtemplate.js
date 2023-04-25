@@ -134,6 +134,7 @@ frappe.render_tree = function(opts) {
 	opts.base_url = frappe.urllib.get_base_url();
 	opts.landscape = false;
 	opts.print_css = frappe.boot.print_css;
+	opts.print_format_css_path = frappe.assets.bundled_asset('print_format.bundle.css');
 	var tree = frappe.render_template("print_tree", opts);
 	var w = window.open();
 
@@ -144,6 +145,7 @@ frappe.render_tree = function(opts) {
 	w.document.write(tree);
 	w.document.close();
 }
+
 frappe.render_pdf = function(html, opts = {}) {
 	//Create a form to place the HTML content
 	var formData = new FormData();
@@ -166,8 +168,17 @@ frappe.render_pdf = function(html, opts = {}) {
 			var blob = new Blob([success.currentTarget.response], {type: "application/pdf"});
 			var objectUrl = URL.createObjectURL(blob);
 
-			//Open report in a new window
-			window.open(objectUrl);
+			// Create a hidden a tag to force set report name
+			// https://stackoverflow.com/questions/19327749/javascript-blob-filename-without-link
+			let hidden_a_tag = document.createElement("a");
+			document.body.appendChild(hidden_a_tag);
+			hidden_a_tag.style = "display: none";
+			hidden_a_tag.href = objectUrl;
+			hidden_a_tag.download = opts.report_name || "report.pdf";
+
+			// Open report in a new window
+			hidden_a_tag.click();
+			window.URL.revokeObjectURL(objectUrl);
 		}
 	};
 	xhr.send(formData);

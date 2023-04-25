@@ -14,7 +14,8 @@ export default class FileUploader {
 		allow_multiple,
 		as_dataurl,
 		disable_file_browser,
-		frm
+		frm,
+		make_attachments_public,
 	} = {}) {
 
 		frm && frm.attachments.max_reached(true);
@@ -40,6 +41,7 @@ export default class FileUploader {
 					allow_multiple,
 					as_dataurl,
 					disable_file_browser,
+					make_attachments_public,
 				}
 			})
 		});
@@ -49,6 +51,12 @@ export default class FileUploader {
 		if (files && files.length) {
 			this.uploader.add_files(files);
 		}
+
+		this.uploader.$watch('close_dialog', (close_dialog) => {
+			if (close_dialog) {
+				this.dialog && this.dialog.hide();
+			}
+		});
 	}
 
 	upload_files() {

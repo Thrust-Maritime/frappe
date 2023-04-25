@@ -146,13 +146,14 @@ frappe.ui.form.ScriptManager = Class.extend({
 		return handlers;
 	},
 	setup: function() {
-		var doctype = this.frm.meta;
-		var me = this;
+		const doctype = this.frm.meta;
+		const me = this;
+		let client_script = doctype.__js;
 
-		// js
-		var cs = doctype.__js;
-		if(cs) {
-			var tmp = eval(cs);
+		// process the custom script for this form
+		if (this.frm.doctype_layout && this.frm.doctype_layout.client_script) {
+			// add a newline to avoid conflict with doctype JS
+			client_script += `\n${this.frm.doctype_layout.client_script}`;
 		}
 
 		if(doctype.__custom_js) {
@@ -168,11 +169,11 @@ frappe.ui.form.ScriptManager = Class.extend({
 		}
 
 		function setup_add_fetch(df) {
-			if((['Data', 'Read Only', 'Text', 'Small Text', 'Currency',
-				'Text Editor', 'Code', 'Link', 'Float', 'Int', 'Date', 'Select'].includes(df.fieldtype) || df.read_only==1)
+			if ((['Data', 'Read Only', 'Text', 'Small Text', 'Currency', 'Check', 'Attach Image',
+				'Text Editor', 'Code', 'Link', 'Float', 'Int', 'Date', 'Select', 'Duration'].includes(df.fieldtype) || df.read_only==1)
 				&& df.fetch_from && df.fetch_from.indexOf(".")!=-1) {
 				var parts = df.fetch_from.split(".");
-				me.frm.add_fetch(parts[0], parts[1], df.fieldname);
+				me.frm.add_fetch(parts[0], parts[1], df.fieldname, df.parent);
 			}
 		}
 

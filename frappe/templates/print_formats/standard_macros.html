@@ -57,8 +57,12 @@
 						{% for tdf in visible_columns %}
 						{% if not d.flags.compact_item_print or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields %}
 							<td class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
-                                <div class="value">{{ print_value(tdf, d, doc, visible_columns) }}</div></td>
-						{% endif %}
+							{% if doc.child_print_templates %}
+								{%- set child_templates = doc.child_print_templates.get(df.fieldname) -%}
+								<div class="value">{{ _(print_value(tdf, d, doc, visible_columns, child_templates)) }}</div></td>
+							{% else %}
+								<div class="value">{{ _(print_value(tdf, d, doc, visible_columns)) }}</div></td>
+							{% endif %}
 						{% endfor %}
 					</tr>
 					{% endfor %}
@@ -122,12 +126,19 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{{ "" }}
 {%- endmacro -%}
 
-{%- macro print_value(df, doc, parent_doc=None, visible_columns=None) -%}
-    {% if doc.print_templates and
-			doc.print_templates.get(df.fieldname) %}
-        {% include doc.print_templates[df.fieldname] %}
-	{% elif df.fieldtype=="Check" %}
-		<i class="{{ 'fa fa-check' if doc[df.fieldname] }}"></i>
+{%- macro print_value(df, doc, parent_doc=None, visible_columns=None, child_templates=None) -%}
+	{% if child_templates and child_templates[df.fieldname] %}
+		{% include child_templates[df.fieldname] %}
+	{% elif df.fieldtype=="Check" and doc[df.fieldname] %}
+		<!-- <i class="{{ 'fa fa-check' }}"></i> -->
+		<svg viewBox="0 0 16 16"
+			fill="transparent" stroke="#1F272E" stroke-width="2"
+			xmlns="http://www.w3.org/2000/svg" id="icon-tick"
+			style="width: 12px; height: 12px; margin-top: 5px;">
+			<path d="M2 9.66667L5.33333 13L14 3" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+		</svg>
+	{% elif df.fieldtype=="Check" and not doc[df.fieldname] %}
+		<!-- empty -->
 	{% elif df.fieldtype in ("Image", "Attach Image") and frappe.utils.is_image(doc[doc.meta.get_field(df.fieldname).options]) %}
 		<img src="{{ doc[doc.meta.get_field(df.fieldname).options] }}"
 			class="img-responsive"
@@ -139,7 +150,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{% elif df.fieldtype=="Signature" %}
 		<img src="{{ doc[df.fieldname] }}" class="signature-img img-responsive"
 			{%- if df.print_width %} style="width: {{ get_width(df) }};"{% endif %}>
-	{% elif df.fieldtype in ("Attach", "Attach Image") and frappe.utils.is_image(doc[df.fieldname]) %}
+	{% elif df.fieldtype in ("Attach", "Attach Image") %}
 		<img src="{{ doc[df.fieldname] }}" class="img-responsive"
 			{%- if df.print_width %} style="width: {{ get_width(df) }};"{% endif %}>
 	{% elif df.fieldtype=="HTML" %}
@@ -156,24 +167,27 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{%- else -%}{{ 150 }}px{% endif -%}
 {%- endmacro %}
 
-{% macro get_align_class(df) %}
-	{%- if df.align -%}{{ "text-" + df.align }}
-	{%- elif df.fieldtype in ("Int", "Float", "Currency", "Check", "Percent") -%}{{ "text-right" }}
+{% macro get_align_class(df, no_of_cols=2) %}
+	{% if no_of_cols >= 3 %}{{ "" }}
+	{%- elif df.align -%}{{ "text-" + df.align }}
+	{%- elif df.fieldtype in ("Int", "Float", "Currency", "Percent") -%}{{ "text-right" }}
+	{%- elif df.fieldtype in ("Check",) -%}{{ "text-center" }}
 	{%- else -%}{{ "" }}
 	{%- endif -%}
 {% endmacro %}
 
-{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None) -%}
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None, print_heading_template=None) -%}
 	{% if letter_head and not no_letterhead %}
 		<div class="letter-head">{{ letter_head }}</div>
 	{% endif %}
-    {% if doc.print_heading_template %}
-        {{ frappe.render_template(doc.print_heading_template, {"doc":doc}) }}
-    {% else %}
-    <div class="print-heading">
-		<h2>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None
-			else _(doc.doctype)) }}<br>
-			<small>{{ doc.sub_heading if doc.sub_heading != None
+	{% if print_heading_template %}
+		{{ frappe.render_template(print_heading_template, {"doc":doc}) }}
+	{% else %}
+	<div class="print-heading">
+		<h2>
+			<div>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None
+				else _(doc.doctype)) }}</div>
+			<small class="sub-heading">{{ doc.sub_heading if doc.sub_heading != None
 				else doc.name }}</small>
         </h2>
     </div>

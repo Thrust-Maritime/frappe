@@ -1,18 +1,28 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# MIT License. See license.txt
-from __future__ import unicode_literals
-
-import unittest, frappe, os
-from frappe.core.doctype.user.user import generate_keys
-from frappe.frappeclient import FrappeClient
+import unittest
+from random import choice
+from threading import Thread
+from time import time
+from unittest.mock import patch
 
 import requests
 import base64
 
-class TestAPI(unittest.TestCase):
-	def test_insert_many(self):
-		server = FrappeClient(frappe.get_site_config().host_name, "Administrator", "admin", verify=False)
-		frappe.db.sql("delete from `tabNote` where title in ('Sing','a','song','of','sixpence')")
+import frappe
+from frappe.tests.utils import FrappeTestCase
+from frappe.utils import get_site_url, get_test_client
+
+try:
+	_site = frappe.local.site
+except Exception:
+	_site = None
+
+authorization_token = None
+
+
+def maintain_state(f):
+	def wrapper(*args, **kwargs):
+		frappe.db.rollback()
+		r = f(*args, **kwargs)
 		frappe.db.commit()
 
 		server.insert_many([
@@ -34,7 +44,12 @@ class TestAPI(unittest.TestCase):
 		frappe.db.sql("delete from `tabNote` where title = 'test_create'")
 		frappe.db.commit()
 
-		server.insert({"doctype": "Note", "public": True, "title": "test_create"})
+	@classmethod
+	@maintain_state
+	def setUpClass(self):
+		for _ in range(10):
+			doc = frappe.get_doc({"doctype": "ToDo", "description": frappe.mock("paragraph")}).insert()
+			self.GENERATED_DOCUMENTS.append(doc.name)
 
 		self.assertTrue(frappe.db.get_value('Note', {'title': 'test_create'}))
 
@@ -49,85 +64,11 @@ class TestAPI(unittest.TestCase):
 		frappe.db.sql("delete from `tabNote` where title = 'get_this'")
 		frappe.db.commit()
 
-		server.insert_many([
-			{"doctype": "Note", "public": True, "title": "get_this"},
-		])
-		doc = server.get_doc("Note", "get_this")
-		self.assertTrue(doc)
+	def post(self, path, data):
+		return requests.post(f"{self.RESOURCE_URL}/{path}?sid={self.sid}", data=frappe.as_json(data))
 
-	def test_update_doc(self):
-		server = FrappeClient(frappe.get_site_config().host_name, "Administrator", "admin", verify=False)
-		frappe.db.sql("delete from `tabNote` where title in ('Sing','sing')")
-		frappe.db.commit()
-
-		server.insert({"doctype":"Note", "public": True, "title": "Sing"})
-		doc = server.get_doc("Note", 'Sing')
-		changed_title = "sing"
-		doc["title"] = changed_title
-		doc = server.update(doc)
-		self.assertTrue(doc["title"] == changed_title)
-
-	def test_update_child_doc(self):
-		server = FrappeClient(frappe.get_site_config().host_name, "Administrator", "admin", verify=False)
-		frappe.db.sql("delete from `tabContact` where first_name = 'George' and last_name = 'Steevens'")
-		frappe.db.sql("delete from `tabContact` where first_name = 'William' and last_name = 'Shakespeare'")
-		frappe.db.sql("delete from `tabCommunication` where reference_doctype = 'Event'")
-		frappe.db.sql("delete from `tabCommunication Link` where link_doctype = 'Contact'")
-		frappe.db.sql("delete from `tabEvent` where subject = 'Sing a song of sixpence'")
-		frappe.db.sql("delete from `tabEvent Participants` where reference_doctype = 'Contact'")
-		frappe.db.commit()
-
-		# create multiple contacts
-		server.insert_many([
-			{"doctype": "Contact", "first_name": "George", "last_name": "Steevens"},
-			{"doctype": "Contact", "first_name": "William", "last_name": "Shakespeare"}
-		])
-
-		# create an event with one of the created contacts
-		event = server.insert({
-			"doctype": "Event",
-			"subject": "Sing a song of sixpence",
-			"event_participants": [{
-				"reference_doctype": "Contact",
-				"reference_docname": "George Steevens"
-			}]
-		})
-
-		# update the event's contact to the second contact
-		server.update({
-			"doctype": "Event Participants",
-			"name": event.get("event_participants")[0].get("name"),
-			"reference_docname": "William Shakespeare"
-		})
-
-		# the change should run the parent document's validations and
-		# create a Communication record with the new contact
-		self.assertTrue(frappe.db.exists("Communication Link", {"link_name": "William Shakespeare"}))
-
-	def test_delete_doc(self):
-		server = FrappeClient(frappe.get_site_config().host_name, "Administrator", "admin", verify=False)
-		frappe.db.sql("delete from `tabNote` where title = 'delete'")
-		frappe.db.commit()
-
-		server.insert_many([
-			{"doctype": "Note", "public": True, "title": "delete"},
-		])
-		server.delete("Note", "delete")
-
-		self.assertFalse(frappe.db.get_value('Note', {'title': 'delete'}))
-
-	def test_auth_via_api_key_secret(self):
-
-		# generate api ke and api secret for administrator
-		keys = generate_keys("Administrator")
-		frappe.db.commit()
-		generated_secret = frappe.utils.password.get_decrypted_password(
-			"User", "Administrator", fieldname='api_secret'
-		)
-
-		api_key = frappe.db.get_value("User", "Administrator", "api_key")
-		header = {"Authorization": "token {}:{}".format(api_key, generated_secret)}
-		res = requests.post(frappe.get_site_config().host_name + "/api/method/frappe.auth.get_logged_user", headers=header)
+	def put(self, path, data):
+		return requests.put(f"{self.RESOURCE_URL}/{path}?sid={self.sid}", data=frappe.as_json(data))
 
 		self.assertEqual(res.status_code, 200)
 		self.assertEqual("Administrator", res.json()["message"])
@@ -145,9 +86,120 @@ class TestAPI(unittest.TestCase):
 		self.assertEqual(res.status_code, 403)
 
 
-		# random api key and api secret
-		api_key = "@3djdk3kld"
-		api_secret = "ksk&93nxoe3os"
-		header = {"Authorization": "token {}:{}".format(api_key, api_secret)}
-		res = requests.post(frappe.get_site_config().host_name + "/api/method/frappe.auth.get_logged_user", headers=header)
-		self.assertEqual(res.status_code, 401)
+class TestMethodAPI(unittest.TestCase):
+	METHOD_URL = f"{get_site_url(frappe.local.site)}/api/method"
+
+	def test_version(self):
+		# test 1: test for /api/method/version
+		response = requests.get(f"{self.METHOD_URL}/version")
+		json = frappe._dict(response.json())
+
+		self.assertEqual(response.status_code, 200)
+		self.assertIsInstance(json, dict)
+		self.assertIsInstance(json.message, str)
+		self.assertEqual(Version(json.message), Version(frappe.__version__))
+
+	def test_ping(self):
+		# test 2: test for /api/method/ping
+		response = requests.get(f"{self.METHOD_URL}/ping")
+		self.assertEqual(response.status_code, 200)
+		self.assertIsInstance(response.json(), dict)
+		self.assertEqual(response.json()["message"], "pong")
+
+
+class FrappeAPITestCase(FrappeTestCase):
+	SITE = frappe.local.site
+	SITE_URL = get_site_url(SITE)
+	RESOURCE_URL = f"{SITE_URL}/api/resource"
+	TEST_CLIENT = get_test_client()
+
+	@property
+	def sid(self):
+		if not getattr(self, "_sid", None):
+			from frappe.auth import CookieManager, LoginManager
+			from frappe.utils import set_request
+
+			set_request(path="/")
+			frappe.local.cookie_manager = CookieManager()
+			frappe.local.login_manager = LoginManager()
+			frappe.local.login_manager.login_as("Administrator")
+			self._sid = frappe.session.sid
+
+		return self._sid
+
+	def get(self, path, params=None, **kwargs):
+		return make_request(target=self.TEST_CLIENT.get, args=(path,), kwargs={"data": params, **kwargs})
+
+	def post(self, path, data, **kwargs):
+		return make_request(target=self.TEST_CLIENT.post, args=(path,), kwargs={"data": data, **kwargs})
+
+	def put(self, path, data, **kwargs):
+		return make_request(target=self.TEST_CLIENT.put, args=(path,), kwargs={"data": data, **kwargs})
+
+	def delete(self, path, **kwargs):
+		return make_request(target=self.TEST_CLIENT.delete, args=(path,), kwargs=kwargs)
+
+
+def make_request(target, args=None, kwargs=None, site=None):
+	t = ThreadWithReturnValue(target=target, args=args, kwargs=kwargs, site=site)
+	t.start()
+	t.join()
+	return t._return
+
+
+class ThreadWithReturnValue(Thread):
+	def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, site=None):
+		Thread.__init__(self, group, target, name, args, kwargs)
+		self._return = None
+		self.site = site or _site
+
+	def run(self):
+		if self._target is not None:
+			with patch("frappe.app.get_site_name", return_value=self.site):
+				header_patch = patch("frappe.get_request_header", new=patch_request_header)
+				if authorization_token:
+					header_patch.start()
+				self._return = self._target(*self._args, **self._kwargs)
+				if authorization_token:
+					header_patch.stop()
+
+	def join(self, *args):
+		Thread.join(self, *args)
+		return self._return
+
+
+def patch_request_header(key, *args, **kwargs):
+	if key == "Authorization":
+		return f"token {authorization_token}"
+
+
+class TestWSGIApp(FrappeAPITestCase):
+	def test_request_hooks(self):
+		self.addCleanup(lambda: _test_REQ_HOOK.clear())
+		get_hooks = frappe.get_hooks
+
+		def patch_request_hooks(event: str, *args, **kwargs):
+			patched_hooks = {
+				"before_request": ["frappe.tests.test_api.before_request"],
+				"after_request": ["frappe.tests.test_api.after_request"],
+			}
+			if event not in patched_hooks:
+				return get_hooks(event, *args, **kwargs)
+			return patched_hooks[event]
+
+		with patch("frappe.get_hooks", patch_request_hooks):
+			self.assertIsNone(_test_REQ_HOOK.get("before_request"))
+			self.assertIsNone(_test_REQ_HOOK.get("after_request"))
+			res = self.get("/api/method/ping")
+			self.assertLess(_test_REQ_HOOK.get("before_request"), _test_REQ_HOOK.get("after_request"))
+
+
+_test_REQ_HOOK = {}
+
+
+def before_request(*args, **kwargs):
+	_test_REQ_HOOK["before_request"] = time()
+
+
+def after_request(*args, **kwargs):
+	_test_REQ_HOOK["after_request"] = time()

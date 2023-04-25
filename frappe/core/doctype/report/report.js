@@ -33,7 +33,13 @@ frappe.ui.form.on('Report', {
 			}, doc.disabled ? "fa fa-check" : "fa fa-off");
 		}
 
-		frm.events.report_type(frm);
+		frm.set_query("ref_doctype", () => {
+			return {
+				filters: {
+					istable: 0,
+				},
+			};
+		});
 	},
 
 	ref_doctype: function(frm) {

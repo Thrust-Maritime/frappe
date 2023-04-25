@@ -1,12 +1,17 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
 
+import os
+import re
+
+import git
 from six.moves import input
 
-import frappe, os, re
-from frappe.utils import touch_file, cstr
+import frappe
+from frappe.utils import cstr, touch_file
+
 
 def make_boilerplate(dest, app_name):
 	if not os.path.exists(dest):
@@ -19,11 +24,15 @@ def make_boilerplate(dest, app_name):
 	hooks = frappe._dict()
 	hooks.app_name = app_name
 	app_title = hooks.app_name.replace("_", " ").title()
-	for key in ("App Title (default: {0})".format(app_title),
-		"App Description", "App Publisher", "App Email",
+	for key in (
+		"App Title (default: {0})".format(app_title),
+		"App Description",
+		"App Publisher",
+		"App Email",
 		"App Icon (default 'octicon octicon-file-directory')",
 		"App Color (default 'grey')",
-		"App License (default 'MIT')"):
+		"App License (default 'MIT')",
+	):
 		hook_key = key.split(" (")[0].lower().replace(" ", "_")
 		hook_val = None
 		while not hook_val:
@@ -34,33 +43,38 @@ def make_boilerplate(dest, app_name):
 					"app_title": app_title,
 					"app_icon": "octicon octicon-file-directory",
 					"app_color": "grey",
-					"app_license": "MIT"
+					"app_license": "MIT",
 				}
 				if hook_key in defaults:
 					hook_val = defaults[hook_key]
 
-			if hook_key=="app_name" and hook_val.lower().replace(" ", "_") != hook_val:
+			if hook_key == "app_name" and hook_val.lower().replace(" ", "_") != hook_val:
 				print("App Name must be all lowercase and without spaces")
 				hook_val = ""
-			elif hook_key=="app_title" and not re.match("^(?![\W])[^\d_\s][\w -]+$", hook_val, re.UNICODE):
-				print("App Title should start with a letter and it can only consist of letters, numbers, spaces and underscores")
+			elif hook_key == "app_title" and not re.match(
+				r"^(?![\W])[^\d_\s][\w -]+$", hook_val, re.UNICODE
+			):
+				print(
+					"App Title should start with a letter and it can only consist of letters, numbers, spaces and underscores"
+				)
 				hook_val = ""
 
 		hooks[hook_key] = hook_val
 
-	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, frappe.scrub(hooks.app_title)),
-		with_init=True)
-	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "templates"), with_init=True)
+	frappe.create_folder(
+		os.path.join(dest, hooks.app_name, hooks.app_name, frappe.scrub(hooks.app_title)), with_init=True
+	)
+	frappe.create_folder(
+		os.path.join(dest, hooks.app_name, hooks.app_name, "templates"), with_init=True
+	)
 	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "www"))
-	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "templates",
-		"pages"), with_init=True)
-	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "templates",
-		"includes"))
+	frappe.create_folder(
+		os.path.join(dest, hooks.app_name, hooks.app_name, "templates", "pages"), with_init=True
+	)
+	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "templates", "includes"))
 	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "config"), with_init=True)
-	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "public",
-		"css"))
-	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "public",
-		"js"))
+	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "public", "css"))
+	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "public", "js"))
 
 	with open(os.path.join(dest, hooks.app_name, hooks.app_name, "__init__.py"), "w") as f:
 		f.write(frappe.as_unicode(init_template))
@@ -69,14 +83,19 @@ def make_boilerplate(dest, app_name):
 		f.write(frappe.as_unicode(manifest_template.format(**hooks)))
 
 	with open(os.path.join(dest, hooks.app_name, ".gitignore"), "w") as f:
-		f.write(frappe.as_unicode(gitignore_template.format(app_name = hooks.app_name)))
+		f.write(frappe.as_unicode(gitignore_template.format(app_name=hooks.app_name)))
 
 	with open(os.path.join(dest, hooks.app_name, "requirements.txt"), "w") as f:
 		f.write("frappe")
 
 	with open(os.path.join(dest, hooks.app_name, "README.md"), "w") as f:
-		f.write(frappe.as_unicode("## {0}\n\n{1}\n\n#### License\n\n{2}".format(hooks.app_title,
-			hooks.app_description, hooks.app_license)))
+		f.write(
+			frappe.as_unicode(
+				"## {0}\n\n{1}\n\n#### License\n\n{2}".format(
+					hooks.app_title, hooks.app_description, hooks.app_license
+				)
+			)
+		)
 
 	with open(os.path.join(dest, hooks.app_name, "license.txt"), "w") as f:
 		f.write(frappe.as_unicode("License: " + hooks.app_license))
@@ -87,7 +106,7 @@ def make_boilerplate(dest, app_name):
 	# These values could contain quotes and can break string declarations
 	# So escaping them before setting variables in setup.py and hooks.py
 	for key in ("app_publisher", "app_description", "app_license"):
-		hooks[key] = hooks[key].replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"")
+		hooks[key] = hooks[key].replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
 
 	with open(os.path.join(dest, hooks.app_name, "setup.py"), "w") as f:
 		f.write(frappe.as_unicode(setup_template.format(**hooks)))
@@ -191,6 +210,12 @@ app_license = "{app_license}"
 # before_install = "{app_name}.install.before_install"
 # after_install = "{app_name}.install.after_install"
 
+# Uninstallation
+# ------------
+
+# before_uninstall = "{app_name}.uninstall.before_uninstall"
+# after_uninstall = "{app_name}.uninstall.after_uninstall"
+
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
@@ -202,11 +227,19 @@ app_license = "{app_license}"
 # Permissions evaluated in scripted ways
 
 # permission_query_conditions = {{
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
+#	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }}
 #
 # has_permission = {{
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
+#	"Event": "frappe.desk.doctype.event.event.has_permission",
+# }}
+
+# DocType Class
+# ---------------
+# Override standard doctype classes
+
+# override_doctype_class = {{
+#	"ToDo": "custom_app.overrides.CustomToDo"
 # }}
 
 # Document Events
@@ -214,10 +247,10 @@ app_license = "{app_license}"
 # Hook on document methods and events
 
 # doc_events = {{
-# 	"*": {{
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
+#	"*": {{
+#		"on_update": "method",
+#		"on_cancel": "method",
+#		"on_trash": "method"
 #	}}
 # }}
 
@@ -225,21 +258,21 @@ app_license = "{app_license}"
 # ---------------
 
 # scheduler_events = {{
-# 	"all": [
-# 		"{app_name}.tasks.all"
-# 	],
-# 	"daily": [
-# 		"{app_name}.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"{app_name}.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"{app_name}.tasks.weekly"
-# 	]
-# 	"monthly": [
-# 		"{app_name}.tasks.monthly"
-# 	]
+#	"all": [
+#		"{app_name}.tasks.all"
+#	],
+#	"daily": [
+#		"{app_name}.tasks.daily"
+#	],
+#	"hourly": [
+#		"{app_name}.tasks.hourly"
+#	],
+#	"weekly": [
+#		"{app_name}.tasks.weekly"
+#	]
+#	"monthly": [
+#		"{app_name}.tasks.monthly"
+#	]
 # }}
 
 # Testing
@@ -251,15 +284,60 @@ app_license = "{app_license}"
 # ------------------------------
 #
 # override_whitelisted_methods = {{
-# 	"frappe.desk.doctype.event.event.get_events": "{app_name}.event.get_events"
+#	"frappe.desk.doctype.event.event.get_events": "{app_name}.event.get_events"
 # }}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 # override_doctype_dashboards = {{
-# 	"Task": "{app_name}.task.get_dashboard_data"
+#	"Task": "{app_name}.task.get_dashboard_data"
 # }}
+
+# exempt linked doctypes from being automatically cancelled
+#
+# auto_cancel_exempted_doctypes = ["Auto Repeat"]
+
+# Request Events
+# ----------------
+# before_request = ["{app_name}.utils.before_request"]
+# after_request = ["{app_name}.utils.after_request"]
+
+# Job Events
+# ----------
+# before_job = ["{app_name}.utils.before_job"]
+# after_job = ["{app_name}.utils.after_job"]
+
+# User Data Protection
+# --------------------
+
+user_data_fields = [
+	{{
+		"doctype": "{{doctype_1}}",
+		"filter_by": "{{filter_by}}",
+		"redact_fields": ["{{field_1}}", "{{field_2}}"],
+		"partial": 1,
+	}},
+	{{
+		"doctype": "{{doctype_2}}",
+		"filter_by": "{{filter_by}}",
+		"partial": 1,
+	}},
+	{{
+		"doctype": "{{doctype_3}}",
+		"strict": False,
+	}},
+	{{
+		"doctype": "{{doctype_4}}"
+	}}
+]
+
+# Authentication and authorization
+# --------------------------------
+
+# auth_hooks = [
+#	"{app_name}.auth.validate"
+# ]
 
 """
 

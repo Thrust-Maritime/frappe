@@ -40,9 +40,13 @@ frappe.ui.form.on('User', {
 	onload: function(frm) {
 		frm.can_edit_roles = has_access_to_edit_user();
 
-		if(frm.can_edit_roles && !frm.is_new()) {
-			if(!frm.roles_editor) {
-				var role_area = $('<div style="min-height: 300px">')
+		if (frm.is_new() && frm.roles_editor) {
+			frm.roles_editor.reset();
+		}
+
+		if (frm.can_edit_roles && !frm.is_new() && in_list(['System User', 'Website User'], frm.doc.user_type)) {
+			if (!frm.roles_editor) {
+				const role_area = $('<div class="role-editor">')
 					.appendTo(frm.fields_dict.roles_html.wrapper);
 				frm.roles_editor = new frappe.RoleEditor(role_area, frm, frm.doc.role_profile_name ? 1 : 0);
 
@@ -97,14 +101,67 @@ frappe.ui.form.on('User', {
 				});
 			}, __("Password"));
 
-			frm.add_custom_button(__("Reset OTP Secret"), function() {
-				frappe.call({
-					method: "frappe.twofactor.reset_otp_secret",
-					args: {
-						"user": frm.doc.name
+			if (frappe.user.has_role("System Manager")) {
+				frappe.db.get_single_value("LDAP Settings", "enabled").then((value) => {
+					if (value === 1 && frm.doc.name != "Administrator") {
+						frm.add_custom_button(__("Reset LDAP Password"), function() {
+							const d = new frappe.ui.Dialog({
+								title: __("Reset LDAP Password"),
+								fields: [
+									{
+										label: __("New Password"),
+										fieldtype: "Password",
+										fieldname: "new_password",
+										reqd: 1
+									},
+									{
+										label: __("Confirm New Password"),
+										fieldtype: "Password",
+										fieldname: "confirm_password",
+										reqd: 1
+									},
+									{
+										label: __("Logout All Sessions"),
+										fieldtype: "Check",
+										fieldname: "logout_sessions"
+									}
+								],
+								primary_action: (values) => {
+									d.hide();
+									if (values.new_password !== values.confirm_password) {
+										frappe.throw(__("Passwords do not match!"));
+									}
+									frappe.call(
+										"frappe.integrations.doctype.ldap_settings.ldap_settings.reset_password", {
+											user: frm.doc.email,
+											password: values.new_password,
+											logout: values.logout_sessions
+										});
+								}
+							});
+							d.show();
+						}, __("Password"));
 					}
 				});
-			}, __("Password"));
+			}
+
+			if (
+				cint(frappe.boot.sysdefaults.enable_two_factor_auth) &&
+				(frappe.session.user == doc.name || frappe.user.has_role("System Manager"))
+			) {
+				frm.add_custom_button(
+					__("Reset OTP Secret"),
+					function () {
+						frappe.call({
+							method: "frappe.twofactor.reset_otp_secret",
+							args: {
+								user: frm.doc.name,
+							},
+						});
+					},
+					__("Password")
+				);
+			}
 
 			frm.trigger('enabled');
 
@@ -122,14 +179,14 @@ frappe.ui.form.on('User', {
 				}
 			}
 		}
-		if (frm.doc.user_emails){
-			var found =0;
-			for (var i = 0;i<frm.doc.user_emails.length;i++){
-				if (frm.doc.email==frm.doc.user_emails[i].email_id){
+		if (frm.doc.user_emails && frappe.model.can_create("Email Account")) {
+			var found = 0;
+			for (var i = 0; i < frm.doc.user_emails.length; i++) {
+				if (frm.doc.email == frm.doc.user_emails[i].email_id) {
 					found = 1;
 				}
 			}
-			if (!found){
+			if (!found) {
 				frm.add_custom_button(__("Create User Email"), function() {
 					frm.events.create_user_email(frm);
 				});
@@ -193,9 +250,10 @@ frappe.ui.form.on('User', {
 			args: {
 				user: frm.doc.name
 			},
-			callback: function(r){
-				if(r.message){
-					frappe.msgprint(__("Save API Secret: ") + r.message.api_secret);
+			callback: function(r) {
+				if (r.message) {
+					frappe.msgprint(__("Save API Secret: {0}", [r.message.api_secret]));
+					frm.reload_doc();
 				}
 			}
 		});

@@ -28,5 +28,11 @@ ignore =
     B007,
     B950,
     W191,
+    E711,
+    E129,
+    F841,
+    E713,
+    E712,
+    B028,
 
 max-line-length = 200

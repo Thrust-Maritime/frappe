@@ -6,29 +6,39 @@
  "document_type": "Setup",
  "engine": "InnoDB",
  "field_order": [
+  "account_section",
   "email_id",
-  "login_id_is_different",
-  "login_id",
+  "email_account_name",
+  "column_break_3",
+  "domain",
+  "service",
+  "authentication_column",
+  "auth_method",
   "password",
   "awaiting_password",
   "ascii_encode_password",
-  "email_account_name",
-  "email_settings",
-  "domain",
-  "service",
+  "authorize_api_access",
+  "column_break_10",
+  "connected_app",
+  "connected_user",
+  "login_id_is_different",
+  "login_id",
   "mailbox_settings",
   "enable_incoming",
-  "use_imap",
-  "email_server",
-  "use_ssl",
-  "incoming_port",
-  "attachment_limit",
-  "append_to",
   "default_incoming",
+  "use_imap",
+  "use_ssl",
+  "use_starttls",
+  "email_server",
+  "incoming_port",
+  "column_break_18",
+  "attachment_limit",
   "email_sync_option",
   "initial_sync_count",
-  "create_contact",
   "section_break_12",
+  "append_emails_to_sent_folder",
+  "append_to",
+  "create_contact",
   "enable_automatic_linking",
   "section_break_13",
   "notify_if_unreplied",
@@ -40,6 +50,7 @@
   "use_ssl_for_outgoing",
   "use_tls",
   "smtp_port",
+  "column_break_38",
   "default_outgoing",
   "always_use_account_email_id_as_sender",
   "always_use_account_name_as_sender_name",
@@ -71,7 +82,9 @@
    "default": "0",
    "fieldname": "login_id_is_different",
    "fieldtype": "Check",
-   "label": "Use Different Email Login ID"
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Use different login"
   },
   {
    "depends_on": "login_id_is_different",
@@ -80,12 +93,14 @@
    "label": "Email Login ID"
   },
   {
+   "depends_on": "eval: doc.auth_method === \"Basic\"",
    "fieldname": "password",
    "fieldtype": "Password",
    "label": "Password"
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.auth_method === \"Basic\"",
    "fieldname": "awaiting_password",
    "fieldtype": "Check",
    "in_list_view": 1,
@@ -93,6 +108,7 @@
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.auth_method === \"Basic\"",
    "fieldname": "ascii_encode_password",
    "fieldtype": "Check",
    "in_list_view": 1,
@@ -106,30 +122,34 @@
    "unique": 1
   },
   {
-   "fieldname": "email_settings",
-   "fieldtype": "Section Break"
-  },
-  {
    "depends_on": "eval:!doc.service",
    "fieldname": "domain",
    "fieldtype": "Link",
-   "label": "Domain",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Domain (optional)",
    "options": "Email Domain"
   },
   {
    "depends_on": "eval:!doc.domain",
    "fieldname": "service",
    "fieldtype": "Select",
-   "label": "Service",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Service (optional)",
    "options": "\nGMail\nSendgrid\nSparkPost\nYahoo Mail\nOutlook.com\nYandex.Mail"
   },
   {
    "fieldname": "mailbox_settings",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Incoming (POP/IMAP) Settings"
   },
   {
    "default": "0",
-   "description": "Check this to pull emails from your mailbox",
    "fieldname": "enable_incoming",
    "fieldtype": "Check",
    "label": "Enable Incoming"
@@ -186,7 +206,7 @@
   },
   {
    "default": "UNSEEN",
-   "depends_on": "eval: doc.enable_incoming",
+   "depends_on": "eval: doc.enable_incoming && doc.use_imap",
    "fieldname": "email_sync_option",
    "fieldtype": "Select",
    "label": "Email Sync Option",
@@ -194,6 +214,7 @@
   },
   {
    "default": "250",
+   "depends_on": "eval: doc.enable_incoming && doc.use_imap",
    "description": "Total number of emails to sync in initial sync process ",
    "fieldname": "initial_sync_count",
    "fieldtype": "Select",
@@ -203,7 +224,9 @@
   {
    "depends_on": "enable_incoming",
    "fieldname": "section_break_13",
-   "fieldtype": "Section Break"
+   "fieldtype": "Column Break",
+   "hide_days": 1,
+   "hide_seconds": 1
   },
   {
    "default": "0",
@@ -227,7 +250,10 @@
   },
   {
    "fieldname": "outgoing_mail_settings",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Outgoing (SMTP) Settings"
   },
   {
    "default": "0",
@@ -271,18 +297,20 @@
   {
    "default": "0",
    "depends_on": "enable_outgoing",
-   "description": "Uses the Email Address mentioned in this Account as the Sender for all emails sent using this Account. ",
    "fieldname": "always_use_account_email_id_as_sender",
    "fieldtype": "Check",
-   "label": "Always use Account's Email Address as Sender"
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Always use this email address as sender address"
   },
   {
    "default": "0",
    "depends_on": "enable_outgoing",
-   "description": "Uses the Email Address Name mentioned in this Account as the Sender's Name for all emails sent using this Account.",
    "fieldname": "always_use_account_name_as_sender_name",
    "fieldtype": "Check",
-   "label": "Always use Account's Name as Sender's Name"
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Always use this name as sender name"
   },
   {
    "default": "1",
@@ -304,8 +332,13 @@
    "label": "Disable SMTP server authentication"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "add_signature",
    "fieldname": "signature_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Signature"
   },
   {
    "default": "0",
@@ -320,8 +353,13 @@
    "label": "Signature"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "enable_auto_reply",
    "fieldname": "auto_reply",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Auto Reply"
   },
   {
    "default": "0",
@@ -337,13 +375,20 @@
    "label": "Auto Reply Message"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:frappe.utils.html2text(doc.footer || '')!=''",
    "fieldname": "set_footer",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Footer"
   },
   {
    "fieldname": "footer",
    "fieldtype": "Text Editor",
-   "label": "Footer"
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Footer Content"
   },
   {
    "fieldname": "uidvalidity",
@@ -376,7 +421,10 @@
   },
   {
    "fieldname": "section_break_12",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Document Linking"
   },
   {
    "default": "0",
@@ -404,10 +452,88 @@
    "fieldname": "use_ssl_for_outgoing",
    "fieldtype": "Check",
    "label": "Use SSL for Outgoing"
+  },
+  {
+   "default": "1",
+   "fieldname": "create_contact",
+   "fieldtype": "Check",
+   "hide_days": 1,
+   "hide_seconds": 1,
+   "label": "Create Contacts from Incoming Emails"
+  },
+  {
+   "fieldname": "brand_logo",
+   "fieldtype": "Attach Image",
+   "label": "Brand Logo"
+  },
+  {
+   "fieldname": "authentication_column",
+   "fieldtype": "Section Break",
+   "label": "Authentication"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_38",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "account_section",
+   "fieldtype": "Section Break",
+   "label": "Account"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:!doc.domain && doc.enable_incoming && doc.use_imap && !doc.use_ssl",
+   "fetch_from": "domain.use_starttls",
+   "fieldname": "use_starttls",
+   "fieldtype": "Check",
+   "label": "Use STARTTLS"
+  },
+  {
+   "default": "Basic",
+   "fieldname": "auth_method",
+   "fieldtype": "Select",
+   "label": "Method",
+   "options": "Basic\nOAuth"
+  },
+  {
+   "depends_on": "eval: doc.auth_method === \"OAuth\"",
+   "fieldname": "connected_app",
+   "fieldtype": "Link",
+   "label": "Connected App",
+   "mandatory_depends_on": "eval: doc.auth_method === \"OAuth\"",
+   "options": "Connected App"
+  },
+  {
+   "depends_on": "eval: doc.auth_method === \"OAuth\"",
+   "fieldname": "connected_user",
+   "fieldtype": "Link",
+   "label": "Connected User",
+   "mandatory_depends_on": "eval: doc.auth_method === \"OAuth\"",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval: doc.auth_method === \"OAuth\" && !doc.__islocal && !doc.__unsaved",
+   "fieldname": "authorize_api_access",
+   "fieldtype": "Button",
+   "label": "Authorize API Access"
   }
  ],
  "icon": "fa fa-inbox",
- "modified": "2020-10-28 16:05:05.546557",
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2023-04-20 17:47:17.222361",
  "modified_by": "Administrator",
  "module": "Email",
  "name": "Email Account",

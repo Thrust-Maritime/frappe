@@ -15,6 +15,9 @@ export default class ListFilter {
 		this.wrapper.html('<li class="input-area"></li>');
 		this.$input_area = this.wrapper.find('.input-area');
 		this.$list_filters = this.wrapper.find('.list-filters');
+		this.$saved_filters = this.wrapper.find('.saved-filters').hide();
+		this.$saved_filters_preview = this.wrapper.find('.saved-filters-preview');
+		this.saved_filters_hidden = true;
 
 		this.filter_input = frappe.ui.form.make_control({
 			df: {
@@ -47,12 +50,12 @@ export default class ListFilter {
 	}
 
 	refresh() {
-		this.get_list_filters()
-			.then(() => {
-				const html = this.filters.map(filter => this.filter_template(filter));
-				this.wrapper.find('.list-link').remove();
-				this.wrapper.append(html);
-			});
+		this.get_list_filters().then(() => {
+			this.filters.length ? this.$saved_filters_preview.show() : this.$saved_filters_preview.hide();
+			const html = this.filters.map((filter) => this.filter_template(filter));
+			this.wrapper.find('.filter-pill').remove();
+			this.$saved_filters.append(html);
+		});
 		this.is_global_input.toggle(false);
 		this.filter_input.set_description('');
 	}

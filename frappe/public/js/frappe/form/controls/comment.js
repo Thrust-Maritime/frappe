@@ -71,6 +71,7 @@ frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 		const options = this._super();
 		return Object.assign(options, {
 			theme: 'bubble',
+			bounds: this.quill_container[0],
 			modules: Object.assign(options.modules, {
 				mention: this.get_mention_options()
 			})
@@ -114,7 +115,7 @@ frappe.ui.form.ControlComment = frappe.ui.form.ControlTextEditor.extend({
 		let direction = frappe.utils.is_rtl() ? 'rtl' : 'ltr';
 		let align = frappe.utils.is_rtl() ? 'right' : 'left';
 		return [
-			['bold', 'italic', 'underline'],
+			['bold', 'italic', 'underline', 'strike'],
 			['blockquote', 'code-block'],
 			[{ 'direction': "rtl" }],
 			['link', 'image'],

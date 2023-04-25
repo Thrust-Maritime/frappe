@@ -1,15 +1,19 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
 
 no_cache = 1
 base_template_path = "templates/www/desk.html"
 
-import os, re
+import os
+import re
+
 import frappe
-from frappe import _
 import frappe.sessions
+from frappe import _
+from frappe.utils.jinja import is_rtl
+
 
 def get_context(context):
 	if (frappe.session.user == "Guest" or
@@ -20,8 +24,7 @@ def get_context(context):
 	try:
 		boot = frappe.sessions.get()
 	except Exception as e:
-		boot = frappe._dict(status='failed', error = str(e))
-		print(frappe.get_traceback())
+		raise frappe.SessionBootFailed from e
 
 	# this needs commit
 	csrf_token = frappe.sessions.get_csrf_token()
@@ -33,19 +36,33 @@ def get_context(context):
 	# remove script tags from boot
 	boot_json = re.sub("\<script\>[^<]*\</script\>", "", boot_json)
 
-	context.update({
-		"no_cache": 1,
-		"build_version": get_build_version(),
-		"include_js": hooks["app_include_js"],
-		"include_css": hooks["app_include_css"],
-		"sounds": hooks["sounds"],
-		"boot": boot if context.get("for_mobile") else boot_json,
-		"csrf_token": csrf_token,
-		"google_analytics_id": frappe.conf.get("google_analytics_id"),
-		"mixpanel_id": frappe.conf.get("mixpanel_id")
-	})
+	context.update(
+		{
+			"no_cache": 1,
+			"build_version": frappe.utils.get_build_version(),
+			"include_js": hooks["app_include_js"],
+			"include_css": get_rtl_styles(style_urls) if is_rtl() else style_urls,
+			"layout_direction": "rtl" if is_rtl() else "ltr",
+			"lang": frappe.local.lang,
+			"sounds": hooks["sounds"],
+			"boot": boot if context.get("for_mobile") else boot_json,
+			"desk_theme": desk_theme or "Light",
+			"csrf_token": csrf_token,
+			"google_analytics_id": frappe.conf.get("google_analytics_id"),
+			"google_analytics_anonymize_ip": frappe.conf.get("google_analytics_anonymize_ip"),
+			"mixpanel_id": frappe.conf.get("mixpanel_id"),
+		}
+	)
 
 	return context
+
+
+def get_rtl_styles(style_urls):
+	rtl_style_urls = []
+	for style_url in style_urls:
+		rtl_style_urls.append(style_url.replace("/css/", "/css-rtl/"))
+	return rtl_style_urls
+
 
 @frappe.whitelist()
 def get_desk_assets(build_version):
@@ -58,33 +75,21 @@ def get_desk_assets(build_version):
 		for path in data["include_js"]:
 			# assets path shouldn't start with /
 			# as it points to different location altogether
-			if path.startswith('/assets/'):
-				path = path.replace('/assets/', 'assets/')
+			if path.startswith("/assets/"):
+				path = path.replace("/assets/", "assets/")
 			try:
-				with open(os.path.join(frappe.local.sites_path, path) ,"r") as f:
+				with open(os.path.join(frappe.local.sites_path, path), "r") as f:
 					assets[0]["data"] = assets[0]["data"] + "\n" + frappe.safe_decode(f.read(), "utf-8")
 			except IOError:
 				pass
 
 		for path in data["include_css"]:
-			if path.startswith('/assets/'):
-				path = path.replace('/assets/', 'assets/')
+			if path.startswith("/assets/"):
+				path = path.replace("/assets/", "assets/")
 			try:
-				with open(os.path.join(frappe.local.sites_path, path) ,"r") as f:
+				with open(os.path.join(frappe.local.sites_path, path), "r") as f:
 					assets[1]["data"] = assets[1]["data"] + "\n" + frappe.safe_decode(f.read(), "utf-8")
 			except IOError:
 				pass
 
-	return {
-		"build_version": data["build_version"],
-		"boot": data["boot"],
-		"assets": assets
-	}
-
-def get_build_version():
-	try:
-		return str(os.path.getmtime(os.path.join(frappe.local.sites_path, '.build')))
-	except OSError:
-		# .build can sometimes not exist
-		# this is not a major problem so send fallback
-		return frappe.utils.random_string(8)
+	return {"build_version": data["build_version"], "boot": data["boot"], "assets": assets}

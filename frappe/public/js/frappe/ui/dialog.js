@@ -50,9 +50,11 @@ frappe.ui.Dialog = class Dialog extends frappe.ui.FieldGroup {
 
 		// show footer
 		this.action = this.action || { primary: { }, secondary: { } };
-		if(this.primary_action || (this.action.primary && this.action.primary.onsubmit)) {
-			this.set_primary_action(this.primary_action_label || this.action.primary.label || __("Submit"),
-				this.primary_action || this.action.primary.onsubmit);
+		if (this.primary_action || (this.action.primary && this.action.primary.onsubmit)) {
+			this.set_primary_action(
+				this.primary_action_label || this.action.primary.label || __("Submit", null, "Primary action in dialog"),
+				this.primary_action || this.action.primary.onsubmit
+			);
 		}
 
 		if(this.secondary_action) {
@@ -72,7 +74,8 @@ frappe.ui.Dialog = class Dialog extends frappe.ui.FieldGroup {
 		this.$wrapper
 			.on("hide.bs.modal", function() {
 				me.display = false;
-				me.secondary_action && me.secondary_action();
+				me.is_minimized = false;
+				me.hide_scrollbar(false);
 
 				if(frappe.ui.open_dialogs[frappe.ui.open_dialogs.length-1]===me) {
 					frappe.ui.open_dialogs.pop();
@@ -91,8 +94,10 @@ frappe.ui.Dialog = class Dialog extends frappe.ui.FieldGroup {
 				window.cur_dialog = me;
 				frappe.ui.open_dialogs.push(me);
 				me.focus_on_first_input();
+				me.hide_scrollbar(true);
 				me.on_page_show && me.on_page_show();
 				$(document).trigger('frappe.ui.Dialog:shown');
+				$(document).off('focusin.modal');
 			})
 			.on('scroll', function() {
 				var $input = $('input:focus');
@@ -182,6 +187,13 @@ frappe.ui.Dialog = class Dialog extends frappe.ui.FieldGroup {
 		}
 		this.$wrapper.modal("show");
 
+		this.$wrapper.removeClass('modal-minimize');
+
+		if (this.minimizable && this.is_minimized) {
+			$(".modal-backdrop").toggle();
+			this.is_minimized = false;
+		}
+
 		// clear any message
 		this.clear_message();
 
@@ -209,5 +221,10 @@ frappe.ui.Dialog = class Dialog extends frappe.ui.FieldGroup {
 		this.is_minimized = !this.is_minimized;
 		this.on_minimize_toggle && this.on_minimize_toggle(this.is_minimized);
 		this.header.find('.modal-title').toggleClass('cursor-pointer');
+		this.hide_scrollbar(!this.is_minimized);
+	}
+
+	hide_scrollbar(bool) {
+		$("body").css("overflow", bool ?  "hidden" : "auto");
 	}
 };

@@ -8,26 +8,29 @@
     <div class="col-sm-6 text-right"><h4>{{ __("Width") }}</h4></div>
 </div>
 <div class="column-selector-list">
-    {% for (i=0; i < fields.length; i++) { var f = fields[i]; %}
-        {% var selected = in_list(column_names, f.fieldname) %}
-        <div class="row column-selector-row">
-            <div class="col-sm-6">
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox"
-                            data-fieldname="{{ f.fieldname }}"
-                            {{ selected ? "checked" : "" }}>
-                            {{ f.label }}
-                    </label>
-                </div>
-            </div>
-            <div class="col-sm-6 text-right">
-                <input class="form-control column-width input-sm text-right"
-                    value="{{ (widths[f.fieldname] || "") }}"
-                    data-fieldname="{{ f.fieldname }}"
-                    style="width: 100px; display: inline"
-                    {{ selected ? "" : "disabled" }}>
-            </div>
-        </div>
-    {% } %}
+	{% for (i=0; i < fields.length; i++) { var f = fields[i]; %}
+		{% var selected = in_list(column_names, f.fieldname) %}
+		<div class="row column-selector-row">
+			<div class="col-sm-6 flex align-center">
+				<div class="drag-handle flex align-center">
+					<svg class="icon icon-xs"><use href="#icon-drag"></use></svg>
+				</div>
+				<div class="checkbox">
+					<label>
+						<span class="input-area">
+							<input type="checkbox" data-fieldname="{{ f.fieldname }}" {{ selected ? "checked" : "" }}>
+						</span>
+						<span class="label-area">{{ __(f.label) }}</span>
+					</label>
+				</div>
+			</div>
+			<div class="col-sm-6 text-right">
+				<input class="form-control column-width input-xs text-right"
+					value="{{ (widths[f.fieldname] || "") }}"
+					data-fieldname="{{ f.fieldname }}"
+					style="width: 100px; display: inline"
+					{{ selected ? "" : "disabled" }}>
+			</div>
+		</div>
+	{% } %}
 </div>

@@ -144,10 +144,23 @@ $.extend(frappe.model, {
 
 			if(!df.ignore_user_permissions) {
 				// 2 - look in user defaults
-				var user_defaults = frappe.defaults.get_user_defaults(df.options);
-				if (user_defaults && user_defaults.length===1) {
-					// Use User Permission value when only when it has a single value
-					user_default = user_defaults[0];
+
+				if (!df.ignore_user_permissions) {
+					var user_defaults = frappe.defaults.get_user_defaults(df.options);
+					if (user_defaults && user_defaults.length===1) {
+						// Use User Permission value when only when it has a single value
+						user_default = user_defaults[0];
+					}
+				}
+
+				if (!user_default) {
+					user_default = frappe.defaults.get_user_default(df.fieldname);
+				} else if (
+					!user_default &&
+					df.remember_last_selected_value &&
+					frappe.boot.user.last_selected_values
+				) {
+					user_default = frappe.boot.user.last_selected_values[df.options];
 				}
 			}
 
@@ -279,7 +292,9 @@ $.extend(frappe.model, {
 		newdoc.owner = user;
 		newdoc.creation = '';
 		newdoc.modified_by = user;
-		newdoc.modified = '';
+		newdoc.modified = "";
+		newdoc.lft = null;
+		newdoc.rgt = null;
 
 		return newdoc;
 	},

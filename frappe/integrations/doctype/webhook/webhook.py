@@ -27,12 +27,16 @@ class Webhook(Document):
 		self.validate_repeating_fields()
 
 	def on_update(self):
-		frappe.cache().delete_value('webhooks')
+		frappe.cache().delete_value("webhooks")
 
 	def validate_docevent(self):
 		if self.webhook_doctype:
 			is_submittable = frappe.get_value("DocType", self.webhook_doctype, "is_submittable")
-			if not is_submittable and self.webhook_docevent in ["on_submit", "on_cancel", "on_update_after_submit"]:
+			if not is_submittable and self.webhook_docevent in [
+				"on_submit",
+				"on_cancel",
+				"on_update_after_submit",
+			]:
 				frappe.throw(_("DocType must be Submittable for the selected Doc Event"))
 
 	def validate_condition(self):
@@ -41,7 +45,7 @@ class Webhook(Document):
 			try:
 				frappe.safe_eval(self.condition, eval_locals=get_context(temp_doc))
 			except Exception as e:
-				frappe.throw(_(e))
+				frappe.throw(_("Invalid Condition: {}").format(e))
 
 	def validate_request_url(self):
 		try:
@@ -71,16 +75,24 @@ class Webhook(Document):
 
 
 def get_context(doc):
-	return {'doc': doc, 'utils': get_safe_globals().get('frappe').get('utils')}
+	return {"doc": doc, "utils": get_safe_globals().get("frappe").get("utils")}
+
 
 def enqueue_webhook(doc, webhook):
 	webhook = frappe.get_doc("Webhook", webhook.get("name"))
 	headers = get_webhook_headers(doc, webhook)
 	data = get_webhook_data(doc, webhook)
+	r = None
 
 	for i in range(3):
 		try:
-			r = requests.post(webhook.request_url, data=json.dumps(data, default=str), headers=headers, timeout=5)
+			r = requests.request(
+				method=webhook.request_method,
+				url=webhook.request_url,
+				data=json.dumps(data, default=str),
+				headers=headers,
+				timeout=5,
+			)
 			r.raise_for_status()
 			frappe.logger().debug({"webhook_success": r.text})
 			break
@@ -93,8 +105,35 @@ def enqueue_webhook(doc, webhook):
 				raise e
 
 
+def log_request(url, headers, data, res):
+	request_log = frappe.get_doc(
+		{
+			"doctype": "Webhook Request Log",
+			"user": frappe.session.user if frappe.session.user else None,
+			"url": url,
+			"headers": frappe.as_json(headers) if headers else None,
+			"data": frappe.as_json(data) if data else None,
+			"response": frappe.as_json(res.json()) if res else None,
+		}
+	)
+
+	request_log.save(ignore_permissions=True)
+
+
 def get_webhook_headers(doc, webhook):
 	headers = {}
+
+	if webhook.enable_security:
+		data = get_webhook_data(doc, webhook)
+		signature = base64.b64encode(
+			hmac.new(
+				webhook.get_password("webhook_secret").encode("utf8"),
+				json.dumps(data).encode("utf8"),
+				hashlib.sha256,
+			).digest()
+		)
+		headers[WEBHOOK_SECRET_HEADER] = signature
+
 	if webhook.webhook_headers:
 		for h in webhook.webhook_headers:
 			if h.get("key") and h.get("value"):

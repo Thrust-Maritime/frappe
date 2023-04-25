@@ -1,12 +1,7 @@
 // Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 // MIT License. See license.txt
 
-frappe.ui.form.on("Web Page", {
-	title: function(frm) {
-		if (frm.doc.title && !frm.doc.route) {
-			frm.set_value('route', frappe.scrub(frm.doc.title, '-'));
-		}
-	},
+frappe.ui.form.on('Web Page', {
 	layout: function(frm) {
 		if (frm.is_new()) {
 			if (frm.doc.insert_code) {
@@ -18,6 +13,20 @@ frappe.ui.form.on("Web Page", {
 	},
 	insert_code: function(frm) {
 		frm.events.layout(frm);
+	},
+	onload: function(frm) {
+		frm.set_query('web_template', 'page_blocks', function() {
+			return {
+				filters: {
+					"type": 'Section'
+				}
+			};
+		});
+	},
+	validate: function(frm) {
+		if (frm.doc.title && !frm.doc.route) {
+			frm.set_value('route', frappe.scrub(frm.doc.title, '-'));
+		}
 	},
 	refresh: function(frm) {
 		if (frm.doc.template_path) {

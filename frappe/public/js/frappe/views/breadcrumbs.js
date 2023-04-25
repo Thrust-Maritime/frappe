@@ -66,10 +66,23 @@ frappe.breadcrumbs = {
 		}
 
 		if (breadcrumbs.type === 'Custom') {
-			const html = `<li><a href="${breadcrumbs.route}">${breadcrumbs.label}</a></li>`;
-			$breadcrumbs.append(html);
-			$("body").removeClass("no-breadcrumbs");
-			return;
+			this.set_custom_breadcrumbs(breadcrumbs);
+		} else {
+			// workspace
+			this.set_workspace_breadcrumb(breadcrumbs);
+
+			// form / print
+			let view = frappe.get_route()[0];
+			view = view ? view.toLowerCase() : null;
+			if (breadcrumbs.doctype && ["print", "form"].includes(view)) {
+				this.set_list_breadcrumb(breadcrumbs);
+				this.set_form_breadcrumb(breadcrumbs, view);
+			} else if (breadcrumbs.doctype && view === 'list') {
+				this.set_list_breadcrumb(breadcrumbs);
+			} else if (breadcrumbs.doctype && view == 'dashboard-view') {
+				this.set_list_breadcrumb(breadcrumbs);
+				this.set_dashboard_breadcrumb(breadcrumbs);
+			}
 		}
 
 		// get preferred module for breadcrumbs, based on sent via module
@@ -117,12 +130,48 @@ frappe.breadcrumbs = {
 					{route: route, label: __(breadcrumbs.doctype)}))
 					.appendTo($breadcrumbs);
 			}
+			$(`<li><a href="/app/${route}">${__(doctype)}</a></li>`)
+				.appendTo(this.$breadcrumbs);
+		}
+	},
+
+	set_form_breadcrumb(breadcrumbs, view) {
+		const doctype = breadcrumbs.doctype;
+		const docname = frappe.get_route().slice(2).join("/");
+		let form_route = `/app/${frappe.router.slug(doctype)}/${docname}`;
+		$(`<li><a href="${form_route}">${__(docname)}</a></li>`)
+			.appendTo(this.$breadcrumbs);
+
+		if (view === "form") {
+			let last_crumb = this.$breadcrumbs.find('li').last();
+			last_crumb.addClass('disabled');
+			last_crumb.css("cursor", "copy");
+			last_crumb.click((event) => {
+				event.stopImmediatePropagation();
+				frappe.utils.copy_to_clipboard(last_crumb.text());
+			});
 		}
 
 		$("body").removeClass("no-breadcrumbs");
 	},
 
-	rename: function(doctype, old_name, new_name) {
+	set_dashboard_breadcrumb(breadcrumbs) {
+		const doctype = breadcrumbs.doctype;
+		const docname = frappe.get_route()[1];
+		let dashboard_route = `/app/${frappe.router.slug(doctype)}/${docname}`;
+		$(`<li><a href="${dashboard_route}">${__(docname)}</a></li>`)
+			.appendTo(this.$breadcrumbs);
+	},
+
+	setup_modules() {
+		if (!frappe.visible_modules) {
+			frappe.visible_modules = $.map(frappe.boot.allowed_workspaces, (m) => {
+				return m.module;
+			});
+		}
+	},
+
+	rename(doctype, old_name, new_name) {
 		var old_route_str = ["Form", doctype, old_name].join("/");
 		var new_route_str = ["Form", doctype, new_name].join("/");
 		frappe.breadcrumbs.all[new_route_str] = frappe.breadcrumbs.all[old_route_str];

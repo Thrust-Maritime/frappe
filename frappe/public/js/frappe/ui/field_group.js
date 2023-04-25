@@ -121,6 +121,9 @@ frappe.ui.FieldGroup = frappe.ui.form.Layout.extend({
 			}
 		});
 	},
+	has_field: function(fieldname) {
+		return !!this.fields_dict[fieldname];
+	},
 	set_input: function(key, val) {
 		return this.set_value(key, val);
 	},
@@ -140,6 +143,9 @@ frappe.ui.FieldGroup = frappe.ui.form.Layout.extend({
 		}
 	},
 	set_df_property: function (fieldname, prop, value) {
+		if (!fieldname) {
+			return;
+		}
 		const field    = this.get_field(fieldname);
 		field.df[prop] = value;
 		field.refresh();

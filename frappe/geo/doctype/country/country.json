@@ -144,14 +144,8 @@
  "hide_toolbar": 0,
  "icon": "fa fa-globe",
  "idx": 1,
- "image_view": 0,
- "in_create": 0,
- "is_submittable": 0,
- "issingle": 0,
- "istable": 0,
- "max_attachments": 0,
- "menu_index": 0,
- "modified": "2018-08-29 06:37:32.303570",
+ "links": [],
+ "modified": "2022-08-06 12:13:36.502655",
  "modified_by": "Administrator",
  "module": "Geo",
  "name": "Country",
@@ -203,6 +197,5 @@
  "sort_field": "country_name",
  "sort_order": "ASC",
  "track_changes": 1,
- "track_seen": 0,
- "track_views": 0
+ "translated_doctype": 1
 }

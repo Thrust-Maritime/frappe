@@ -6,7 +6,80 @@ frappe.ui.GroupBy = class {
 		this.report_view = report_view;
 		this.page = report_view.page;
 		this.doctype = report_view.doctype;
-		this.setup_group_by_area();
+		this.make();
+	}
+
+	make() {
+		this.make_group_by_button();
+		this.init_group_by_popover();
+		this.set_popover_events();
+	}
+
+	init_group_by_popover() {
+		const sql_aggregate_functions = [
+			{name: 'count', label: __('Count')},
+			{name: 'sum', label: __('Sum')},
+			{name: 'avg', label: __('Average')}
+		];
+
+		const group_by_template = $(
+			frappe.render_template('group_by', {
+				doctype: this.doctype,
+				group_by_conditions: this.get_group_by_fields(),
+				aggregate_function_conditions: sql_aggregate_functions,
+			})
+		);
+
+		this.group_by_button.popover({
+			content: group_by_template,
+			template: `
+				<div class="group-by-popover popover">
+					<div class="arrow"></div>
+					<div class="popover-body popover-content">
+					</div>
+				</div>
+			`,
+			html: true,
+			trigger: 'manual',
+			container: 'body',
+			placement: 'bottom',
+			offset: '-100px, 0',
+		});
+	}
+
+	// TODO: make common with filter popover
+	set_popover_events() {
+		$(document.body).on('click', (e) => {
+			if (this.wrapper && this.wrapper.is(':visible')) {
+				if (
+					$(e.target).parents('.group-by-popover').length === 0 &&
+					$(e.target).parents('.group-by-box').length === 0 &&
+					$(e.target).parents('.group-by-button').length === 0 &&
+					!$(e.target).is(this.group_by_button)
+				) {
+					this.wrapper && this.group_by_button.popover('hide');
+				}
+			}
+		});
+
+		this.group_by_button.on('click', () => {
+			this.group_by_button.popover('toggle');
+		});
+
+		this.group_by_button.on('shown.bs.popover', () => {
+			if (!this.wrapper) {
+				this.wrapper = $('.group-by-popover');
+				this.setup_group_by_area();
+			}
+		});
+
+		this.group_by_button.on('hidden.bs.popover', () => {
+			this.update_group_by_button();
+		});
+
+		frappe.router.on('change', () => {
+			this.group_by_button.popover('hide');
+		});
 	}
 
 	setup_group_by_area() {

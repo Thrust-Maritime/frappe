@@ -34,13 +34,18 @@ frappe.ui.Filter = class {
 
 		this.invalid_condition_map = {
 			Date: ['like', 'not like'],
-			Datetime: ['like', 'not like'],
-			Data: ['Between', 'Previous', 'Next'],
-			Select: ['like', 'not like', 'Between', 'Previous', 'Next'],
-			Link: ['Between', 'Previous', 'Next', '>', '<', '>=', '<='],
-			Currency: ['Between', 'Previous', 'Next'],
-			Color: ['Between', 'Previous', 'Next'],
+			Datetime: ['like', 'not like', 'in', 'not in', '=', '!='],
+			Data: ['Between', 'Timespan'],
+			Select: ['like', 'not like', 'Between', 'Timespan'],
+			Link: ['Between', 'Timespan', '>', '<', '>=', '<='],
+			Currency: ['Between', 'Timespan'],
+			Color: ['Between', 'Timespan'],
 			Check: this.conditions.map((c) => c[0]).filter((c) => c !== '='),
+			Code: ['Between', 'Timespan', '>', '<', '>=', '<=', 'in', 'not in'],
+			'HTML Editor': ['Between', 'Timespan', '>', '<', '>=', '<=', 'in', 'not in'],
+			'Markdown Editor': ['Between', 'Timespan', '>', '<', '>=', '<=', 'in', 'not in'],
+			Password: ['Between', 'Timespan', '>', '<', '>=', '<=', 'in', 'not in'],
+			Rating: ['like', 'not like', 'Between', 'in', 'not in', 'Timespan'],
 		};
 		this.make();
 		this.make_select();
@@ -60,6 +65,7 @@ frappe.ui.Filter = class {
 		this.fieldselect = new frappe.ui.FieldSelect({
 			parent: this.filter_edit_area.find('.fieldname-select-area'),
 			doctype: this.parent_doctype,
+			parent_doctype: this._parent_doctype,
 			filter_fields: this.filter_fields,
 			select: (doctype, fieldname) => {
 				this.set_field(doctype, fieldname);
@@ -437,15 +443,23 @@ frappe.ui.filter_utils = {
 			];
 		} else if (df.fieldtype == 'Check') {
 			df.fieldtype = 'Select';
-			df.options = 'No\nYes';
+			df.options = [
+				{ label: __('Yes', null, 'Checkbox is checked'), value: 'Yes' },
+				{ label: __('No', null, 'Checkbox is not checked'), value: 'No' },
+			];
 		} else if (
 			[
 				'Text',
 				'Small Text',
 				'Text Editor',
 				'Code',
+				'Attach',
+				'Attach Image',
+				'Markdown Editor',
+				'HTML Editor',
 				'Tag',
 				'Comments',
+				'Barcode',
 				'Dynamic Link',
 				'Read Only',
 				'Assign',
@@ -488,8 +502,8 @@ frappe.ui.filter_utils = {
 		if (condition === 'is') {
 			df.fieldtype = 'Select';
 			df.options = [
-				{ label: __('Set'), value: 'set' },
-				{ label: __('Not Set'), value: 'not set' },
+				{ label: __('Set', null, 'Field value is set'), value: 'set' },
+				{ label: __('Not Set', null, 'Field value is not set'), value: 'not set' },
 			];
 		}
 	},

@@ -16,6 +16,7 @@
   "in_standard_filter",
   "in_global_search",
   "bold",
+  "no_copy",
   "allow_in_quick_entry",
   "translatable",
   "column_break_7",
@@ -37,6 +38,12 @@
   "allow_on_submit",
   "report_hide",
   "remember_last_selected_value",
+  "hide_border",
+  "ignore_xss_filter",
+  "property_depends_on_section",
+  "mandatory_depends_on",
+  "column_break_33",
+  "read_only_depends_on",
   "display",
   "default",
   "in_filter",
@@ -72,7 +79,7 @@
    "label": "Type",
    "oldfieldname": "fieldtype",
    "oldfieldtype": "Select",
-   "options": "Attach\nAttach Image\nBarcode\nButton\nCheck\nCode\nColor\nColumn Break\nCurrency\nData\nDate\nDatetime\nDynamic Link\nFloat\nFold\nGeolocation\nHeading\nHTML\nHTML Editor\nImage\nInt\nLink\nLong Text\nMarkdown Editor\nPassword\nPercent\nRating\nRead Only\nSection Break\nSelect\nSignature\nSmall Text\nTable\nTable MultiSelect\nText\nText Editor\nTime",
+   "options": "Attach\nAttach Image\nBarcode\nButton\nCheck\nCode\nColor\nColumn Break\nCurrency\nData\nDate\nDatetime\nDuration\nDynamic Link\nFloat\nFold\nGeolocation\nHeading\nHTML\nHTML Editor\nIcon\nImage\nInt\nLink\nLong Text\nMarkdown Editor\nPassword\nPercent\nRating\nRead Only\nSection Break\nSelect\nSignature\nSmall Text\nTable\nTable MultiSelect\nText\nText Editor\nTime",
    "reqd": 1,
    "search_index": 1
   },
@@ -353,12 +360,82 @@
    "default": "0",
    "fieldname": "allow_in_quick_entry",
    "fieldtype": "Check",
-   "label": " Allow in Quick Entry "
+   "label": "Allow in Quick Entry"
+  },
+  {
+   "fieldname": "property_depends_on_section",
+   "fieldtype": "Section Break",
+   "label": "Property Depends On"
+  },
+  {
+   "fieldname": "mandatory_depends_on",
+   "fieldtype": "Code",
+   "label": "Mandatory Depends On",
+   "options": "JS"
+  },
+  {
+   "fieldname": "column_break_33",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "read_only_depends_on",
+   "fieldtype": "Code",
+   "label": "Read Only Depends On",
+   "options": "JS"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:!in_list(['Table', 'Table MultiSelect'], doc.fieldtype);",
+   "fieldname": "in_preview",
+   "fieldtype": "Check",
+   "label": "In Preview"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.fieldtype=='Duration'",
+   "fieldname": "hide_seconds",
+   "fieldtype": "Check",
+   "label": "Hide Seconds"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.fieldtype=='Duration'",
+   "fieldname": "hide_days",
+   "fieldtype": "Check",
+   "label": "Hide Days"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.fieldtype=='Section Break'",
+   "fieldname": "hide_border",
+   "fieldtype": "Check",
+   "label": "Hide Border"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:in_list([\"Int\", \"Float\", \"Currency\"], doc.fieldtype)",
+   "fieldname": "non_negative",
+   "fieldtype": "Check",
+   "label": "Non Negative"
+  },
+  {
+   "default": "0",
+   "fieldname": "no_copy",
+   "fieldtype": "Check",
+   "label": "No Copy"
+  },
+  {
+   "default": "0",
+   "description": "Don't encode HTML tags like &lt;script&gt; or just characters like &lt; or &gt;, as they could be intentionally used in this field",
+   "fieldname": "ignore_xss_filter",
+   "fieldtype": "Check",
+   "label": "Ignore XSS Filter"
   }
  ],
  "idx": 1,
  "istable": 1,
- "modified": "2020-03-17 21:31:35.714416",
+ "links": [],
+ "modified": "2022-04-13 22:31:14.162661",
  "modified_by": "Administrator",
  "module": "Custom",
  "name": "Customize Form Field",

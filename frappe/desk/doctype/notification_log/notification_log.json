@@ -82,8 +82,9 @@
   }
  ],
  "in_create": 1,
- "modified": "2019-11-12 15:22:35.283678",
- "modified_by": "umair@erpnext.com",
+ "links": [],
+ "modified": "2021-10-25 17:26:09.703215",
+ "modified_by": "Administrator",
  "module": "Desk",
  "name": "Notification Log",
  "owner": "Administrator",
@@ -103,6 +104,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "title_field": "subject",
- "track_changes": 1,
  "track_seen": 1
 }

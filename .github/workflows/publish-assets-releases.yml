@@ -20,7 +20,7 @@ jobs:
           python-version: '12.x'
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.6'
+          python-version: '3.7'
       - name: Set up bench for current push
         run: |
           npm install -g yarn
@@ -35,7 +35,7 @@ jobs:
 
       - name: Get release
         id: get_release
-        uses: bruceadams/get-release@v1.2.0
+        uses: bruceadams/get-release@v1.3.1
 
       - name: Upload built Assets to Release
         uses: actions/upload-release-asset@v1.0.2

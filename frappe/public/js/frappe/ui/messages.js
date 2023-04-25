@@ -26,16 +26,14 @@ frappe.throw = function(msg) {
 
 frappe.confirm = function(message, ifyes, ifno) {
 	var d = new frappe.ui.Dialog({
-		title: __("Confirm"),
-		fields: [
-			{fieldtype:"HTML", options:`<p class="frappe-confirm-message">${message}</p>`}
-		],
-		primary_action_label: __("Yes"),
-		primary_action: function() {
-			if(ifyes) ifyes();
+		title: __("Confirm", null, "Title of confirmation dialog"),
+		primary_action_label: __("Yes", null, "Approve confirmation dialog"),
+		primary_action: () => {
+			confirm_action && confirm_action();
 			d.hide();
 		},
-		secondary_action_label: __("No")
+		secondary_action_label: __("No", null, "Dismiss confirmation dialog"),
+		secondary_action: () => d.hide(),
 	});
 	d.show();
 
@@ -69,7 +67,8 @@ frappe.warn = function(title, message_html, proceed_action, primary_label, is_mi
 			if (proceed_action) proceed_action();
 			d.hide();
 		},
-		secondary_action_label: __("Cancel"),
+		secondary_action_label: __("Cancel", null, "Secondary button in warning dialog"),
+		secondary_action: () => d.hide(),
 		minimizable: is_minimizable
 	});
 
@@ -96,9 +95,9 @@ frappe.prompt = function(fields, callback, title, primary_label) {
 	if(!$.isArray(fields)) fields = [fields];
 	var d = new frappe.ui.Dialog({
 		fields: fields,
-		title: title || __("Enter Value"),
+		title: title || __("Enter Value", null, "Title of prompt dialog"),
 	});
-	d.set_primary_action(primary_label || __("Submit"), function() {
+	d.set_primary_action(primary_label || __("Submit", null, "Primary action of prompt dialog"), function() {
 		var values = d.get_values();
 		if(!values) {
 			return;
@@ -218,7 +217,7 @@ frappe.msgprint = function(msg, title, is_minimizable) {
 	if(data.title || !msg_exists) {
 		// set title only if it is explicitly given
 		// and no existing title exists
-		frappe.msg_dialog.set_title(data.title || __('Message'));
+		frappe.msg_dialog.set_title(data.title || __('Message', null, 'Default title of the message dialog'));
 	}
 
 	// show / hide indicator
@@ -347,7 +346,15 @@ frappe.hide_progress = function() {
 
 // Floating Message
 frappe.show_alert = function(message, seconds=7, actions={}) {
-	if(typeof message==='string') {
+	let indicator_icon_map = {
+		'orange': "solid-warning",
+		'yellow': "solid-warning",
+		'blue': "solid-info",
+		'green': "solid-success",
+		'red': "solid-error"
+	};
+
+	if (typeof message==='string') {
 		message = {
 			message: message
 		};
@@ -362,12 +369,21 @@ frappe.show_alert = function(message, seconds=7, actions={}) {
 		body_html = message.body;
 	}
 
+	const indicator = message.indicator || 'blue';
+
 	const div = $(`
-		<div class="alert desk-alert">
-			<div class="alert-message small"></div>
+		<div class="alert desk-alert ${indicator}" role="alert">
+			<div class="alert-message-container">
+				<div class="alert-title-container">
+					<div>${frappe.utils.icon(icon, 'lg')}</div>
+					<div class="alert-message">${message.message}</div>
+				</div>
+				<div class="alert-subtitle">${message.subtitle || '' }</div>
+			</div>
 			<div class="alert-body" style="display: none"></div>
-			<a class="close">&times;</a>
-		</div>`);
+			<a class="close">${frappe.utils.icon('close-alt')}</a>
+		</div>
+	`);
 
 	if(message.indicator) {
 		div.find('.alert-message').append(`<span class="indicator ${message.indicator}"></span>`);

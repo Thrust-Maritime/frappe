@@ -232,7 +232,8 @@ login.login_handlers = (function() {
 			}
 		},
 		401: get_error_handler('{{ _("Invalid Login. Try again.") }}'),
-		417: get_error_handler('{{ _("Oops! Something went wrong") }}')
+		417: get_error_handler('{{ _("Oops! Something went wrong") }}'),
+		404: get_error_handler('{{ _("User does not exist.")}}')
 	};
 
 	return login_handlers;
@@ -286,12 +287,12 @@ var continue_otp_app = function(setup, qrcode){
 	request_otp();
 	var qrcode_div = $('<div class="text-muted" style="padding-bottom: 15px;"></div>');
 
-	if (setup){
-		direction = $('<div>').attr('id','qr_info').text('{{ _("Enter Code displayed in OTP App.") }}');
+	if (setup) {
+		direction = $('<div>').attr('id', 'qr_info').html('{{ _("Enter Code displayed in OTP App.") }}');
 		qrcode_div.append(direction);
 		$('#otp_div').prepend(qrcode_div);
 	} else {
-		direction = $('<div>').attr('id','qr_info').text('{{ _("OTP setup using OTP App was not completed. Please contact Administrator.") }}');
+		direction = $('<div>').attr('id', 'qr_info').html('{{ _("OTP setup using OTP App was not completed. Please contact Administrator.") }}');
 		qrcode_div.append(direction);
 		$('#otp_div').prepend(qrcode_div);
 	}
@@ -305,7 +306,7 @@ var continue_sms = function(setup, prompt){
 		sms_div.append(prompt)
 		$('#otp_div').prepend(sms_div);
 	} else {
-		direction = $('<div>').attr('id','qr_info').text(prompt || '{{ _("SMS was not sent. Please contact Administrator.") }}');
+		direction = $('<div>').attr('id', 'qr_info').html(prompt || '{{ _("SMS was not sent. Please contact Administrator.") }}');
 		sms_div.append(direction);
 		$('#otp_div').prepend(sms_div)
 	}
@@ -319,7 +320,7 @@ var continue_email = function(setup, prompt){
 		email_div.append(prompt)
 		$('#otp_div').prepend(email_div);
 	} else {
-		var direction = $('<div>').attr('id','qr_info').text(prompt || '{{ _("Verification code email not sent. Please contact Administrator.") }}');
+		var direction = $('<div>').attr('id', 'qr_info').html(prompt || '{{ _("Verification code email not sent. Please contact Administrator.") }}');
 		email_div.append(direction);
 		$('#otp_div').prepend(email_div);
 	}

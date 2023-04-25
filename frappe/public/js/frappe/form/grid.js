@@ -153,11 +153,23 @@ export default class Grid {
 				});
 			}
 
-			tasks.push(() => {
-				if (dirty) me.refresh();
-			});
+		frappe.run_serially(tasks);
 
-			frappe.run_serially(tasks);
+		this.wrapper.find('.grid-heading-row .grid-row-check:checked:first').prop('checked', 0);
+		if (selected_children.length == this.grid_pagination.page_length) {
+			this.scroll_to_top();
+		}
+	}
+
+	delete_all_rows() {
+		frappe.confirm(__("Are you sure you want to delete all rows?"), () => {
+			this.frm.doc[this.df.fieldname] = [];
+			$(this.parent).find('.rows').empty();
+			this.grid_rows = [];
+			this.refresh();
+			this.frm && this.frm.script_manager.trigger(this.df.fieldname + "_delete", this.doctype);
+			this.frm && this.frm.dirty();
+			this.scroll_to_top();
 		});
 	}
 	select_row(name) {
@@ -171,6 +183,10 @@ export default class Grid {
 	refresh_remove_rows_button() {
 		this.remove_rows_button.toggleClass('hidden',
 			this.wrapper.find('.grid-body .grid-row-check:checked:first').length ? false : true);
+
+		let select_all_checkbox_checked = this.wrapper.find('.grid-heading-row .grid-row-check:checked:first').length;
+		let show_delete_all_btn = select_all_checkbox_checked && this.data.length > this.get_selected_children().length;
+		this.remove_all_rows_button.toggleClass('hidden', !show_delete_all_btn);
 	}
 	get_selected() {
 		return (this.grid_rows || []).map(function(row) { return row.doc.__checked ? row.doc.name : null; })
@@ -180,6 +196,15 @@ export default class Grid {
 		return (this.grid_rows || []).map(function(row) { return row.doc.__checked ? row.doc : null; })
 			.filter(function(d) { return d; });
 	}
+
+	reset_grid() {
+		this.visible_columns = [];
+		this.grid_rows = [];
+
+		$(this.parent).find(".grid-body .grid-row").remove();
+		this.refresh();
+	}
+
 	make_head() {
 		// labels
 		if(!this.header_row) {
@@ -191,6 +216,14 @@ export default class Grid {
 				grid: this
 			});
 		}
+		this.header_row = new GridRow({
+			parent: $(this.parent).find(".grid-heading-row"),
+			parent_df: this.df,
+			docfields: this.docfields,
+			frm: this.frm,
+			grid: this,
+			configure_columns: true
+		});
 	}
 	refresh(force) {
 		!this.wrapper && this.make();
@@ -224,7 +257,41 @@ export default class Grid {
 		for(var ri=0; ri < data.length; ri++) {
 			var d = data[ri];
 
-			if(d.idx===undefined) {
+		// toolbar
+		this.setup_toolbar();
+		this.toggle_checkboxes(this.display_status !== 'Read');
+
+		// sortable
+		if (this.is_sortable() && !this.sortable_setup_done) {
+			this.make_sortable($rows);
+			this.sortable_setup_done = true;
+		}
+
+		this.last_display_status = this.display_status;
+		this.last_docname = this.frm && this.frm.docname;
+
+		// red if mandatory
+		this.form_grid.toggleClass('error', !!(this.df.reqd && !(this.data && this.data.length)));
+
+		this.refresh_remove_rows_button();
+
+		this.wrapper.trigger('change');
+	}
+
+
+	render_result_rows($rows, append_row) {
+		let result_length = this.grid_pagination.get_result_length();
+		let page_index = this.grid_pagination.page_index;
+		let page_length = this.grid_pagination.page_length;
+		if (!this.grid_rows) {
+			return;
+		}
+		for (var ri = (page_index - 1) * page_length; ri < result_length; ri++) {
+			var d = this.data[ri];
+			if (!d) {
+				return;
+			}
+			if (d.idx === undefined) {
 				d.idx = ri + 1;
 			}
 
@@ -358,13 +425,18 @@ export default class Grid {
 				let idx = $(event.item).closest('.grid-row').attr('data-idx');
 				let doc = this.get_data()[idx - 1];
 				this.renumber_based_on_dom();
-				this.frm.script_manager.trigger(this.df.fieldname + "_move", this.df.options, doc.name);
+				this.frm &&
+					this.frm.script_manager.trigger(
+						this.df.fieldname + "_move",
+						this.df.options,
+						doc.name
+					);
 				this.refresh();
-				this.frm.dirty();
-			}
+				this.frm && this.frm.dirty();
+			},
 		});
 
-		$(this.frm.wrapper).trigger("grid-make-sortable", [this.frm]);
+		this.frm && $(this.frm.wrapper).trigger("grid-make-sortable", [this.frm]);
 	}
 	get_data() {
 		var data = this.frm ?
@@ -381,12 +453,10 @@ export default class Grid {
 		}) : [];
 	}
 	set_column_disp(fieldname, show) {
-		if($.isArray(fieldname)) {
-			var me = this;
-			for(var i=0, l=fieldname.length; i<l; i++) {
-				var fname = fieldname[i];
-				me.get_docfield(fname).hidden = show ? 0 : 1;
-				this.set_editable_grid_column_disp(fname, show);
+		if (Array.isArray(fieldname)) {
+			for (let field of fieldname) {
+				this.update_docfield_property(field, "hidden", show ? 0 : 1);
+				this.set_editable_grid_column_disp(field, show);
 			}
 		} else {
 			this.get_docfield(fieldname).hidden = show ? 0 : 1;
@@ -434,16 +504,16 @@ export default class Grid {
 		this.refresh();
 	}
 	toggle_reqd(fieldname, reqd) {
-		this.get_docfield(fieldname).reqd = reqd;
-		this.refresh();
+		this.update_docfield_property(fieldname, "reqd", reqd);
+		this.debounced_refresh();
 	}
 	toggle_enable(fieldname, enable) {
-		this.get_docfield(fieldname).read_only = enable ? 0 : 1;
-		this.refresh();
+		this.update_docfield_property(fieldname, "read_only", enable ? 0 : 1);
+		this.debounced_refresh();
 	}
 	toggle_display(fieldname, show) {
-		this.get_docfield(fieldname).hidden = show ? 0 : 1;
-		this.refresh();
+		this.update_docfield_property(fieldname, "hidden", show ? 0 : 1);
+		this.debounced_refresh();
 	}
 	toggle_checkboxes(enable) {
 		this.wrapper.find(".grid-row-check").prop('disabled', !enable)
@@ -477,9 +547,25 @@ export default class Grid {
 			this.grid_rows_by_docname[doc.name].refresh_field(fieldname, value);
 		}
 	}
-	add_new_row(idx, callback, show, copy_doc) {
-		if(this.is_editable()) {
-			if(this.frm) {
+
+	setup_add_row() {
+		this.wrapper.find(".grid-add-row").click(() => {
+			this.add_new_row(null, null, true, null, true);
+			this.set_focus_on_row();
+
+			return false;
+		});
+	}
+
+	add_new_row(idx, callback, show, copy_doc, go_to_last_page = false, go_to_first_page = false) {
+		if (this.is_editable()) {
+			if (go_to_last_page) {
+				this.grid_pagination.go_to_last_page_to_add_row();
+			} else if (go_to_first_page) {
+				this.grid_pagination.go_to_page(1);
+			}
+
+			if (this.frm) {
 				var d = frappe.model.add_child(this.frm.doc, this.df.options, this.df.fieldname, idx);
 				if(copy_doc) {
 					d = this.duplicate_row(d, copy_doc);
@@ -524,12 +610,15 @@ export default class Grid {
 		$rows.find(".grid-row").each(function(i, item) {
 
 			let $item = $(item);
-			let d = locals[me.doctype][$item.attr('data-name')];
-			d.idx = i + 1;
+			let index =
+				(this.grid_pagination.page_index - 1) * this.grid_pagination.page_length + i;
+			let d = this.grid_rows_by_docname[$item.attr("data-name")].doc;
+			d.idx = index + 1;
 			$item.attr('data-idx', d.idx);
 
-			me.frm.doc[me.df.fieldname].push(d);
-			me.grid_rows.push(me.grid_rows_by_docname[d.name]);
+			if (this.frm) this.frm.doc[this.df.fieldname][index] = d;
+			this.data[index] = d;
+			this.grid_rows[index] = (this.grid_rows_by_docname[d.name]);
 		});
 	}
 
@@ -545,9 +634,8 @@ export default class Grid {
 	}
 
 	set_focus_on_row(idx) {
-		var me = this;
-		if(!idx) {
-			idx = me.grid_rows.length - 1;
+		if (!idx && idx !== 0) {
+			idx = this.grid_rows.length - 1;
 		}
 		setTimeout(function() {
 			me.grid_rows[idx].row
@@ -556,10 +644,13 @@ export default class Grid {
 	}
 
 	setup_visible_columns() {
-		if (this.visible_columns) return;
+		if (this.visible_columns && this.visible_columns.length > 0) return;
 
+		this.user_defined_columns = [];
+		this.setup_user_defined_columns();
 		var total_colsize = 1,
-			fields = this.editable_fields || this.docfields;
+			fields = (this.user_defined_columns && this.user_defined_columns.length > 0)
+				? this.user_defined_columns : this.editable_fields || this.docfields;
 
 		this.visible_columns = [];
 
@@ -567,24 +658,17 @@ export default class Grid {
 			var _df = fields[ci];
 
 			// get docfield if from fieldname
-			df = this.fields_map[_df.fieldname];
+			df = (this.user_defined_columns && this.user_defined_columns.length > 0) ? _df : this.fields_map[_df.fieldname];
 
-			if(!df.hidden
+			if (df && !df.hidden
 				&& (this.editable_fields || df.in_list_view)
 				&& (this.frm && this.frm.get_perm(df.permlevel, "read") || !this.frm)
 				&& !in_list(frappe.model.layout_fields, df.fieldtype)) {
 
-				if(df.columns) {
-					df.colsize=df.columns;
-				}
-				else {
-					var colsize = 2;
-					switch (df.fieldtype) {
-						case "Text": break;
-						case "Small Text": colsize = 3; break;
-						case "Check": colsize = 1;
-					}
-					df.colsize = colsize;
+				if (df.columns) {
+					df.colsize = df.columns;
+				} else {
+					this.update_default_colsize(df);
 				}
 
 				// attach formatter on refresh
@@ -627,6 +711,31 @@ export default class Grid {
 		}
 	}
 
+	update_default_colsize(df) {
+		var colsize = 2;
+		switch (df.fieldtype) {
+			case "Text": break;
+			case "Small Text": colsize = 3; break;
+			case "Check": colsize = 1;
+		}
+		df.colsize = colsize;
+	}
+
+	setup_user_defined_columns() {
+		if (this.frm) {
+			let user_settings = frappe.get_user_settings(this.frm.doctype, 'GridView');
+			if (user_settings && user_settings[this.doctype] && user_settings[this.doctype].length) {
+				this.user_defined_columns = user_settings[this.doctype].map(row => {
+					let column = frappe.meta.get_docfield(this.doctype, row.fieldname);
+					if (column) {
+						column.in_list_view = 1;
+						column.columns = row.columns;
+						return column;
+					}
+				});
+			}
+		}
+	}
 
 	is_editable() {
 		return this.display_status=="Write" && !this.static_rows;
@@ -666,7 +775,15 @@ export default class Grid {
 		var me = this;
 		if(this.frm && this.frm.get_docfield(this.df.fieldname).allow_bulk_edit) {
 			// download
-			me.setup_download();
+			this.setup_download();
+
+			const value_formatter_map = {
+				"Date": val => val ? frappe.datetime.user_to_str(val) : val,
+				"Int": val => cint(val),
+				"Check": val => cint(val),
+				"Float": val => flt(val),
+				"Currency": (val) => flt(val),
+			};
 
 			// upload
 			frappe.flags.no_socketio = true;
@@ -695,17 +812,11 @@ export default class Grid {
 									$.each(row, function(ci, value) {
 										var fieldname = fieldnames[ci];
 										var df = frappe.meta.get_docfield(me.df.options, fieldname);
-
-										// convert date formatting
-										if(df.fieldtype==="Date" && value) {
-											value = frappe.datetime.user_to_str(value);
+										if (df) {
+											d[fieldnames[ci]] = value_formatter_map[df.fieldtype]
+												? value_formatter_map[df.fieldtype](value)
+												: value;
 										}
-
-										if(df.fieldtype==="Int" || df.fieldtype==="Check") {
-											value = cint(value);
-										}
-
-										d[fieldnames[ci]] = value;
 									});
 								}
 							}
@@ -782,5 +893,33 @@ export default class Grid {
 	clear_custom_buttons() {
 		// hide all custom buttons
 		this.grid_buttons.find('.btn-custom').addClass('hidden');
+	}
+
+	update_docfield_property(fieldname, property, value) {
+		// update the docfield of each row
+		if (!this.grid_rows) {
+			return;
+		}
+
+		for (let row of this.grid_rows) {
+			let docfield = row.docfields.find(d => d.fieldname === fieldname);
+			if (docfield) {
+				docfield[property] = value;
+			} else {
+				throw `field ${fieldname} not found`;
+			}
+		}
+
+		// update the parent too (for new rows)
+		this.docfields.find(d => d.fieldname === fieldname)[property] = value;
+
+		if (this.user_defined_columns && this.user_defined_columns.length > 0) {
+			let field = this.user_defined_columns.find((d) => d.fieldname === fieldname);
+			if (field && Object.keys(field).includes(property)) {
+				field[property] = value;
+			}
+		}
+
+		this.debounced_refresh();
 	}
 }

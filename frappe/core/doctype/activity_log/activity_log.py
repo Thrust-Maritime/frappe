@@ -3,11 +3,13 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-from frappe import _
-from frappe.utils import get_fullname, now
-from frappe.model.document import Document
-from frappe.core.utils import set_timeline_doc
+
 import frappe
+from frappe import _
+from frappe.core.utils import set_timeline_doc
+from frappe.model.document import Document
+from frappe.utils import get_fullname, now
+
 
 class ActivityLog(Document):
 	def before_insert(self):
@@ -25,8 +27,6 @@ class ActivityLog(Document):
 		if self.reference_doctype and self.reference_name:
 			self.status = "Linked"
 
-	def on_trash(self): # pylint: disable=no-self-use
-		frappe.throw(_("Sorry! You cannot delete auto-generated comments"))
 
 def on_doctype_update():
 	"""Add indexes in `tabActivity Log`"""
@@ -34,16 +34,28 @@ def on_doctype_update():
 	frappe.db.add_index("Activity Log", ["timeline_doctype", "timeline_name"])
 	frappe.db.add_index("Activity Log", ["link_doctype", "link_name"])
 
-def add_authentication_log(subject, user, operation="Login", status="Success"):
-	frappe.get_doc({
-		"doctype": "Activity Log",
-		"user": user,
-		"status": status,
-		"subject": subject,
-		"operation": operation,
-	}).insert(ignore_permissions=True, ignore_links=True)
 
-def clear_authentication_logs():
-	"""clear 100 day old authentication logs"""
-	frappe.db.sql("""delete from `tabActivity Log` where \
-	creation< (NOW() - INTERVAL '100' DAY)""")
+def add_authentication_log(subject, user, operation="Login", status="Success"):
+	frappe.get_doc(
+		{
+			"doctype": "Activity Log",
+			"user": user,
+			"status": status,
+			"subject": subject,
+			"operation": operation,
+		}
+	).insert(ignore_permissions=True, ignore_links=True)
+
+
+def clear_activity_logs(days=None):
+	"""clear 90 day old authentication logs or configured in log settings"""
+
+	if not days:
+		days = 90
+
+	frappe.db.sql(
+		"""delete from `tabActivity Log` where \
+		creation< (NOW() - INTERVAL '{0}' DAY)""".format(
+			days
+		)
+	)

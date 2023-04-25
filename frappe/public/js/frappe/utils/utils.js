@@ -2,7 +2,148 @@
 // MIT License. See license.txt
 
 import deep_equal from "fast-deep-equal";
-frappe.provide('frappe.utils');
+import cloneDeepWith from "lodash/cloneDeepWith";
+
+frappe.provide("frappe.utils");
+
+// Array de duplicate
+if (!Array.prototype.uniqBy) {
+	Object.defineProperty(Array.prototype, 'uniqBy', {
+		value: function (key) {
+			var seen = {};
+			return this.filter(function (item) {
+				var k = key(item);
+				return k in seen ? false : (seen[k] = true);
+			});
+		}
+	});
+	Object.defineProperty(Array.prototype, 'move', {
+		value: function(from, to) {
+			this.splice(to, 0, this.splice(from, 1)[0]);
+		}
+	});
+}
+
+// Python's dict.setdefault ported for JS objects
+Object.defineProperty(Object.prototype, "setDefault", {
+	value: function(key, default_value) {
+		if (!(key in this)) this[key] = default_value;
+		return this[key];
+	},
+	writable: true
+});
+
+// Pluralize
+String.prototype.plural = function(revert) {
+	const plural = {
+		"(quiz)$": "$1zes",
+		"^(ox)$": "$1en",
+		"([m|l])ouse$": "$1ice",
+		"(matr|vert|ind)ix|ex$": "$1ices",
+		"(x|ch|ss|sh)$": "$1es",
+		"([^aeiouy]|qu)y$": "$1ies",
+		"(hive)$": "$1s",
+		"(?:([^f])fe|([lr])f)$": "$1$2ves",
+		"(shea|lea|loa|thie)f$": "$1ves",
+		sis$: "ses",
+		"([ti])um$": "$1a",
+		"(tomat|potat|ech|her|vet)o$": "$1oes",
+		"(bu)s$": "$1ses",
+		"(alias)$": "$1es",
+		"(octop)us$": "$1i",
+		"(ax|test)is$": "$1es",
+		"(us)$": "$1es",
+		"([^s]+)$": "$1s",
+	};
+
+	const singular = {
+		"(quiz)zes$": "$1",
+		"(matr)ices$": "$1ix",
+		"(vert|ind)ices$": "$1ex",
+		"^(ox)en$": "$1",
+		"(alias)es$": "$1",
+		"(octop|vir)i$": "$1us",
+		"(cris|ax|test)es$": "$1is",
+		"(shoe)s$": "$1",
+		"(o)es$": "$1",
+		"(bus)es$": "$1",
+		"([m|l])ice$": "$1ouse",
+		"(x|ch|ss|sh)es$": "$1",
+		"(m)ovies$": "$1ovie",
+		"(s)eries$": "$1eries",
+		"([^aeiouy]|qu)ies$": "$1y",
+		"([lr])ves$": "$1f",
+		"(tive)s$": "$1",
+		"(hive)s$": "$1",
+		"(li|wi|kni)ves$": "$1fe",
+		"(shea|loa|lea|thie)ves$": "$1f",
+		"(^analy)ses$": "$1sis",
+		"((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$":
+			"$1$2sis",
+		"([ti])a$": "$1um",
+		"(n)ews$": "$1ews",
+		"(h|bl)ouses$": "$1ouse",
+		"(corpse)s$": "$1",
+		"(us)es$": "$1",
+		s$: "",
+	};
+
+	const irregular = {
+		move: "moves",
+		foot: "feet",
+		goose: "geese",
+		sex: "sexes",
+		child: "children",
+		man: "men",
+		tooth: "teeth",
+		person: "people",
+	};
+
+	const uncountable = [
+		"sheep",
+		"fish",
+		"deer",
+		"moose",
+		"series",
+		"species",
+		"money",
+		"rice",
+		"information",
+		"equipment",
+	];
+
+	// save some time in the case that singular and plural are the same
+	if (uncountable.indexOf(this.toLowerCase()) >= 0) return this;
+
+	// check for irregular forms
+	let word;
+	let pattern;
+	let replace;
+	for (word in irregular) {
+		if (revert) {
+			pattern = new RegExp(irregular[word] + "$", "i");
+			replace = word;
+		} else {
+			pattern = new RegExp(word + "$", "i");
+			replace = irregular[word];
+		}
+		if (pattern.test(this)) return this.replace(pattern, replace);
+	}
+
+	let array;
+	if (revert) array = singular;
+	else array = plural;
+
+	// check for matches using regular expressions
+	let reg;
+	for (reg in array) {
+		pattern = new RegExp(reg, "i");
+
+		if (pattern.test(this)) return this.replace(pattern, array[reg]);
+	}
+
+	return this;
+};
 
 Object.assign(frappe.utils, {
 	get_random: function(len) {
@@ -93,10 +234,10 @@ Object.assign(frappe.utils, {
 		return $("<div></div>").text(txt || "").html();
 	},
 
-	html2text: function(html) {
-		let d = document.createElement('div');
-		d.innerHTML = html;
-		return d.textContent;
+	html2text: function (html) {
+		const parser = new DOMParser();
+		const dom = parser.parseFromString(html, "text/html");
+		return dom.body.textContent;
 	},
 
 	is_url: function(txt) {
@@ -739,6 +880,10 @@ Object.assign(frappe.utils, {
 		return deep_equal(a, b);
 	},
 
+	deep_clone(obj, customizer) {
+		return cloneDeepWith(obj, customizer);
+	},
+
 	file_name_ellipsis(filename, length) {
 		let first_part_length = length * 2 / 3;
 		let last_part_length = length - first_part_length;
@@ -757,20 +902,36 @@ Object.assign(frappe.utils, {
 		// decodes base64 to string
 		let parts = dataURI.split(',');
 		const encoded_data = parts[1];
-		return decodeURIComponent(escape(atob(encoded_data)));
+		let decoded = atob(encoded_data);
+		try {
+			const escaped = escape(decoded);
+			decoded = decodeURIComponent(escaped);
+
+		} catch (e) {
+			// pass decodeURIComponent failure
+			// just return atob response
+		}
+		return decoded;
 	},
 	copy_to_clipboard(string) {
-		let input = $("<input>");
-		$("body").append(input);
-		input.val(string).select();
+		const show_success_alert = () => {
+			frappe.show_alert({
+				indicator: 'green',
+				message: __('Copied to clipboard.')
+			});
+		};
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(string).then(show_success_alert);
+		} else {
+			let input = $("<textarea>");
+			$("body").append(input);
+			input.val(string).select();
 
-		document.execCommand("copy");
-		input.remove();
+			document.execCommand("copy");
+			show_success_alert();
+			input.remove();
+		}
 
-		frappe.show_alert({
-			indicator: 'green',
-			message: __('Copied to clipboard.')
-		});
 	},
 	is_rtl() {
 		return ["ar", "he", "fa"].includes(frappe.boot.lang);
@@ -787,6 +948,385 @@ Object.assign(frappe.utils, {
 		});
 
 		return $el;
+	},
+
+	eval(code, context={}) {
+		let variable_names = Object.keys(context);
+		let variables = Object.values(context);
+		code = `let out = ${code}; return out`;
+		try {
+			let expression_function = new Function(...variable_names, code);
+			return expression_function(...variables);
+		} catch (error) {
+			console.log('Error evaluating the following expression:'); // eslint-disable-line no-console
+			console.error(code); // eslint-disable-line no-console
+			throw error;
+		}
+	},
+
+	get_browser() {
+		let ua = navigator.userAgent;
+		let tem;
+		let M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+
+		if (/trident/i.test(M[1])) {
+			tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+			return { name: "IE", version: tem[1] || "" };
+		}
+		if (M[1] === "Chrome") {
+			tem = ua.match(/\bOPR|Edge\/(\d+)/);
+			if (tem != null) {
+				return { name: "Opera", version: tem[1] };
+			}
+		}
+		M = M[2]
+			? [M[1], M[2]]
+			: [navigator.appName, navigator.appVersion, "-?"];
+		if ((tem = ua.match(/version\/(\d+)/i)) != null) {
+			M.splice(1, 1, tem[1]);
+		}
+		return {
+			name: M[0],
+			version: M[1],
+		};
+	},
+
+	get_formatted_duration(value, duration_options=null) {
+		let duration = '';
+		if (!duration_options) {
+			duration_options = {
+				hide_days: 0,
+				hide_seconds: 0
+			};
+		}
+		if (value) {
+			let total_duration = frappe.utils.seconds_to_duration(value, duration_options);
+
+			if (total_duration.days) {
+				duration += total_duration.days + __('d', null, 'Days (Field: Duration)');
+			}
+			if (total_duration.hours) {
+				duration += (duration.length ? " " : "");
+				duration += total_duration.hours + __('h', null, 'Hours (Field: Duration)');
+			}
+			if (total_duration.minutes) {
+				duration += (duration.length ? " " : "");
+				duration += total_duration.minutes + __('m', null, 'Minutes (Field: Duration)');
+			}
+			if (total_duration.seconds) {
+				duration += (duration.length ? " " : "");
+				duration += total_duration.seconds + __('s', null, 'Seconds (Field: Duration)');
+			}
+		}
+		return duration;
+	},
+
+	seconds_to_duration(seconds, duration_options) {
+		const round = seconds > 0 ? Math.floor : Math.ceil;
+		const total_duration = {
+			days: round(seconds / 86400), // 60 * 60 * 24
+			hours: round(seconds % 86400 / 3600),
+			minutes: round(seconds % 3600 / 60),
+			seconds: round(seconds % 60)
+		};
+
+		if (duration_options.hide_days) {
+			total_duration.hours = round(seconds / 3600);
+			total_duration.days = 0;
+		}
+
+		return total_duration;
+	},
+
+	duration_to_seconds(days=0, hours=0, minutes=0, seconds=0) {
+		let value = 0;
+		if (days) {
+			value += days * 24 * 60 * 60;
+		}
+		if (hours) {
+			value += hours * 60 * 60;
+		}
+		if (minutes) {
+			value += minutes * 60;
+		}
+		if (seconds) {
+			value += seconds;
+		}
+		return value;
+	},
+
+	get_duration_options: function(docfield) {
+		let duration_options = {
+			hide_days: docfield.hide_days,
+			hide_seconds: docfield.hide_seconds
+		};
+		return duration_options;
+	},
+
+	get_number_system: function (country) {
+		let number_system_map = {
+			'India':
+				[{
+					divisor: 1.0e+7,
+					symbol: 'Cr'
+				},
+				{
+					divisor: 1.0e+5,
+					symbol: 'Lakh'
+				}],
+			'':
+				[{
+					divisor: 1.0e+12,
+					symbol: 'T'
+				},
+				{
+					divisor: 1.0e+9,
+					symbol: 'B'
+				},
+				{
+					divisor: 1.0e+6,
+					symbol: 'M'
+				},
+				{
+					divisor: 1.0e+3,
+					symbol: 'K',
+				}]
+		};
+
+		if (!Object.keys(number_system_map).includes(country)) country = '';
+
+		return number_system_map[country];
+	},
+
+	map_defaults: {
+		center: [19.0800, 72.8961],
+		zoom: 13,
+		tiles: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+		options: {
+			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+		}
+	},
+
+	icon(icon_name, size="sm", icon_class="", icon_style="", svg_class="") {
+		let size_class = "";
+
+		if (typeof size == "object") {
+			icon_style += ` width: ${size.width}; height: ${size.height}`;
+		} else {
+			size_class = `icon-${size}`;
+		}
+		return `<svg class="icon ${svg_class} ${size_class}" style="${icon_style}">
+			<use class="${icon_class}" href="#icon-${icon_name}"></use>
+		</svg>`;
+	},
+
+	make_chart(wrapper, custom_options={}) {
+		let chart_args = {
+			type: 'bar',
+			colors: ['light-blue'],
+			axisOptions: {
+				xIsSeries: 1,
+				shortenYAxisNumbers: 1,
+				xAxisMode: 'tick'
+			}
+		};
+
+		for (let key in custom_options) {
+			if (typeof chart_args[key] === 'object' && typeof custom_options[key] === 'object') {
+				chart_args[key] = Object.assign(chart_args[key], custom_options[key]);
+			} else {
+				chart_args[key] = custom_options[key];
+			}
+		}
+
+		return new frappe.Chart(wrapper, chart_args);
+	},
+
+	generate_route(item) {
+		const type = item.type.toLowerCase();
+		if (type === "doctype") {
+			item.doctype = item.name;
+		}
+		let route = "";
+		if (!item.route) {
+			if (item.link) {
+				route = strip(item.link, "#");
+			} else if (type === "doctype") {
+				let doctype_slug = frappe.router.slug(item.doctype);
+
+				if (frappe.model.is_single(item.doctype)) {
+					route = doctype_slug;
+				} else {
+					if (!item.doc_view) {
+						if (frappe.model.is_tree(item.doctype)) {
+							item.doc_view = "Tree";
+						} else {
+							item.doc_view = "List";
+						}
+					}
+
+					switch (item.doc_view) {
+						case "List":
+							if (item.filters) {
+								frappe.route_options = item.filters;
+							}
+							route = doctype_slug;
+							break;
+						case "Tree":
+							route = `${doctype_slug}/view/tree`;
+							break;
+						case "Report Builder":
+							route = `${doctype_slug}/view/report`;
+							break;
+						case "Dashboard":
+							route = `${doctype_slug}/view/dashboard`;
+							break;
+						case "New":
+							route = `${doctype_slug}/new`;
+							break;
+						case "Calendar":
+							route = `${doctype_slug}/view/calendar/default`;
+							break;
+						default:
+							frappe.throw({ message: __("Not a valid view:") + item.doc_view, title: __("Unknown View") });
+							route = "";
+					}
+				}
+			} else if (type === "report") {
+				if (item.is_query_report) {
+					route = "query-report/" + item.name;
+				} else if (!item.doctype) {
+					route = "/report/" + item.name;
+				} else {
+					route = frappe.router.slug(item.doctype) + "/view/report/" + item.name;
+				}
+			} else if (type === "page") {
+				route = item.name;
+			} else if (type === "dashboard") {
+				route = `dashboard-view/${item.name}`;
+			}
+
+		} else {
+			route = item.route;
+		}
+
+		if (item.route_options) {
+			route +=
+				"?" +
+				$.map(item.route_options, function (value, key) {
+					return (
+						encodeURIComponent(key) + "=" + encodeURIComponent(value)
+					);
+				}).join("&");
+		}
+
+		// if(type==="page" || type==="help" || type==="report" ||
+		// (item.doctype && frappe.model.can_read(item.doctype))) {
+		//     item.shown = true;
+		// }
+		return `/app/${route}`;
+	},
+
+	shorten_number: function (number, country, min_length=4, max_no_of_decimals=2) {
+		/* returns the number as an abbreviated string
+		 * PARAMS
+		 *  number - number to be shortened
+		 *  country - country that determines the numnber system to be used
+		 *  min_length - length below which the number will not be shortened
+		 *	max_no_of_decimals - max number of decimals of the shortened number
+		*/
+
+		// return number if total digits is lesser than min_length
+		const len = String(number).match(/\d/g).length;
+		if (len < min_length) return number.toString();
+
+		const number_system = this.get_number_system(country);
+		let x = Math.abs(Math.round(number));
+		for (const map of number_system) {
+			if (x >= map.divisor) {
+				let result = number/map.divisor;
+				const no_of_decimals = this.get_number_of_decimals(result);
+				/*
+					If no_of_decimals is greater than max_no_of_decimals,
+					round the number to max_no_of_decimals
+				*/
+				result = no_of_decimals > max_no_of_decimals
+					? result.toFixed(max_no_of_decimals)
+					: result;
+				return result + ' ' + map.symbol;
+			}
+		}
+
+		return number.toFixed(max_no_of_decimals);
+	},
+
+	get_number_of_decimals: function (number) {
+		if (Math.floor(number) === number) return 0;
+		return number.toString().split(".")[1].length || 0;
+	},
+
+	build_summary_item(summary) {
+		if (summary.type == "separator") {
+			return $(`<div class="summary-separator">
+				<div class="summary-value ${summary.color ? summary.color.toLowerCase() : 'text-muted'}">${summary.value}</div>
+			</div>`);
+		}
+		let df = { fieldtype: summary.datatype };
+		let doc = null;
+		if (summary.datatype == "Currency") {
+			df.options = "currency";
+			doc = { currency: summary.currency };
+		}
+
+		let value = frappe.format(summary.value, df, { only_value: true }, doc);
+		let color = summary.indicator ? summary.indicator.toLowerCase()
+			: summary.color ? summary.color.toLowerCase() : '';
+
+		return $(`<div class="summary-item">
+			<span class="summary-label">${__(summary.label)}</span>
+			<div class="summary-value ${color}">${value}</div>
+		</div>`);
+	},
+
+	print(doctype, docname, print_format, letterhead, lang_code) {
+		let w = window.open(
+			frappe.urllib.get_full_url(
+				'/printview?doctype=' +
+				encodeURIComponent(doctype) +
+				'&name=' +
+				encodeURIComponent(docname) +
+				'&trigger_print=1' +
+				'&format=' +
+				encodeURIComponent(print_format) +
+				'&no_letterhead=' +
+				(letterhead ? '0' : '1') +
+				'&letterhead=' +
+				encodeURIComponent(letterhead) +
+				(lang_code ? '&_lang=' + lang_code : '')
+			)
+		);
+
+		if (!w) {
+			frappe.msgprint(__('Please enable pop-ups'));
+			return;
+		}
+	},
+
+	get_clipboard_data(clipboard_paste_event) {
+		let e = clipboard_paste_event;
+		let clipboard_data = e.clipboardData || window.clipboardData || e.originalEvent.clipboardData;
+		return clipboard_data.getData('Text');
+	},
+
+	parse_array(array) {
+		if (array && array.length !== 0) {
+			return array;
+		}
+		return undefined;
+	},
+
+	is_current_user(user) {
+		return user === frappe.session.user;
 	}
 });
 

@@ -10,35 +10,43 @@ context('Form', () => {
 		cy.visit('/desk');
 	});
 	it('create a new form', () => {
-		cy.visit('/desk#Form/ToDo/New ToDo 1');
-		cy.fill_field('description', 'this is a test todo', 'Text Editor').blur();
+		cy.visit('/app/todo/new');
+		cy.get_field('description', 'Text Editor').type('this is a test todo', {force: true}).wait(200);
 		cy.get('.page-title').should('contain', 'Not Saved');
 		cy.get('.primary-action').click();
-		cy.visit('/desk#List/ToDo');
-		cy.location('hash').should('eq', '#List/ToDo/List');
+		cy.wait('@form_save').its('response.statusCode').should('eq', 200);
+
+		cy.visit('/app/todo');
+		cy.get('.page-head').findByTitle('To Do').should('exist');
 		cy.get('.list-row').should('contain', 'this is a test todo');
 	});
+
 	it('navigates between documents with child table list filters applied', () => {
-		cy.visit('/desk#List/Contact');
-		cy.get('.tag-filters-area .btn:contains("Add Filter")').click();
-		cy.get('.fieldname-select-area').should('exist');
-		cy.get('.fieldname-select-area input').type('Number{enter}', { force: true });
-		cy.get('.filter-field .input-with-feedback.form-control').type('123', { force: true });
-		cy.findByRole('button', {name: 'Apply Filters'}).click({ force: true });
-		cy.visit('/app/contact/Test Form Contact 3');
+		cy.visit('/app/contact');
+
+		cy.clear_filters();
+		cy.get('.standard-filter-section [data-fieldname="name"] input').type('Test Form Contact 3').blur();
+		cy.click_listview_row_item_with_text('Test Form Contact 3');
+
+		cy.get('#page-Contact .page-head').findByTitle('Test Form Contact 3').should('exist');
 		cy.get('.prev-doc').should('be.visible').click();
 		cy.get('.msgprint-dialog .modal-body').contains('No further records').should('be.visible');
-		cy.get('.btn-modal-close:visible').click();
-		cy.get('.next-doc').click({ force: true });
-		cy.wait(200);
-		cy.contains('Test Form Contact 2').should('not.exist');
-		cy.get('.page-title .title-text').should('contain', 'Test Form Contact 1');
+		cy.hide_dialog();
+
+		cy.get('#page-Contact .page-head').findByTitle('Test Form Contact 3').should('exist');
+		cy.get('.next-doc').should('be.visible').click();
+		cy.get('.msgprint-dialog .modal-body').contains('No further records').should('be.visible');
+		cy.hide_dialog();
+
+		cy.get('#page-Contact .page-head').findByTitle('Test Form Contact 3').should('exist');
+
 		// clear filters
 		cy.window().its('frappe').then((frappe) => {
 			let list_view = frappe.get_list_view('Contact');
 			list_view.filter_area.filter_list.clear_filters();
 		});
 	});
+
 	it('validates behaviour of Data options validations in child table', () => {
 		// test email validations for set_invalid controller
 		let website_input = 'website.in';

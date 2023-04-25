@@ -33,15 +33,6 @@ frappe.Application = Class.extend({
 		frappe.socketio.init();
 		frappe.model.init();
 
-		if(frappe.boot.status==='failed') {
-			frappe.msgprint({
-				message: frappe.boot.error,
-				title: __('Session Start Failed'),
-				indicator: 'red',
-			});
-			throw 'boot failed';
-		}
-
 		this.setup_frappe_vue();
 		this.load_bootinfo();
 		this.load_user_permissions();
@@ -130,19 +121,37 @@ frappe.Application = Class.extend({
 		this.link_preview = new frappe.ui.LinkPreview();
 
 		if (!frappe.boot.developer_mode) {
-			setInterval(function() {
-				frappe.call({
-					method: 'frappe.core.page.background_jobs.background_jobs.get_scheduler_status',
-					callback: function(r) {
-						if (r.message[0] == __("Inactive")) {
-							frappe.call('frappe.utils.scheduler.activate_scheduler');
+			if (frappe.user.has_role("System Manager")) {
+				setInterval(function() {
+					frappe.call({
+						method: 'frappe.core.doctype.log_settings.log_settings.has_unseen_error_log',
+						args: {
+							user: frappe.session.user
+						},
+						callback: function(r) {
+							if (r.message.show_alert) {
+								frappe.show_alert({
+									indicator: 'red',
+									message: r.message.message
+								});
+							}
 						}
-					}
-				});
-			}, 300000); // check every 5 minutes
+					});
+				}, 600000); // check every 10 minutes
+			}
 		}
 
-		this.fetch_tags();
+	set_route() {
+		if (frappe.boot && localStorage.getItem("session_last_route")) {
+			frappe.set_route(localStorage.getItem("session_last_route"));
+			localStorage.removeItem("session_last_route");
+		} else {
+			// route to home page
+			frappe.router.route();
+		}
+		frappe.router.on('change', () => {
+			$(".tooltip").hide();
+		});
 	},
 
 	setup_frappe_vue() {
@@ -171,19 +180,20 @@ frappe.Application = Class.extend({
 
 	email_password_prompt: function(email_account,user,i) {
 		var me = this;
+		const email_id = email_account[i]["email_id"];
 		let d = new frappe.ui.Dialog({
 			title: __('Password missing in Email Account'),
 			fields: [
 				{
 					'fieldname': 'password',
 					'fieldtype': 'Password',
-					'label': __('Please enter the password for: <b>{0}</b>', [email_account[i]["email_id"]]),
+					'label': __('Please enter the password for: <b>{0}</b>', [email_id], "Email Account"),
 					'reqd': 1
 				},
 				{
 					"fieldname": "submit",
 					"fieldtype": "Button",
-					"label": __("Submit")
+					"label": __("Submit", null, "Submit password for Email Account")
 				}
 			]
 		});
@@ -231,15 +241,11 @@ frappe.Application = Class.extend({
 				frappe.modules[m.module_name]=m;
 			});
 			frappe.model.sync(frappe.boot.docs);
-			$.extend(frappe._messages, frappe.boot.__messages);
 			this.check_metadata_cache_status();
 			this.set_globals();
 			this.sync_pages();
-			moment.locale("en");
-			moment.user_utc_offset = moment().utcOffset();
-			if(frappe.boot.timezone_info) {
-				moment.tz.add(frappe.boot.timezone_info);
-			}
+			frappe.router.setup();
+			this.setup_moment();
 			if(frappe.boot.print_css) {
 				frappe.dom.set_style(frappe.boot.print_css, "print-style");
 			}
@@ -481,7 +487,8 @@ frappe.Application = Class.extend({
 		// 	"version": "12.2.0"
 		// }];
 
-		if (!Array.isArray(change_log) || !change_log.length || window.Cypress) {
+		if (!Array.isArray(change_log) || !change_log.length ||
+			window.Cypress || cint(frappe.boot.sysdefaults.disable_change_log_notification)) {
 			return;
 		}
 
@@ -502,6 +509,8 @@ frappe.Application = Class.extend({
 	},
 
 	show_update_available: () => {
+		if (frappe.boot.sysdefaults.disable_system_update_notification) return;
+
 		frappe.call({
 			"method": "frappe.utils.change_log.show_update_popup"
 		});
@@ -574,8 +583,50 @@ frappe.Application = Class.extend({
 		});
 	},
 
-	fetch_tags() {
-		frappe.tags.utils.fetch_tags();
+	setup_copy_doc_listener() {
+		$('body').on('paste', (e) => {
+			try {
+				let pasted_data = frappe.utils.get_clipboard_data(e);
+				let doc = JSON.parse(pasted_data);
+				if (doc.doctype) {
+					e.preventDefault();
+					let sleep = (time) => {
+						return new Promise((resolve) => setTimeout(resolve, time));
+					};
+
+					frappe.dom.freeze(__('Creating {0}', [doc.doctype]) + '...');
+					// to avoid abrupt UX
+					// wait for activity feedback
+					sleep(500).then(() => {
+						let res = frappe.model.with_doctype(doc.doctype, () => {
+							let newdoc = frappe.model.copy_doc(doc);
+							newdoc.__newname = doc.name;
+							delete doc.name;
+							newdoc.idx = null;
+							newdoc.__run_link_triggers = false;
+							frappe.set_route('Form', newdoc.doctype, newdoc.name);
+							frappe.dom.unfreeze();
+						});
+						res && res.fail(frappe.dom.unfreeze);
+					});
+				}
+			} catch (e) {
+				//
+			}
+		});
+	},
+
+	setup_moment() {
+		moment.updateLocale('en', {
+			week: {
+				dow: frappe.datetime.get_first_day_of_the_week_index(),
+			}
+		});
+		moment.locale("en");
+		moment.user_utc_offset = moment().utcOffset();
+		if (frappe.boot.timezone_info) {
+			moment.tz.add(frappe.boot.timezone_info);
+		}
 	}
 });
 

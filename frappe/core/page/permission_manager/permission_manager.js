@@ -304,15 +304,15 @@ frappe.PermissionEngine = Class.extend({
 			.attr("data-doctype", d.parent)
 			.attr("data-role", d.role)
 			.attr("data-permlevel", d.permlevel)
-			.click(function() {
+			.on("click", () => {
 				return frappe.call({
 					module: "frappe.core",
 					page: "permission_manager",
 					method: "remove",
 					args: {
-						doctype: $(this).attr("data-doctype"),
-						role: $(this).attr("data-role"),
-						permlevel: $(this).attr("data-permlevel")
+						doctype: d.parent,
+						role: d.role,
+						permlevel: d.permlevel
 					},
 					callback: function(r) {
 						if(r.exc) {
@@ -325,11 +325,10 @@ frappe.PermissionEngine = Class.extend({
 			});
 	},
 
-	add_check_events: function() {
-		var me = this;
-
-		this.body.on("click", ".show-user-permissions", function() {
-			frappe.route_options = { allow: me.get_doctype() || "" };
+	add_check_events() {
+		let me = this;
+		this.body.on("click", ".show-user-permissions", () => {
+			frappe.route_options = { allow: this.get_doctype() || "" };
 			frappe.set_route('List', 'User Permission');
 		});
 
@@ -352,7 +351,7 @@ frappe.PermissionEngine = Class.extend({
 						// exception: reverse
 						chk.prop("checked", !chk.prop("checked"));
 					} else {
-						me.get_perm(args.role)[args.ptype]=args.value;
+						me.get_perm(args.role)[args.ptype] = args.value;
 					}
 				}
 			});

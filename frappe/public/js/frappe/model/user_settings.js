@@ -6,6 +6,8 @@ $.extend(frappe.model.user_settings, {
 			.then(r => JSON.parse(r.message || '{}'));
 	},
 	save: function(doctype, key, value) {
+		if (frappe.session.user === 'Guest') return Promise.resolve();
+
 		const old_user_settings = frappe.model.user_settings[doctype] || {};
 		const new_user_settings = $.extend(true, {}, old_user_settings); // deep copy
 
@@ -22,7 +24,7 @@ $.extend(frappe.model.user_settings, {
 			// update if changed
 			return this.update(doctype, new_user_settings);
 		}
-		return Promise.resolve();
+		return Promise.resolve(new_user_settings);
 	},
 	remove: function(doctype, key) {
 		var user_settings = frappe.model.user_settings[doctype] || {};
