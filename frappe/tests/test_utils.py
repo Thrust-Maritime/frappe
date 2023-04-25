@@ -16,25 +16,37 @@ import frappe
 from frappe.utils import (
 	ceil,
 	evaluate_filters,
+	execute_in_shell,
 	floor,
 	format_timedelta,
+	get_file_timestamp,
+	get_site_info,
+	get_sites,
 	get_url,
 	money_in_words,
 	parse_timedelta,
+	safe_json_loads,
 	scrub_urls,
 	validate_email_address,
 	validate_url,
 )
 from frappe.utils.data import (
+	add_to_date,
 	cast,
+	cstr,
+	expand_relative_urls,
+	get_first_day_of_week,
 	get_time,
 	get_timedelta,
+	getdate,
 	now_datetime,
 	nowtime,
 	validate_python_code,
 )
+from frappe.utils.dateutils import get_dates_from_timegrain
 from frappe.utils.image import strip_exif_data
 from frappe.utils.response import json_handler
+from frappe.utils.synchronization import LockTimeoutError, filelock
 
 
 class TestFilters(unittest.TestCase):
@@ -386,6 +398,31 @@ class TestDateUtils(unittest.TestCase):
 		self.assertIsInstance(get_timedelta(str(timedelta_input)), timedelta)
 		self.assertIsInstance(get_timedelta(str(time_input)), timedelta)
 
+	def test_date_from_timegrain(self):
+		start_date = getdate("2021-01-01")
+
+		daily = get_dates_from_timegrain(start_date, add_to_date(start_date, days=6), "Daily")
+		self.assertEqual(len(daily), 7)
+		for idx, d in enumerate(daily):
+			self.assertEqual(d, add_to_date(start_date, days=idx))
+
+		start = get_first_day_of_week(start_date)
+		end = add_to_date(add_to_date(start, weeks=52), days=-1)
+		weekly = get_dates_from_timegrain(start, end, "Weekly")
+		self.assertEqual(len(weekly), 52)
+		for idx, d in enumerate(weekly, start=1):
+			self.assertEqual(d, add_to_date(start, days=7 * idx - 1))
+
+		quarterly = get_dates_from_timegrain(start_date, add_to_date(start_date, months=5), "Quarterly")
+		self.assertEqual(len(quarterly), 2)
+		for idx, d in enumerate(quarterly, start=1):
+			self.assertEqual(d, add_to_date(start_date, months=idx * 3, days=-1))
+
+		yearly = get_dates_from_timegrain(start_date, add_to_date(start_date, years=2), "Yearly")
+		self.assertEqual(len(yearly), 3)
+		for idx, d in enumerate(yearly, start=1):
+			self.assertEqual(d, add_to_date(start_date, years=idx, days=-1))
+
 
 class TestResponse(unittest.TestCase):
 	def test_json_handler(self):
@@ -454,3 +491,51 @@ class TestXlsxUtils(unittest.TestCase):
 		val = handle_html("<p>html data &gt;</p>")
 		self.assertIn("html data >", val)
 		self.assertEqual("abc", handle_html("abc"))
+
+
+class TestLocks(unittest.TestCase):
+	def test_locktimeout(self):
+		lock_name = "test_lock"
+		with filelock(lock_name):
+			with self.assertRaises(LockTimeoutError):
+				with filelock(lock_name, timeout=1):
+					self.fail("Locks not working")
+
+	def test_global_lock(self):
+		lock_name = "test_global"
+		with filelock(lock_name, is_global=True):
+			with self.assertRaises(LockTimeoutError):
+				with filelock(lock_name, timeout=1, is_global=True):
+					self.fail("Global locks not working")
+
+
+class TestMiscUtils(unittest.TestCase):
+	def test_get_file_timestamp(self):
+		self.assertIsInstance(get_file_timestamp(__file__), str)
+
+	def test_execute_in_shell(self):
+		err, out = execute_in_shell("ls")
+		self.assertIn("apps", cstr(out))
+
+	def test_get_all_sites(self):
+		self.assertIn(frappe.local.site, get_sites())
+
+	def test_safe_json_load(self):
+		self.assertEqual(safe_json_loads("{}"), {})
+		self.assertEqual(safe_json_loads("{ /}"), "{ /}")
+		self.assertEqual(safe_json_loads("12"), 12)  # this is a quirk
+
+	def test_url_expansion(self):
+		unchanged_links = [
+			"<a href='tel:12345432'>My Phone</a>)",
+			"<a href='mailto:hello@example.com'>My Email</a>)",
+			"<a href='data:hello@example.com'>Data</a>)",
+		]
+		for link in unchanged_links:
+			self.assertEqual(link, expand_relative_urls(link))
+
+		site = get_url()
+
+		transforms = [("<a href='/about'>About</a>)", f"<a href='{site}/about'>About</a>)")]
+		for input, output in transforms:
+			self.assertEqual(output, expand_relative_urls(input))

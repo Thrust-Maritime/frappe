@@ -19,6 +19,7 @@ from frappe.utils import (
 	cint,
 	get_datetime,
 	get_formatted_email,
+	get_string_between,
 	get_url,
 	list_to_str,
 	parse_addr,
@@ -98,7 +99,7 @@ def make(
 		send_me_a_copy=cint(send_me_a_copy),
 		cc=cc,
 		bcc=bcc,
-		read_receipt=read_receipt,
+		read_receipt=cint(read_receipt),
 		print_letterhead=print_letterhead,
 		email_template=email_template,
 		communication_type=communication_type,
@@ -151,7 +152,7 @@ def _make(
 			"reference_doctype": doctype,
 			"reference_name": name,
 			"email_template": email_template,
-			"message_id": get_message_id().strip(" <>"),
+			"message_id": get_string_between("<", get_message_id(), ">"),
 			"read_receipt": read_receipt,
 			"has_attachment": 1 if attachments else 0,
 			"communication_type": communication_type,
@@ -388,7 +389,7 @@ def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None)
 				# is it a filename?
 				try:
 					# check for both filename and file id
-					file_id = frappe.db.get_list("File", or_filters={"file_name": a, "name": a}, limit=1)
+					file_id = frappe.db.get_all("File", or_filters={"file_name": a, "name": a}, limit=1)
 					if not file_id:
 						frappe.throw(_("Unable to find attachment {0}").format(a))
 					file_id = file_id[0]["name"]
@@ -611,7 +612,7 @@ def get_attach_link(doc, print_format):
 			"doctype": doc.reference_doctype,
 			"name": doc.reference_name,
 			"print_format": print_format,
-			"key": get_parent_doc(doc).get_signature(),
+			"key": get_parent_doc(doc).get_document_share_key(),
 		}
 	)
 
@@ -665,7 +666,7 @@ def sendmail(
 			else:
 				break
 
-	except:
+	except Exception:
 		traceback = frappe.log_error("frappe.core.doctype.communication.email.sendmail")
 		raise
 

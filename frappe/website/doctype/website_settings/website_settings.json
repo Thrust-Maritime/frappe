@@ -21,6 +21,7 @@
   "website_theme_image_link",
   "brand",
   "banner_image",
+  "splash_image",
   "brand_html",
   "set_banner_from_image",
   "favicon",
@@ -235,7 +236,7 @@
    "read_only": 1
   },
   {
-   "default": "0",
+   "default": "1",
    "description": "Disable Customer Signup link in Login page",
    "fieldname": "disable_signup",
    "fieldtype": "Check",
@@ -386,6 +387,11 @@
    "fieldname": "app_logo",
    "fieldtype": "Attach Image",
    "label": "App Logo"
+  },
+  {
+    "fieldname": "splash_image",
+    "fieldtype": "Attach Image",
+    "label": "Splash Image"
   }
  ],
  "icon": "fa fa-cog",
@@ -393,7 +399,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-03-09 01:47:31.094462",
+ "modified": "2022-12-05 04:17:56.478757",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "Website Settings",

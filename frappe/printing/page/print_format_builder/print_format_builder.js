@@ -261,8 +261,7 @@ frappe.PrintFormatBuilder = Class.extend({
 			} else if(f.fieldtype==="Column Break") {
 				set_column();
 
-			} else if(!in_list(["Section Break", "Column Break", "Fold"], f.fieldtype)
-				&& f.label) {
+			} else if(!in_list(["Section Break", "Column Break", "Fold"], f.fieldtype)) {
 				if(!column) set_column();
 
 				if(f.fieldtype==="Table") {
@@ -437,7 +436,7 @@ frappe.PrintFormatBuilder = Class.extend({
 			const field = $(e.currentTarget).parent();
 			// new dialog
 			var d = new frappe.ui.Dialog({
-				title: "Set Properties",
+				title: __("Set Properties"),
 				fields: [
 					{
 						label: __("Label"),
@@ -448,7 +447,8 @@ frappe.PrintFormatBuilder = Class.extend({
 						label: __("Align Value"),
 						fieldname: "align",
 						fieldtype: "Select",
-						options: [{'label': __('Left'), 'value': 'left'}, {'label': __('Right'), 'value': 'right'}]
+						options: [{'label': __('Left', null, 'alignment'), 'value': 'left'},
+							{'label': __('Right', null, 'alignment'), 'value': 'right'}]
 					},
 					{
 						label: __("Remove Field"),

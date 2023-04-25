@@ -14,6 +14,7 @@
   "is_first_startup",
   "enable_onboarding",
   "setup_complete",
+  "disable_document_sharing",
   "date_and_number_format",
   "date_format",
   "time_format",
@@ -34,12 +35,15 @@
   "security",
   "session_expiry",
   "session_expiry_mobile",
+  "document_share_key_expiry",
   "column_break_13",
   "deny_multiple_sessions",
   "allow_login_using_mobile_number",
   "allow_login_using_user_name",
   "allow_error_traceback",
   "strip_exif_metadata_from_uploaded_images",
+  "allow_older_web_view_links",
+  "apply_perm_level_on_api_calls",
   "password_settings",
   "logout_on_password_reset",
   "force_user_to_reset_password",
@@ -60,6 +64,7 @@
   "otp_issuer_name",
   "email",
   "email_footer_address",
+  "email_retry_limit",
   "column_break_18",
   "disable_standard_email_footer",
   "hide_footer_in_auto_email_reports",
@@ -496,12 +501,43 @@
    "fieldname": "disable_change_log_notification",
    "fieldtype": "Check",
    "label": "Disable Change Log Notification"
+  },
+  {
+   "default": "30",
+   "description": "Number of days after which the document Web View link shared on email will be expired",
+   "fieldname": "document_share_key_expiry",
+   "fieldtype": "Int",
+   "label": "Document Share Key Expiry (in Days)"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_older_web_view_links",
+   "fieldtype": "Check",
+   "label": "Allow Older Web View Links (Insecure)"
+  },
+  {
+   "default": "3",
+   "fieldname": "email_retry_limit",
+   "fieldtype": "Int",
+   "label": "Email Retry Limit"
+  },
+  {
+   "default": "0",
+   "fieldname": "apply_perm_level_on_api_calls",
+   "fieldtype": "Check",
+   "label": "Apply Perm Level on API calls (Recommended)"
+  },
+  {
+   "default": "0",
+   "fieldname": "disable_document_sharing",
+   "fieldtype": "Check",
+   "label": "Disable Document Sharing"
   }
  ],
  "icon": "fa fa-cog",
  "issingle": 1,
  "links": [],
- "modified": "2022-04-28 14:31:50.330954",
+ "modified": "2023-03-14 11:30:56.465653",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "System Settings",
@@ -518,6 +554,5 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "ASC",
- "states": [],
  "track_changes": 1
 }

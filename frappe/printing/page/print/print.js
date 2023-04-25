@@ -8,7 +8,7 @@ frappe.pages['print'].on_page_load = function(wrapper) {
 	$(wrapper).bind('show', () => {
 		const route = frappe.get_route();
 		const doctype = route[1];
-		const docname = route[2];
+		const docname = route.slice(2).join("/");
 		if (!frappe.route_options || !frappe.route_options.frm) {
 			frappe.model.with_doc(doctype, docname, () => {
 				let frm = { doctype: doctype, docname: docname };
@@ -19,7 +19,8 @@ frappe.pages['print'].on_page_load = function(wrapper) {
 				});
 			});
 		} else {
-			print_view.frm = frappe.route_options.frm;
+			print_view.frm = frappe.route_options.frm.doctype ?
+				frappe.route_options.frm : frappe.route_options.frm.frm;
 			frappe.route_options.frm = null;
 			print_view.show(print_view.frm);
 		}
@@ -81,6 +82,10 @@ frappe.ui.form.PrintView = class {
 			() => this.refresh_print_format(),
 			{ icon: 'refresh' }
 		);
+
+		this.page.add_action_icon("file", () => {
+			this.go_to_form_view();
+		}, '', __("Form"));
 	}
 
 	setup_sidebar() {
@@ -372,8 +377,8 @@ frappe.ui.form.PrintView = class {
 	set_default_print_language() {
 		let print_format = this.get_print_format();
 		this.lang_code =
-			print_format.default_print_language ||
 			this.frm.doc.language ||
+			print_format.default_print_language ||
 			frappe.boot.lang;
 		this.language_sel.val(this.lang_code);
 	}
@@ -449,6 +454,13 @@ frappe.ui.form.PrintView = class {
 					: this.frm.page.previous_view_name || 'main'
 			);
 		}
+	}
+
+	go_to_form_view() {
+		frappe.route_options = {
+			frm: this,
+		};
+		frappe.set_route('Form', this.frm.doctype, this.frm.docname);
 	}
 
 	show_footer() {

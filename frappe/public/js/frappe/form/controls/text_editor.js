@@ -6,6 +6,12 @@ const CodeBlockContainer = Quill.import('formats/code-block-container');
 CodeBlockContainer.tagName = 'PRE';
 Quill.register(CodeBlockContainer, true);
 
+// font size
+let font_sizes = [false, '8px', '9px', '10px', '11px', '12px', '13px', '14px', '15px', '16px', '18px', '20px', '22px', '24px', '32px', '36px', '40px', '48px', '54px', '64px', '96px', '128px'];
+const Size = Quill.import('attributors/style/size');
+Size.whitelist = font_sizes;
+Quill.register(Size, true);
+
 // table
 const Table = Quill.import('formats/table-container');
 const superCreate = Table.create.bind(Table);
@@ -91,7 +97,7 @@ frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 
 	bind_events() {
 		this.quill.on('text-change', frappe.utils.debounce((delta, oldDelta, source) => {
-			if (!this.is_quill_dirty(source)) return;
+			if (source === 'api') return;
 
 			const input_value = this.get_input_value();
 			this.parse_validate_and_set_in_model(input_value);
@@ -139,12 +145,15 @@ frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 
 			e.preventDefault();
 		});
-	},
 
-	is_quill_dirty(source) {
-		if (source === 'api') return false;
-		let input_value = this.get_input_value();
-		return this.value !== input_value;
+		// font size dropdown
+		let $font_size_label = this.$wrapper.find('.ql-size .ql-picker-label:first');
+		let $default_font_size = this.$wrapper.find('.ql-size .ql-picker-item:first');
+
+		if ($font_size_label.length) {
+			$font_size_label.attr('data-value', '---');
+			$default_font_size.attr('data-value', '---');
+		}
 	},
 
 	get_quill_options() {
@@ -160,8 +169,9 @@ frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 
 	get_toolbar_options() {
 		return [
-			[{ 'header': [1, 2, 3, false] }],
-			['bold', 'italic', 'underline', 'clean'],
+			[{ header: [1, 2, 3, false] }],
+			[{ size: font_sizes }],
+			['bold', 'italic', 'underline', 'strike', 'clean'],
 			[{ 'color': [] }, { 'background': [] }],
 			['blockquote', 'code-block'],
 			// Adding Direction tool to give the user the ability to change text direction.
@@ -217,6 +227,18 @@ frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 			value = `<div class="ql-editor read-mode">${value}</div>`;
 		}
 
+		// quill keeps ol as a common container for both type of lists
+		// and uses css for appearances, this is not semantic
+		// so we convert ol to ul if it is unordered
+		let $value = $(value);
+		$value.find('ol li[data-list=bullet]:first-child').each((i, li) => {
+			let $li = $(li);
+			let $parent = $li.parent();
+			let $children = $parent.children();
+			let $ul = $('<ul>').append($children);
+			$parent.replaceWith($ul);
+		});
+		value = $value.prop("outerHTML");
 		return value;
 	},
 

@@ -248,6 +248,10 @@ class QueryDeadlockError(Exception):
 	pass
 
 
+class SessionBootFailed(ValidationError):
+	http_status_code = 500
+
+
 class TooManyWritesError(Exception):
 	pass
 
@@ -270,4 +274,12 @@ class InvalidDatabaseFile(ValidationError):
 
 
 class ExecutableNotFound(FileNotFoundError):
+	pass
+
+
+class LinkExpired(ValidationError):
+	pass
+
+
+class InvalidKeyError(ValidationError):
 	pass

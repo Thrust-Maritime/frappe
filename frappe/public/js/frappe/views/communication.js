@@ -166,6 +166,10 @@ frappe.views.CommunicationComposer = class {
 				fieldname: "sender",
 				options: this.user_email_accounts
 			});
+			//Preselect email senders if there is only one
+			if (this.user_email_accounts.length==1) {
+				this['sender'] = this.user_email_accounts
+			}
 		}
 
 		return fields;
@@ -764,17 +768,23 @@ frappe.views.CommunicationComposer = class {
 				filters['default_outgoing'] = 1;
 			}
 
-			const email = await frappe.db.get_list("Email Account", {
+			const email_accounts = await frappe.db.get_list("Email Account", {
 				filters: filters,
 				fields: ['signature', 'email_id'],
 				limit: 1
 			});
 
-			signature = email && email[0].signature;
+			let filtered_email = null;
+			if (email_accounts.length) {
+				signature = email_accounts[0].signature;
+				filtered_email = email_accounts[0].email_id;
+			}
 
-			if (this.user_email_accounts &&
-				this.user_email_accounts.includes(email[0].email_id)) {
-				this.dialog.set_value('sender', email[0].email_id);
+			if (!sender_email && filtered_email) {
+				if (this.user_email_accounts &&
+					this.user_email_accounts.includes(filtered_email)) {
+					this.dialog.set_value('sender', filtered_email);
+				}
 			}
 		}
 
@@ -829,12 +839,12 @@ frappe.views.CommunicationComposer = class {
 
 	html2text(html) {
 		// convert HTML to text and try and preserve whitespace
-		const d = document.createElement( 'div' );
-		d.innerHTML = html.replace(/<\/div>/g, '<br></div>')  // replace end of blocks
-			.replace(/<\/p>/g, '<br></p>') // replace end of paragraphs
-			.replace(/<br>/g, '\n');
+		html = html
+			.replace(/<\/div>/g, "<br></div>") // replace end of blocks
+			.replace(/<\/p>/g, "<br></p>") // replace end of paragraphs
+			.replace(/<br>/g, "\n");
 
-		// replace multiple empty lines with just one
-		return d.textContent.replace(/\n{3,}/g, '\n\n');
+		const text = frappe.utils.html2text(html);
+		return text.replace(/\n{3,}/g, "\n\n");
 	}
 };
