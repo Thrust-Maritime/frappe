@@ -1,6 +1,6 @@
 .gantt-modern .gantt {
 	.bar {
-		fill: white;
+		fill: green;
 	}
 
 	.arrow {
@@ -15,7 +15,7 @@
 
 		&:hover {
 			.bar {
-				fill: green;
+				fill: white;
 				stroke: var(--gray-400);
 			}
 
